@@ -1,20 +1,15 @@
-# Simple Free-Look Camera
-A simple 3D 100-line free-look camera for Godot 3.2 that mimics the functionality of the editor's camera for in-game use.
-## Usage
-Use **W** and **S** to move forward and backward.
+# Bloodstained Level Editor
 
-Use **A** and **D** to move left and right.
+An WORK IN PROGRESS level editor for Bloodstained: Ritual of the Night.
 
-Use **Q** and **E** to move up and down.
-
-Roll the **scroll wheel** to increase and decrease movement speed.
-
-Hold down the **right mouse button** to rotate the camera.
-There's a slider in the editor to control mouse sensitivity.
-
-## Installation
-Attach `camera.gd` to your Camera node. That's it!
-
-## License
-[MIT](https://opensource.org/licenses/MIT).
-
+Target functionality:
+- [ ] Add/Remove enemies from any room
+- [ ] Edit the placement of any 3D static mesh in any room or remove them
+- [ ] Add any existing 3D model in the game to any room as a static mesh
+- [ ] Support "Splines" (used in many levels for the basic level geometry, especially the underground levels)
+- [ ] Add/Remove collision boxes in any room
+- [ ] Disable cutscenes
+- [ ] Add/Remove NPCs from any room
+- [ ] Edit map room placement, reorganize rooms anywhere
+- [ ] Edit room "doors"
+- [ ] Add new rooms to the game
