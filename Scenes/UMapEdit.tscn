@@ -1,0 +1,83 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Scenes/UMapEdit.cs" type="Script" id=1]
+[ext_resource path="res://Scenes/UMap3DPreview.tscn" type="PackedScene" id=2]
+
+[sub_resource type="ProceduralSky" id=1]
+
+[sub_resource type="Environment" id=2]
+background_mode = 2
+background_sky = SubResource( 1 )
+
+[sub_resource type="World" id=3]
+environment = SubResource( 2 )
+
+[node name="UMapPreview" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="EditorContainer" type="VSplitContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+dragger_visibility = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="GridContainer" type="GridContainer" parent="EditorContainer"]
+margin_right = 1024.0
+margin_bottom = 20.0
+
+[node name="Button" type="Button" parent="EditorContainer/GridContainer"]
+margin_right = 39.0
+margin_bottom = 20.0
+text = "Test"
+
+[node name="ViewportContainer" type="ViewportContainer" parent="EditorContainer"]
+margin_top = 32.0
+margin_right = 1024.0
+margin_bottom = 600.0
+size_flags_horizontal = 3
+stretch = true
+
+[node name="Viewport" type="Viewport" parent="EditorContainer/ViewportContainer"]
+size = Vector2( 1024, 568 )
+world = SubResource( 3 )
+handle_input_locally = false
+render_target_update_mode = 3
+
+[node name="UMap3DPreview" parent="EditorContainer/ViewportContainer/Viewport" instance=ExtResource( 2 )]
+
+[node name="LoadingStatusContainer" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ColorRect" type="ColorRect" parent="LoadingStatusContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0.0862745, 0.0862745, 0.0980392, 1 )
+
+[node name="CenterContainer" type="CenterContainer" parent="LoadingStatusContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="LoadingStatusLabel" type="Label" parent="LoadingStatusContainer/CenterContainer"]
+margin_left = 481.0
+margin_top = 293.0
+margin_right = 542.0
+margin_bottom = 307.0
+text = "Loading..."
+align = 1
+valign = 1

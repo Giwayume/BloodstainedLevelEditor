@@ -1,0 +1,48 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+_global_script_classes=[ {
+"base": "Reference",
+"class": "EditorConfig",
+"language": "GDScript",
+"path": "res://Utility/EditorConfig.gd"
+} ]
+_global_script_class_icons={
+"EditorConfig": ""
+}
+
+[application]
+
+config/name="BloodstainedLevelEditor"
+run/main_scene="res://Scenes/Startup.tscn"
+boot_splash/image="res://SplashScreen.png"
+boot_splash/bg_color=Color( 0, 0, 0, 1 )
+config/icon="res://Icon.png"
+
+[autoload]
+
+Editor="*res://Scenes/Editor.gd"
+UAssetParser="*res://Scenes/UAssetParser.cs"
+
+[global]
+
+unit=false
+
+[layer_names]
+
+2d_render/layer_1="default"
+
+[physics]
+
+common/enable_pause_aware_picking=true
+
+[rendering]
+
+environment/default_environment="res://default_env.tres"

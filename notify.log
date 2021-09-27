@@ -1,0 +1,18 @@
+
+******** SIP_Pillar00 ********
+
+ERROR: Memory: bad allocation size -934012032 bytes
+appMalloc: size=-934012032 (total=5 Mbytes) <- FArray::Empty: -1668988488 x 16 <- TArray::Serialize: 0/0 <- FPackageFileSummary::Serialize4 <- FPackageFileSummary<<: Ver=0/0 <- UnPackage::UnPackage: Content/Core/Environment/ACT01_SIP/Mesh/SIP_Pillar00.uasset, ver=18/0, game=ue4.18 <- UnPackage::LoadPackage(info): Content/Core/Environment/ACT01_SIP/Mesh/SIP_Pillar00.uasset <- Main: umodel_build=1571
+
+
+******** SIP_Pillar00 ********
+
+ERROR: Memory: bad allocation size -934012032 bytes
+appMalloc: size=-934012032 (total=5 Mbytes) <- FArray::Empty: -1668988488 x 16 <- TArray::Serialize: 0/0 <- FPackageFileSummary::Serialize4 <- FPackageFileSummary<<: Ver=0/0 <- UnPackage::UnPackage: Content/Core/Environment/ACT01_SIP/Mesh/SIP_Pillar00.uasset, ver=18/0, game=ue4.18 <- UnPackage::LoadPackage(info): Content/Core/Environment/ACT01_SIP/Mesh/SIP_Pillar00.uasset <- Main: umodel_build=1571
+
+
+******** SIP_Pillar00 ********
+
+ERROR: Memory: bad allocation size -934012032 bytes
+appMalloc: size=-934012032 (total=5 Mbytes) <- FArray::Empty: -1668988488 x 16 <- TArray::Serialize: 0/0 <- FPackageFileSummary::Serialize4 <- FPackageFileSummary<<: Ver=0/0 <- UnPackage::UnPackage: Content/Core/Environment/ACT01_SIP/Mesh/SIP_Pillar00.uasset, ver=18/0, game=ue4.18 <- UnPackage::LoadPackage(info): Content/Core/Environment/ACT01_SIP/Mesh/SIP_Pillar00.uasset <- Main: umodel_build=1571
+
