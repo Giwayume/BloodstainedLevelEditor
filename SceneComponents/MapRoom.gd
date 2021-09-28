@@ -153,9 +153,9 @@ func init(params: Dictionary):
 		add_child(door_polygon)
 		door_polygon.position = Vector2(door.x_block * tile_width, -door.z_block * tile_height)
 		if door.direction_part in [directions.right_top, directions.left_top]:
-			door_polygon.position += Vector2(0, -(door_margin_z + .4))
+			door_polygon.position += Vector2(0, -(door_margin_z + .5))
 		if door.direction_part in [directions.right_bottom, directions.left_bottom]:
-			door_polygon.position += Vector2(0, door_margin_z - .4)
+			door_polygon.position += Vector2(0, door_margin_z - .5)
 		if door.direction_part in [directions.top_left, directions.bottom_left]:
 			door_polygon.position += Vector2(-(door_margin_x + .5), 0)
 		if door.direction_part in [directions.top_right, directions.bottom_right]:

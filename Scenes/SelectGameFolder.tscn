@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=2]
+[gd_scene load_steps=4 format=2]
 
 [ext_resource path="res://Scenes/SelectGameFolder.gd" type="Script" id=1]
+[ext_resource path="res://EditorTheme/PanelContainerForeground.tres" type="StyleBox" id=2]
+[ext_resource path="res://EditorTheme/MainTheme.tres" type="Theme" id=3]
 
 [node name="SelectGameFolder" type="Control"]
 anchor_right = 1.0
@@ -13,7 +15,7 @@ __meta__ = {
 [node name="ColorRect" type="ColorRect" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color( 0, 0, 0, 1 )
+color = Color( 0.12549, 0.133333, 0.164706, 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -26,17 +28,18 @@ __meta__ = {
 }
 
 [node name="PanelContainer" type="PanelContainer" parent="CenterContainer"]
-margin_left = 340.0
-margin_top = 243.0
-margin_right = 684.0
-margin_bottom = 357.0
+margin_left = 335.0
+margin_top = 234.0
+margin_right = 689.0
+margin_bottom = 366.0
 size_flags_horizontal = 9
+custom_styles/panel = ExtResource( 2 )
 
 [node name="MarginContainer" type="MarginContainer" parent="CenterContainer/PanelContainer"]
-margin_left = 7.0
-margin_top = 7.0
-margin_right = 337.0
-margin_bottom = 107.0
+margin_left = 8.0
+margin_top = 8.0
+margin_right = 346.0
+margin_bottom = 124.0
 custom_constants/margin_right = 4
 custom_constants/margin_top = 4
 custom_constants/margin_left = 4
@@ -45,50 +48,50 @@ custom_constants/margin_bottom = 4
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer"]
 margin_left = 4.0
 margin_top = 4.0
-margin_right = 326.0
-margin_bottom = 96.0
+margin_right = 334.0
+margin_bottom = 112.0
 
 [node name="Instructions" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
-margin_right = 322.0
-margin_bottom = 14.0
+margin_right = 330.0
+margin_bottom = 22.0
 size_flags_horizontal = 9
 text = "Specify Bloodstained's install location:"
 
 [node name="GridContainer" type="GridContainer" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
-margin_top = 18.0
-margin_right = 322.0
-margin_bottom = 42.0
+margin_top = 26.0
+margin_right = 330.0
+margin_bottom = 48.0
 columns = 2
 
 [node name="FolderPathEdit" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/GridContainer"]
-margin_right = 259.0
-margin_bottom = 24.0
+margin_right = 267.0
+margin_bottom = 22.0
 size_flags_horizontal = 3
 
 [node name="BrowseFolderButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/GridContainer"]
-margin_left = 263.0
-margin_right = 322.0
-margin_bottom = 24.0
+margin_left = 271.0
+margin_right = 330.0
+margin_bottom = 22.0
 text = "Browse"
 
 [node name="InstructionExample" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
-margin_top = 46.0
-margin_right = 322.0
-margin_bottom = 60.0
+margin_top = 52.0
+margin_right = 330.0
+margin_bottom = 74.0
 size_flags_horizontal = 9
 custom_colors/font_color = Color( 0.607843, 0.607843, 0.607843, 1 )
 text = "(Folder name is \"Bloodstained Ritual of the Night\")"
 
 [node name="MarginContainer" type="MarginContainer" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
-margin_top = 64.0
-margin_right = 322.0
-margin_bottom = 68.0
+margin_top = 78.0
+margin_right = 330.0
+margin_bottom = 82.0
 custom_constants/margin_top = 4
 
 [node name="DoneButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
-margin_top = 72.0
-margin_right = 322.0
-margin_bottom = 92.0
+margin_top = 86.0
+margin_right = 330.0
+margin_bottom = 108.0
 text = "Done"
 
 [node name="OpenFolderDialog" type="FileDialog" parent="."]
@@ -96,6 +99,7 @@ margin_left = 354.0
 margin_top = 235.0
 margin_right = 669.0
 margin_bottom = 365.0
+theme = ExtResource( 3 )
 window_title = "Open a Directory"
 mode = 2
 access = 2
@@ -105,4 +109,5 @@ current_path = "/"
 [node name="ErrorDialog" type="AcceptDialog" parent="."]
 margin_right = 83.0
 margin_bottom = 58.0
+theme = ExtResource( 3 )
 window_title = "Error!"

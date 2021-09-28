@@ -88,7 +88,7 @@ func update_package_list():
 func on_press_edit_button():
 	if selected_package_item > -1:
 		get_node("/root/Editor").selected_package = package_list.get_item_text(selected_package_item)
-		get_tree().change_scene("res://Scenes/ParseAndChooseLevel.tscn")
+		get_tree().change_scene("res://Scenes/MapEdit.tscn")
 
 func on_press_delete_button():
 	if selected_package_item > -1:

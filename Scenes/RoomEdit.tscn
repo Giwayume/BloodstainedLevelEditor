@@ -1,17 +1,22 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://Scenes/RoomEdit.gd" type="Script" id=1]
 [ext_resource path="res://Scenes/UMap3DPreview.tscn" type="PackedScene" id=2]
+[ext_resource path="res://EditorTheme/PanelContainerForeground.tres" type="StyleBox" id=3]
 
-[sub_resource type="StyleBoxFlat" id=1]
+[sub_resource type="StyleBoxEmpty" id=1]
 content_margin_left = 4.0
 content_margin_right = 4.0
-content_margin_top = 4.0
-content_margin_bottom = 4.0
-bg_color = Color( 0.254902, 0.243137, 0.286275, 1 )
-border_width_bottom = 2
-border_color = Color( 0, 0, 0, 1 )
-border_blend = true
+content_margin_top = 8.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id=2]
+bg_color = Color( 0, 0, 0, 1 )
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color( 0.0980392, 0.113725, 0.156863, 1 )
 
 [node name="RoomEdit" type="Control"]
 anchor_right = 1.0
@@ -31,7 +36,7 @@ __meta__ = {
 [node name="ColorRect" type="ColorRect" parent="EditorContainer"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color( 0.254902, 0.243137, 0.286275, 1 )
+color = Color( 0.12549, 0.133333, 0.164706, 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -46,105 +51,153 @@ __meta__ = {
 
 [node name="MenuBarContainer" type="PanelContainer" parent="EditorContainer/VBoxContainer"]
 margin_right = 1024.0
-margin_bottom = 28.0
+margin_bottom = 38.0
 custom_styles/panel = SubResource( 1 )
 
 [node name="HBoxContainer" type="HBoxContainer" parent="EditorContainer/VBoxContainer/MenuBarContainer"]
 margin_left = 4.0
-margin_top = 4.0
+margin_top = 8.0
 margin_right = 1020.0
-margin_bottom = 24.0
+margin_bottom = 30.0
 
 [node name="PackageMenuButton" type="MenuButton" parent="EditorContainer/VBoxContainer/MenuBarContainer/HBoxContainer"]
 margin_right = 63.0
-margin_bottom = 20.0
+margin_bottom = 22.0
 focus_mode = 2
 text = "Package"
-items = [ "Install to Game", null, 0, false, false, 0, 0, null, "", false, "Edit Map", null, 0, false, false, 1, 0, null, "", false, "", null, 0, false, false, 2, 0, null, "", true, "Exit", null, 0, false, false, 3, 0, null, "", false ]
+items = [ "Test In-Game", null, 0, false, false, 0, 0, null, "", false, "Edit Map", null, 0, false, false, 1, 0, null, "", false, "", null, 0, false, false, 2, 0, null, "", true, "Exit", null, 0, false, false, 3, 0, null, "", false ]
 switch_on_hover = true
 
 [node name="EditMenuButton" type="MenuButton" parent="EditorContainer/VBoxContainer/MenuBarContainer/HBoxContainer"]
 margin_left = 67.0
 margin_right = 103.0
-margin_bottom = 20.0
+margin_bottom = 22.0
 focus_mode = 2
 text = "Edit"
 items = [ "Undo", null, 0, false, false, 0, 0, null, "", false, "Redo", null, 0, false, false, 1, 0, null, "", false ]
 switch_on_hover = true
 
 [node name="HSplitContainer" type="HSplitContainer" parent="EditorContainer/VBoxContainer"]
-margin_top = 28.0
+margin_top = 38.0
 margin_right = 1024.0
 margin_bottom = 600.0
 size_flags_vertical = 3
 
-[node name="ViewportContainer" type="ViewportContainer" parent="EditorContainer/VBoxContainer/HSplitContainer"]
-margin_right = 769.0
-margin_bottom = 572.0
+[node name="ViewportMarginContainer" type="MarginContainer" parent="EditorContainer/VBoxContainer/HSplitContainer"]
+margin_right = 771.0
+margin_bottom = 562.0
+size_flags_horizontal = 3
+custom_constants/margin_left = 8
+custom_constants/margin_bottom = 8
+
+[node name="PanelContainer" type="PanelContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer"]
+margin_left = 8.0
+margin_right = 771.0
+margin_bottom = 554.0
+custom_styles/panel = SubResource( 2 )
+
+[node name="ViewportContainer" type="ViewportContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer"]
+margin_left = 1.0
+margin_top = 1.0
+margin_right = 762.0
+margin_bottom = 553.0
 size_flags_horizontal = 3
 stretch = true
 
-[node name="Viewport" type="Viewport" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportContainer"]
-size = Vector2( 769, 572 )
+[node name="Viewport" type="Viewport" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer/ViewportContainer"]
+size = Vector2( 761, 552 )
 handle_input_locally = false
 render_target_update_mode = 3
 
-[node name="UMap3DPreview" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportContainer/Viewport" instance=ExtResource( 2 )]
+[node name="UMap3DPreview" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer/ViewportContainer/Viewport" instance=ExtResource( 2 )]
 
-[node name="VBoxContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer"]
-margin_left = 781.0
+[node name="VSplitContainer" type="VSplitContainer" parent="EditorContainer/VBoxContainer/HSplitContainer"]
+margin_left = 779.0
 margin_right = 1024.0
-margin_bottom = 572.0
+margin_bottom = 562.0
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.32
 
-[node name="TabMarginContainer" type="MarginContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VBoxContainer"]
-margin_right = 243.0
-margin_bottom = 572.0
+[node name="LevelOutlineMarginContainer" type="MarginContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer"]
+margin_right = 245.0
+margin_bottom = 277.0
 size_flags_vertical = 3
 custom_constants/margin_right = 8
-custom_constants/margin_top = 8
+
+[node name="TabContainer" type="TabContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer"]
+margin_right = 237.0
+margin_bottom = 277.0
+tab_align = 0
+
+[node name="BG" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 5.0
+margin_top = 29.0
+margin_right = -5.0
+margin_bottom = -5.0
+
+[node name="Label" type="Label" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/BG"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+text = "Background editing is not available yet."
+autowrap = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Enemy" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 5.0
+margin_top = 29.0
+margin_right = -5.0
+margin_bottom = -5.0
+
+[node name="AssetListMarginContainer" type="MarginContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer"]
+margin_top = 285.0
+margin_right = 245.0
+margin_bottom = 562.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 8
 custom_constants/margin_bottom = 8
 
-[node name="TabContainer" type="TabContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VBoxContainer/TabMarginContainer"]
+[node name="PanelContainer" type="PanelContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer"]
+margin_right = 237.0
+margin_bottom = 269.0
+custom_styles/panel = ExtResource( 3 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer"]
+margin_left = 8.0
 margin_top = 8.0
-margin_right = 235.0
-margin_bottom = 564.0
+margin_right = 229.0
+margin_bottom = 261.0
 
-[node name="BG" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VBoxContainer/TabMarginContainer/TabContainer"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = 4.0
-margin_top = 32.0
-margin_right = -4.0
-margin_bottom = -4.0
+[node name="GridContainer" type="GridContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer/VBoxContainer"]
+margin_right = 221.0
+margin_bottom = 22.0
+columns = 2
 
-[node name="Enemy" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VBoxContainer/TabMarginContainer/TabContainer"]
-visible = false
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = 4.0
-margin_top = 32.0
-margin_right = -4.0
-margin_bottom = -4.0
+[node name="LineEdit" type="LineEdit" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer/VBoxContainer/GridContainer"]
+margin_right = 173.0
+margin_bottom = 22.0
+size_flags_horizontal = 3
+placeholder_text = "Filter Assets..."
 
-[node name="Event" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VBoxContainer/TabMarginContainer/TabContainer"]
-visible = false
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = 4.0
-margin_top = 32.0
-margin_right = -4.0
-margin_bottom = -4.0
+[node name="Button" type="Button" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer/VBoxContainer/GridContainer"]
+margin_left = 177.0
+margin_right = 221.0
+margin_bottom = 22.0
+text = "Clear"
 
-[node name="RV" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VBoxContainer/TabMarginContainer/TabContainer"]
-visible = false
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = 4.0
-margin_top = 32.0
-margin_right = -4.0
-margin_bottom = -4.0
+[node name="ItemList" type="ItemList" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer/VBoxContainer"]
+margin_top = 26.0
+margin_right = 221.0
+margin_bottom = 253.0
+size_flags_vertical = 3
 
 [node name="LoadingStatusContainer" type="Control" parent="."]
 visible = false
@@ -154,7 +207,7 @@ anchor_bottom = 1.0
 [node name="ColorRect" type="ColorRect" parent="LoadingStatusContainer"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color( 0, 0, 0, 1 )
+color = Color( 0.12549, 0.133333, 0.164706, 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -167,8 +220,8 @@ __meta__ = {
 }
 
 [node name="LoadingStatusLabel" type="Label" parent="LoadingStatusContainer/CenterContainer"]
-margin_left = 481.0
-margin_top = 293.0
-margin_right = 542.0
-margin_bottom = 307.0
+margin_left = 477.0
+margin_top = 289.0
+margin_right = 546.0
+margin_bottom = 311.0
 text = "Loading..."

@@ -6,6 +6,7 @@ var editor: Node
 var uasset_parser: Node
 
 var parse_pak_thread: Thread
+var extract_room_assets_thread: Thread
 var parse_enemy_blueprint_thread: Thread
 
 var editor_container: Control
@@ -33,29 +34,14 @@ func _ready():
 	
 	if not editor.selected_package:
 		editor.selected_package = "MyTest"
+	if not editor.selected_level_name:
+		editor.selected_level_name = "m04GDN_015"
 	
 	editor_container = find_node("EditorContainer", true, true)
 	loading_status_container = find_node("LoadingStatusContainer", true, true)
 	loading_status_label = find_node("LoadingStatusLabel", true, true)
 	menu_button_package = find_node("PackageMenuButton", true, true)
 	menu_button_edit = find_node("EditMenuButton", true, true)
-#	world_outliner_tree = find_node("WorldOutlinerTree", true, true)
-#	world_outliner_tree_root = world_outliner_tree.create_item()
-#	world_outliner_tree_root.set_text(0, "Scene")
-#	world_outliner_tree_bg = world_outliner_tree.create_item(world_outliner_tree_root)
-#	world_outliner_tree_bg.set_text(0, "Background")
-#	world_outliner_tree_enemy = world_outliner_tree.create_item(world_outliner_tree_root)
-#	world_outliner_tree_enemy.set_text(0, "Enemy")
-#	world_outliner_tree_enemy_normal = world_outliner_tree.create_item(world_outliner_tree_enemy)
-#	world_outliner_tree_enemy_normal.set_text(0, "Normal")
-#	world_outliner_tree_enemy_hard = world_outliner_tree.create_item(world_outliner_tree_enemy)
-#	world_outliner_tree_enemy_hard.set_text(0, "Hard/Nightmare")
-#	world_outliner_tree_gimmick = world_outliner_tree.create_item(world_outliner_tree_root)
-#	world_outliner_tree_gimmick.set_text(0, "Gimmick")
-#	world_outliner_tree_event = world_outliner_tree.create_item(world_outliner_tree_root)
-#	world_outliner_tree_event.set_text(0, "Event")
-#	world_outliner_tree_rv = world_outliner_tree.create_item(world_outliner_tree_root)
-#	world_outliner_tree_rv.set_text(0, "RV")
 	
 	editor_container.hide()
 	loading_status_container.show()
@@ -79,8 +65,22 @@ func parse_pak_thread_function(_noop):
 
 func end_parse_pak_thread():
 	parse_pak_thread.wait_to_finish()
+	start_extract_room_assets_thread()
+
+func start_extract_room_assets_thread():
+	extract_room_assets_thread = Thread.new()
+	extract_room_assets_thread.start(self, "extract_room_assets_thread_function")
+	loading_status_label.text = "Extracting the room's assets..."
 	
-	start_parse_enemy_blueprint_thread()
+func extract_room_assets_thread_function(_noop):
+	uasset_parser.ExtractRoomAssets(editor.selected_level_name)
+	call_deferred("end_extract_room_assets_thread")
+	
+func end_extract_room_assets_thread():
+	extract_room_assets_thread.wait_to_finish()
+	
+	threads_finished()
+	
 
 func start_parse_enemy_blueprint_thread():
 	parse_enemy_blueprint_thread = Thread.new()
@@ -115,7 +115,9 @@ func end_enemy_blueprint_thread():
 		"Chr_N3091(3)",
 		user_project_path + "/ModifiedAssets/BloodstainedRotN/Content/Core/Environment/ACT04_GDN/Level/m04GDN_016_Enemy.umap"
 	)
-	
+
+
+func threads_finished():
 	editor_container.show()
 	loading_status_container.hide()
 
@@ -126,3 +128,7 @@ func end_enemy_blueprint_thread():
 func on_menu_popup_package_pressed(id: int):
 	if id == 0:
 		editor.package_and_install()
+	elif id == 1:
+		get_tree().change_scene("res://Scenes/MapEdit.tscn")
+	elif id == 3:
+		 get_tree().change_scene("res://Scenes/SelectPackage.tscn")

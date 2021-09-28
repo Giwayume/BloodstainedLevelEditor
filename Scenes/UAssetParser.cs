@@ -121,9 +121,9 @@ public class UAssetParser : Control {
                             string packageName = packagePath.Split("/").Last();
                             string levelName = packageName.Substring(0, 10);
                             Godot.Collections.Dictionary<string, string> roomPackageDef = default(Godot.Collections.Dictionary<string, string>);
-                            try {
+                            if (_levelNameToAssetPathMap.ContainsKey(levelName)) {
                                 roomPackageDef = _levelNameToAssetPathMap[levelName];
-                            } catch (Exception e) {
+                            } else {
                                 roomPackageDef = new Godot.Collections.Dictionary<string, string>();
                                 _levelNameToAssetPathMap[levelName] = roomPackageDef;
                             }
@@ -232,16 +232,27 @@ public class UAssetParser : Control {
     }
 
     public void ExtractAssetToFolder(string pakFilePath, string assetPath, string outputFolderPath) {
+        GD.Print("extract? ", assetPath);
         // Extract uasset
         string u4pakPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/U4pak/u4pak.exe");
         using (Process unpack = new Process()) {
             unpack.StartInfo.FileName = u4pakPath;
-            unpack.StartInfo.Arguments = @" unpack -o " + "\"" + outputFolderPath + "\" \"" + pakFilePath + "\" \"" + assetPath + "\"";
+            unpack.StartInfo.Arguments = @" unpack -o " + "\"" + outputFolderPath.Replace("/", "\\") + "\" \"" + pakFilePath.Replace("/", "\\") + "\" \"" + assetPath.Replace("\\", "/") + "\"";
+            GD.Print(unpack.StartInfo.Arguments);
             unpack.StartInfo.UseShellExecute = false;
             unpack.StartInfo.RedirectStandardOutput = true;
             unpack.Start();
             string output = unpack.StandardOutput.ReadToEnd();
             unpack.WaitForExit();
+            GD.Print(output);
+        }
+    }
+
+    public void ExtractRoomAssets(string levelName) {
+        Godot.Collections.Dictionary<string, string> levelAssets = _levelNameToAssetPathMap[levelName];
+        string outputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
+        foreach (string key in levelAssets.Keys) {
+            ExtractAssetToFolder(_assetPathToPakFilePathMap[levelAssets[key]], levelAssets[key], outputFolder);
         }
     }
 

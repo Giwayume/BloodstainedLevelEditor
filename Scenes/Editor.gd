@@ -45,3 +45,6 @@ func end_package_and_install_thread():
 	package_and_install_thread.wait_to_finish()
 	get_tree().get_root().remove_child(loading_screen)
 	loading_screen = null
+	
+	var game_directory = EditorConfig.read_config()["game_directory"]
+	OS.execute(game_directory + "/BloodstainedRotN/Binaries/Win64/BloodstainedRotN-Win64-Shipping.exe", [], false)

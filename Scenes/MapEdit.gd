@@ -1,125 +1,186 @@
-extends Node2D
+extends Control
 
-signal level_activated
-signal level_selected
+var map_room_scene = preload("res://SceneComponents/MapRoom.tscn")
 
-var tile_width: float = 12.6
-var tile_height: float = 7.2
-var scrolling: bool = false
-var scroll_start_position: Vector2
-var scroll_start_mouse_position: Vector2
-var zoom_increment = 1.1
-var rooms_by_name: Dictionary = {}
-var room_coordinate_map: Dictionary = {}
-var selected_room_names: Array = []
+var editor: Node
+var uasset_parser: Node
+
+var parse_pak_thread: Thread
+var read_map_thread: Thread
+
+var edit_selected_room_button: Button
+var level_name_item_list: ItemList
+var loading_status_container: Control
+var loading_status_label: Label
+var map_display: Node2D
+var map_room_list_split_container: HSplitContainer
+var menu_button_package: MenuButton
+var menu_button_edit: MenuButton
+var room_select_container: Control
+var search_level_name_clear_button: Button
+var search_level_name_edit: LineEdit
+
+var level_names: Array
+var level_names_filtered: Array
 
 #############
 # LIFECYCLE #
 #############
 
 func _ready():
-	center_map_in_parent()
+	editor = get_node("/root/Editor");
+	uasset_parser = get_node("/root/UAssetParser")
+	
+	edit_selected_room_button = find_node("EditSelectedRoomButton", true, true)
+	loading_status_container = find_node("LoadingStatusContainer", true, true)
+	loading_status_label = find_node("LoadingStatusLabel", true, true)
+	level_name_item_list = find_node("LevelNameList", true, true)
+	map_display = find_node("MapDisplay", true, true)
+	map_room_list_split_container = find_node("MapRoomListSplitContainer", true, true)
+	menu_button_package = find_node("PackageMenuButton", true, true)
+	menu_button_edit = find_node("EditMenuButton", true, true)
+	room_select_container = find_node("RoomSelectContainer", true, true)
+	search_level_name_clear_button = find_node("SearchLevelNameClearButton", true, true)
+	search_level_name_edit = find_node("SearchLevelNameEdit", true, true)
+	
+	edit_selected_room_button.disabled = true
+	
+	loading_status_container.show()
+	room_select_container.hide()
+	
+	edit_selected_room_button.connect("pressed", self, "on_edit_selected_room")
+	level_name_item_list.connect("item_activated", self, "on_level_name_list_item_activated")
+	level_name_item_list.connect("item_selected", self, "on_level_name_list_item_selected")
+	level_name_item_list.connect("nothing_selected", self, "on_level_name_list_nothing_selected")
+	map_display.connect("level_selected", self, "on_map_level_selected")
+	map_display.connect("level_activated", self, "on_map_level_activated")
+	menu_button_package.get_popup().connect("id_pressed", self, "on_menu_popup_package_pressed")
+	search_level_name_edit.connect("text_changed", self, "on_search_level_name_changed")
+	search_level_name_clear_button.connect("pressed", self, "on_search_level_name_clear")
+	
+	if not EditorConfig.read_config().has("game_directory"):
+		get_tree().change_scene("res://Scenes/SelectGameFolder.tscn")
+	else:
+		start_parse_pak_thread()
 
-func _input(event):
-	var parent = get_parent()
-	var parent_position = parent.rect_global_position
-	var global_mouse_position = get_global_mouse_position()
-	var is_mouse_in_parent_bounds = (
-		global_mouse_position.x > parent_position.x and
-		global_mouse_position.y > parent_position.y and
-		global_mouse_position.x < parent_position.x + parent.rect_size.x and
-		global_mouse_position.y < parent_position.y + parent.rect_size.y
-	)
-	if event is InputEventMouseButton:
-		if event.button_index == BUTTON_LEFT and event.pressed:
-			if is_mouse_in_parent_bounds:
-				deselect_all_rooms()
-				var position_offset = global_mouse_position - get_global_position()
-				var coordinate_x = floor(position_offset.x / tile_width / scale.x)
-				var coordinate_z = -ceil(position_offset.y / tile_height / scale.x)
-				var coordinate_key = str(coordinate_x) + "," + str(coordinate_z)
-				if room_coordinate_map.has(coordinate_key):
-					var level_name = room_coordinate_map[coordinate_key]
-					add_room_to_selection(level_name);
-					if event.doubleclick:
-						emit_signal("level_activated", level_name)
-					else:
-						emit_signal("level_selected", level_name)
-					
-		if event.button_index == BUTTON_RIGHT or event.button_index == BUTTON_MIDDLE:
-			if is_mouse_in_parent_bounds and not scrolling and event.pressed:
-				scrolling = true
-				scroll_start_position = position
-				scroll_start_mouse_position = event.position
-			if scrolling and not event.pressed:
-				scrolling = false
-		if is_mouse_in_parent_bounds and event.button_index == BUTTON_WHEEL_UP and scale.x < 8:
-			scale *= Vector2(zoom_increment, zoom_increment)
-			position -= (global_mouse_position - get_global_position()) * (zoom_increment - 1)
-		if is_mouse_in_parent_bounds and event.button_index == BUTTON_WHEEL_DOWN:
-			scale *= Vector2(1 / zoom_increment, 1 / zoom_increment)
-			if scale.x < 1:
-				scale = Vector2(1, 1)
-			else:
-				position += (global_mouse_position - get_global_position()) * (1 - (1/zoom_increment))
-	if event is InputEventMouseMotion and scrolling:
-		position = scroll_start_position + event.position - scroll_start_mouse_position
+###########
+# THREADS #
+###########
+
+func start_parse_pak_thread():
+	parse_pak_thread = Thread.new()
+	parse_pak_thread.start(self, "parse_pak_thread_function")
+	loading_status_label.text = "Reading .pak files..."
+
+func parse_pak_thread_function(_noop):
+	uasset_parser.GuaranteeAssetListFromPakFiles()
+	call_deferred("end_parse_pak_thread")
+
+func end_parse_pak_thread():
+	parse_pak_thread.wait_to_finish()
+	
+	# Populate level name list GUI on right
+	level_names = uasset_parser.LevelNameToAssetPathMap.keys().duplicate()
+	level_names.sort()
+	level_name_item_list.clear()
+	for level_name in level_names:
+		level_name_item_list.add_item(level_name)
+	on_search_level_name_clear()
+	
+	start_read_map_thread()
+
+func start_read_map_thread():
+	read_map_thread = Thread.new()
+	read_map_thread.start(self, "read_map_thread_function")
+	loading_status_label.text = "Reading map..."
+
+func read_map_thread_function(_noop):
+	uasset_parser.GuaranteeMapData()
+	call_deferred("end_read_map_thread")
+	
+func end_read_map_thread():
+	read_map_thread.wait_to_finish()
+	
+	# Populate map rooms GUI
+	for map_room in uasset_parser.MapRooms:
+		var map_room_node = map_room_scene.instance()
+		map_room_node.name = map_room["level_name"];
+		map_display.add_child(map_room_node)
+		map_room_node.init(map_room)
+	map_display.init()
+	
+	loading_status_container.hide()
+	room_select_container.show()
+	
+	map_room_list_split_container.split_offset = (get_viewport().size.x / 4)
+	map_display.call_deferred("center_map_in_parent")
+
+
+#############
+# CALLBACKS #
+#############
+
+func on_change_mod_package():
+	get_tree().change_scene("res://Scenes/SelectPackage.tscn")
+
+func on_edit_selected_room():
+	on_map_level_activated(level_names_filtered[level_name_item_list.get_selected_items()[0]])
+
+func on_level_name_list_item_activated(index: int):
+	on_map_level_activated(level_names_filtered[index])
+
+func on_level_name_list_item_selected(index: int):
+	edit_selected_room_button.disabled = false
+	map_display.select_room_and_center(level_names_filtered[index])
+
+func on_level_name_list_nothing_selected():
+	edit_selected_room_button.disabled = true
+
+func on_map_level_selected(level_name_to_select: String):
+	on_search_level_name_clear()
+	edit_selected_room_button.disabled = true
+	var index: int = 0
+	for level_name in level_names_filtered:
+		if level_name == level_name_to_select:
+			level_name_item_list.select(index)
+			edit_selected_room_button.disabled = false
+			break
+		index += 1
+	level_name_item_list.ensure_current_is_visible()
+
+func on_map_level_activated(level_name_to_activate: String):
+	editor.selected_level_name = level_name_to_activate
+	get_tree().change_scene("res://Scenes/RoomEdit.tscn")
+
+func on_menu_popup_package_pressed(id: int):
+	if id == 0:
+		editor.package_and_install()
+	elif id == 2:
+		 get_tree().change_scene("res://Scenes/SelectPackage.tscn")
+
+func on_search_level_name_changed(search_text: String):
+	filter_level_name_list(search_text)
+	
+func on_search_level_name_clear():
+	search_level_name_edit.text = ""
+	filter_level_name_list("")
 
 ###########
 # METHODS #
 ###########
 
-func init():
-	center_map_in_parent()
-	var all_rooms = get_children()
-	for room in all_rooms:
-		var level_name = room.level_name
-		if not rooms_by_name.has(level_name):
-			rooms_by_name[level_name] = []
-		rooms_by_name[level_name].push_back(room)
-		var offset_x = round(room.offset_x / tile_width)
-		var offset_z = round(room.offset_z / tile_height)
-		var area_width_size = round(room.area_width_size)
-		var area_height_size = round(room.area_height_size)
-		for room_x in range(0, area_width_size):
-			for room_z in range(0, area_height_size):
-				var coordinate_key = str(offset_x + room_x) + "," + str(offset_z + room_z)
-				room_coordinate_map[coordinate_key] = level_name
+func filter_level_name_list(search_text: String):
+	search_text = search_text.to_lower()
+	var search_terms: Array = search_text.rsplit(" ");
+	level_name_item_list.clear()
+	level_names_filtered = []
+	for level_name in level_names:
+		var is_include: bool = true
+		for search_term in search_terms:
+			if search_term != "" and not search_term in level_name.to_lower():
+				is_include = false
+				break
+		if is_include:
+			level_name_item_list.add_item(level_name)
+			level_names_filtered.push_back(level_name)
 
-func deselect_all_rooms():
-	for room_name in selected_room_names:
-		if rooms_by_name.has(room_name):
-			for room in rooms_by_name[room_name]:
-				room.deselect()
-	selected_room_names = []
-
-func add_room_to_selection(level_name: String):
-	if rooms_by_name.has(level_name):
-		for room in rooms_by_name[level_name]:
-			room.select()
-	selected_room_names.push_back(level_name)
-
-func center_map_in_parent():
-	var parent = get_parent()
-	position = Vector2(parent.rect_size.x / 2, parent.rect_size.y / 2)
-	position += Vector2(-700, 0)
-
-func select_room_and_center(level_name: String):
-	deselect_all_rooms()
-	add_room_to_selection(level_name)
-	center_on_selected_rooms()
-
-func center_on_selected_rooms():
-	var total_x = 0
-	var total_z = 0
-	var room_count = 0
-	for room_name in selected_room_names:
-		if rooms_by_name.has(room_name):
-			for room in rooms_by_name[room_name]:
-				total_x += room.offset_x + (room.area_width_size * tile_width / 2)
-				total_z += room.offset_z + (room.area_height_size * tile_height / 2)
-				room_count += 1
-	if room_count > 0:
-		var parent = get_parent()
-		position = Vector2(parent.rect_size.x / 2, parent.rect_size.y / 2)
-		position += Vector2(-total_x / room_count * scale.x, total_z / room_count * scale.y)

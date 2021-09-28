@@ -35,6 +35,10 @@ UAssetParser="*res://Scenes/UAssetParser.cs"
 
 unit=false
 
+[gui]
+
+theme/custom="res://EditorTheme/MainTheme.tres"
+
 [layer_names]
 
 2d_render/layer_1="default"
