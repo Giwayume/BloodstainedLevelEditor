@@ -130,6 +130,7 @@ margin_bottom = 277.0
 tab_align = 0
 
 [node name="BG" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer"]
+visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 5.0
@@ -148,13 +149,43 @@ __meta__ = {
 }
 
 [node name="Enemy" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer"]
-visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 5.0
 margin_top = 29.0
 margin_right = -5.0
 margin_bottom = -5.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/Enemy"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HBoxContainer" type="HBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/Enemy/VBoxContainer"]
+margin_right = 227.0
+margin_bottom = 22.0
+
+[node name="Label" type="Label" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/Enemy/VBoxContainer/HBoxContainer"]
+margin_right = 65.0
+margin_bottom = 22.0
+text = "Difficulty"
+
+[node name="OptionButton" type="OptionButton" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/Enemy/VBoxContainer/HBoxContainer"]
+margin_left = 69.0
+margin_right = 227.0
+margin_bottom = 22.0
+size_flags_horizontal = 3
+text = "All"
+items = [ "All", null, false, 0, null, "Normal", null, false, 1, null, "Hard", null, false, 2, null ]
+selected = 0
+
+[node name="ItemList" type="ItemList" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/Enemy/VBoxContainer"]
+margin_top = 26.0
+margin_right = 227.0
+margin_bottom = 243.0
+size_flags_vertical = 3
 
 [node name="AssetListMarginContainer" type="MarginContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer"]
 margin_top = 285.0
@@ -171,32 +202,32 @@ margin_bottom = 269.0
 custom_styles/panel = ExtResource( 3 )
 
 [node name="VBoxContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer"]
-margin_left = 8.0
-margin_top = 8.0
-margin_right = 229.0
-margin_bottom = 261.0
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 232.0
+margin_bottom = 264.0
 
 [node name="GridContainer" type="GridContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer/VBoxContainer"]
-margin_right = 221.0
+margin_right = 227.0
 margin_bottom = 22.0
 columns = 2
 
 [node name="LineEdit" type="LineEdit" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer/VBoxContainer/GridContainer"]
-margin_right = 173.0
+margin_right = 179.0
 margin_bottom = 22.0
 size_flags_horizontal = 3
 placeholder_text = "Filter Assets..."
 
 [node name="Button" type="Button" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer/VBoxContainer/GridContainer"]
-margin_left = 177.0
-margin_right = 221.0
+margin_left = 183.0
+margin_right = 227.0
 margin_bottom = 22.0
 text = "Clear"
 
 [node name="ItemList" type="ItemList" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer/VBoxContainer"]
 margin_top = 26.0
-margin_right = 221.0
-margin_bottom = 253.0
+margin_right = 227.0
+margin_bottom = 259.0
 size_flags_vertical = 3
 
 [node name="LoadingStatusContainer" type="Control" parent="."]

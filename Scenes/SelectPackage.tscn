@@ -85,29 +85,31 @@ margin_top = 51.0
 margin_right = 998.0
 margin_bottom = 550.0
 size_flags_vertical = 3
-split_offset = 850
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="PackageListContainer" type="PanelContainer" parent="MarginContainer/TabContainer/Mod Packages/VBoxContainer/HSplitContainer"]
-margin_right = 850.0
+margin_right = 827.0
 margin_bottom = 499.0
+size_flags_horizontal = 3
 custom_styles/panel = SubResource( 2 )
 
 [node name="PackageList" type="ItemList" parent="MarginContainer/TabContainer/Mod Packages/VBoxContainer/HSplitContainer/PackageListContainer"]
-margin_right = 850.0
+margin_right = 827.0
 margin_bottom = 499.0
 size_flags_horizontal = 3
 items = [ "Test", ExtResource( 2 ), false, "Item 1", ExtResource( 1 ), false, "Item 2", ExtResource( 1 ), false ]
 
 [node name="ProjectActions" type="VBoxContainer" parent="MarginContainer/TabContainer/Mod Packages/VBoxContainer/HSplitContainer"]
-margin_left = 858.0
+margin_left = 835.0
 margin_right = 998.0
 margin_bottom = 499.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.2
 
 [node name="EditButton" type="Button" parent="MarginContainer/TabContainer/Mod Packages/VBoxContainer/HSplitContainer/ProjectActions"]
-margin_right = 140.0
+margin_right = 163.0
 margin_bottom = 22.0
 size_flags_horizontal = 3
 text = "Edit"
@@ -128,7 +130,7 @@ __meta__ = {
 
 [node name="DeleteButton" type="Button" parent="MarginContainer/TabContainer/Mod Packages/VBoxContainer/HSplitContainer/ProjectActions"]
 margin_top = 26.0
-margin_right = 140.0
+margin_right = 163.0
 margin_bottom = 48.0
 size_flags_horizontal = 3
 text = "Delete"
@@ -138,19 +140,19 @@ __meta__ = {
 
 [node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/Mod Packages/VBoxContainer/HSplitContainer/ProjectActions"]
 margin_top = 52.0
-margin_right = 140.0
+margin_right = 163.0
 margin_bottom = 60.0
 custom_constants/margin_top = 2
 custom_constants/margin_bottom = 2
 
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/TabContainer/Mod Packages/VBoxContainer/HSplitContainer/ProjectActions/MarginContainer"]
 margin_top = 2.0
-margin_right = 140.0
+margin_right = 163.0
 margin_bottom = 6.0
 
 [node name="NewPackageButton" type="Button" parent="MarginContainer/TabContainer/Mod Packages/VBoxContainer/HSplitContainer/ProjectActions"]
 margin_top = 64.0
-margin_right = 140.0
+margin_right = 163.0
 margin_bottom = 86.0
 size_flags_horizontal = 3
 text = "New Package"

@@ -232,19 +232,16 @@ public class UAssetParser : Control {
     }
 
     public void ExtractAssetToFolder(string pakFilePath, string assetPath, string outputFolderPath) {
-        GD.Print("extract? ", assetPath);
         // Extract uasset
         string u4pakPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/U4pak/u4pak.exe");
         using (Process unpack = new Process()) {
             unpack.StartInfo.FileName = u4pakPath;
             unpack.StartInfo.Arguments = @" unpack -o " + "\"" + outputFolderPath.Replace("/", "\\") + "\" \"" + pakFilePath.Replace("/", "\\") + "\" \"" + assetPath.Replace("\\", "/") + "\"";
-            GD.Print(unpack.StartInfo.Arguments);
             unpack.StartInfo.UseShellExecute = false;
             unpack.StartInfo.RedirectStandardOutput = true;
             unpack.Start();
             string output = unpack.StandardOutput.ReadToEnd();
             unpack.WaitForExit();
-            GD.Print(output);
         }
     }
 
@@ -252,7 +249,9 @@ public class UAssetParser : Control {
         Godot.Collections.Dictionary<string, string> levelAssets = _levelNameToAssetPathMap[levelName];
         string outputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
         foreach (string key in levelAssets.Keys) {
-            ExtractAssetToFolder(_assetPathToPakFilePathMap[levelAssets[key]], levelAssets[key], outputFolder);
+            if (!System.IO.File.Exists(outputFolder + "/" + levelAssets[key])) {
+                ExtractAssetToFolder(_assetPathToPakFilePathMap[levelAssets[key]], levelAssets[key], outputFolder);
+            }
         }
     }
 
