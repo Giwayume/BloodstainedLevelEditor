@@ -1,12 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UAssetAPI.StructTypes;
 
 namespace UAssetAPI.PropertyTypes
 {
+    /// <summary>
+    /// Describes a map (<see cref="OrderedDictionary"/>).
+    /// </summary>
     public class MapPropertyData : PropertyData<OrderedDictionary> // Map
     {
         public FName[] dummyEntry = new FName[] { new FName(string.Empty), new FName(string.Empty) };
@@ -14,15 +16,16 @@ namespace UAssetAPI.PropertyTypes
 
         public MapPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("MapProperty");
             Value = new OrderedDictionary();
         }
 
         public MapPropertyData()
         {
-            Type = new FName("MapProperty");
             Value = new OrderedDictionary();
         }
+
+        private static readonly FName CurrentPropertyType = new FName("MapProperty");
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         private PropertyData MapTypeToClass(FName type, FName name, UAsset asset, BinaryReader reader, int leng, bool includeHeader, bool isKey)
         {
@@ -46,10 +49,12 @@ namespace UAssetAPI.PropertyTypes
                     if (strucType == null) strucType = new FName("Generic");
 
                     StructPropertyData data = new StructPropertyData(name, asset, strucType);
-                    data.Read(reader, false, leng);
+                    data.Offset = reader.BaseStream.Position;
+                    data.Read(reader, false, 1);
                     return data;
                 default:
                     var res = MainSerializer.TypeToClass(type, name, asset, null, leng);
+                    res.Offset = reader.BaseStream.Position;
                     res.Read(reader, includeHeader, leng);
                     return res;
             }
@@ -101,7 +106,9 @@ namespace UAssetAPI.PropertyTypes
             int here = (int)writer.BaseStream.Position;
             foreach (DictionaryEntry entry in map)
             {
+                ((PropertyData)entry.Key).Offset = writer.BaseStream.Position;
                 ((PropertyData)entry.Key).Write(writer, false);
+                ((PropertyData)entry.Value).Offset = writer.BaseStream.Position;
                 ((PropertyData)entry.Value).Write(writer, false);
             }
             return (int)writer.BaseStream.Position - here;
@@ -114,8 +121,8 @@ namespace UAssetAPI.PropertyTypes
                 if (Value.Count > 0)
                 {
                     DictionaryEntry firstEntry = Value.Cast<DictionaryEntry>().ElementAt(0);
-                    writer.WriteFName(((PropertyData)firstEntry.Key).Type, Asset);
-                    writer.WriteFName(((PropertyData)firstEntry.Value).Type, Asset);
+                    writer.WriteFName(((PropertyData)firstEntry.Key).PropertyType, Asset);
+                    writer.WriteFName(((PropertyData)firstEntry.Value).PropertyType, Asset);
                 }
                 else
                 {
@@ -133,6 +140,30 @@ namespace UAssetAPI.PropertyTypes
 
             writer.Write(Value.Count);
             return WriteRawMap(writer, Value) + 8;
+        }
+
+        protected override void HandleCloned(PropertyData res)
+        {
+            MapPropertyData cloningProperty = (MapPropertyData)res;
+
+            OrderedDictionary newDict = new OrderedDictionary();
+            foreach (DictionaryEntry entry in this.Value)
+            {
+                newDict[(entry.Key as PropertyData).Clone()] = (entry.Value as PropertyData).Clone();
+            }
+            cloningProperty.Value = newDict;
+
+            newDict = new OrderedDictionary();
+            foreach (DictionaryEntry entry in this.KeysToRemove)
+            {
+                newDict[(entry.Key as PropertyData).Clone()] = (entry.Value as PropertyData).Clone();
+            }
+            cloningProperty.KeysToRemove = newDict;
+
+            if (this.dummyEntry != null && this.dummyEntry.Length == 2)
+            {
+                cloningProperty.dummyEntry = new FName[] { (FName)this.dummyEntry[0].Clone(), (FName)this.dummyEntry[1].Clone() };
+            }
         }
     }
 }

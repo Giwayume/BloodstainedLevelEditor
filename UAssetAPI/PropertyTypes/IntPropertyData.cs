@@ -3,17 +3,23 @@ using System.IO;
 
 namespace UAssetAPI.PropertyTypes
 {
+    /// <summary>
+    /// Describes a 32-bit signed integer variable.
+    /// </summary>
     public class IntPropertyData : PropertyData<int>
     {
         public IntPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("IntProperty");
+
         }
 
         public IntPropertyData()
         {
-            Type = new FName("IntProperty");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("IntProperty");
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {

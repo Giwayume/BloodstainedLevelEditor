@@ -4,6 +4,9 @@ using UAssetAPI.StructTypes;
 
 namespace UAssetAPI.PropertyTypes
 {
+    /// <summary>
+    /// Describes an array.
+    /// </summary>
     public class ArrayPropertyData : PropertyData<PropertyData[]> // Array
     {
         public FName ArrayType;
@@ -11,15 +14,16 @@ namespace UAssetAPI.PropertyTypes
 
         public ArrayPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("ArrayProperty");
             Value = new PropertyData[0];
         }
 
         public ArrayPropertyData()
         {
-            Type = new FName("ArrayProperty");
             Value = new PropertyData[0];
         }
+
+        private static readonly FName CurrentPropertyType = new FName("ArrayProperty");
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
@@ -41,7 +45,7 @@ namespace UAssetAPI.PropertyTypes
                 }
 
                 if (reader.ReadFName(Asset).Value.Value != ArrayType.Value.Value) throw new FormatException("Invalid array type");
-                reader.ReadInt64(); // length value
+                long structLength = reader.ReadInt64(); // length value
 
                 FName fullType = reader.ReadFName(Asset);
                 Guid structGUID = new Guid(reader.ReadBytes(16));
@@ -59,7 +63,8 @@ namespace UAssetAPI.PropertyTypes
                     for (int i = 0; i < numEntries; i++)
                     {
                         var data = new StructPropertyData(name, Asset, fullType);
-                        data.Read(reader, false, 0);
+                        data.Offset = reader.BaseStream.Position;
+                        data.Read(reader, false, structLength);
                         data.StructGUID = structGUID;
                         results[i] = data;
                     }
@@ -77,6 +82,7 @@ namespace UAssetAPI.PropertyTypes
                     for (int i = 0; i < numEntries; i++)
                     {
                         results[i] = MainSerializer.TypeToClass(ArrayType, Name, Asset);
+                        results[i].Offset = reader.BaseStream.Position;
                         results[i].Read(reader, false, averageSizeEstimate1, averageSizeEstimate2);
                     }
                 }
@@ -86,7 +92,7 @@ namespace UAssetAPI.PropertyTypes
 
         public override int Write(BinaryWriter writer, bool includeHeader)
         {
-            if (Value.Length > 0) ArrayType = Value[0].Type;
+            if (Value.Length > 0) ArrayType = Value[0].PropertyType;
 
             if (includeHeader)
             {
@@ -114,6 +120,7 @@ namespace UAssetAPI.PropertyTypes
                 for (int i = 0; i < Value.Length; i++)
                 {
                     ((StructPropertyData)Value[i]).StructType = fullType;
+                    Value[i].Offset = writer.BaseStream.Position;
                     Value[i].Write(writer, false);
                 }
 
@@ -127,6 +134,7 @@ namespace UAssetAPI.PropertyTypes
             {
                 for (int i = 0; i < Value.Length; i++)
                 {
+                    Value[i].Offset = writer.BaseStream.Position;
                     Value[i].Write(writer, false);
                 }
             }
@@ -137,6 +145,13 @@ namespace UAssetAPI.PropertyTypes
         public override void FromString(string[] d)
         {
             if (d[4] != null) ArrayType = FName.FromString(d[4]);
+        }
+
+        protected override void HandleCloned(PropertyData res)
+        {
+            ArrayPropertyData cloningProperty = (ArrayPropertyData)res;
+            cloningProperty.ArrayType = (FName)this.ArrayType?.Clone();
+            cloningProperty.DummyStruct = (StructPropertyData)this.DummyStruct?.Clone();
         }
     }
 }

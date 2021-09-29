@@ -1,22 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace UAssetAPI.PropertyTypes
 {
+    /// <summary>
+    /// Describes a property which UAssetAPI has no specific serialization for, and is instead represented as an array of bytes as a fallback.
+    /// </summary>
     public class UnknownPropertyData : PropertyData<byte[]>
     {
+        public FName SerializingPropertyType = CurrentPropertyType;
+
         public UnknownPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("UnknownProperty");
+
         }
 
         public UnknownPropertyData()
         {
-            Type = new FName("UnknownProperty");
+
+        }
+
+        private static readonly FName CurrentPropertyType = new FName("UnknownProperty");
+        public override FName PropertyType { get { return CurrentPropertyType; } }
+
+        public void SetSerializingPropertyType(FName newType)
+        {
+            SerializingPropertyType = newType;
         }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
@@ -43,6 +52,13 @@ namespace UAssetAPI.PropertyTypes
         public override string ToString()
         {
             return Convert.ToString(Value);
+        }
+
+        protected override void HandleCloned(PropertyData res)
+        {
+            UnknownPropertyData cloningProperty = (UnknownPropertyData)res;
+
+            cloningProperty.SerializingPropertyType = (FName)SerializingPropertyType.Clone();
         }
     }
 }

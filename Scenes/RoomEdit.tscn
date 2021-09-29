@@ -1,7 +1,7 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://Scenes/RoomEdit.gd" type="Script" id=1]
-[ext_resource path="res://Scenes/UMap3DPreview.tscn" type="PackedScene" id=2]
+[ext_resource path="res://Scenes/Room3dDisplay.tscn" type="PackedScene" id=2]
 [ext_resource path="res://EditorTheme/PanelContainerForeground.tres" type="StyleBox" id=3]
 
 [sub_resource type="StyleBoxEmpty" id=1]
@@ -17,6 +17,13 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color( 0.0980392, 0.113725, 0.156863, 1 )
+
+[sub_resource type="StyleBoxFlat" id=3]
+content_margin_left = 4.0
+content_margin_right = 4.0
+content_margin_top = 4.0
+content_margin_bottom = 4.0
+bg_color = Color( 0, 0, 0, 0.560784 )
 
 [node name="RoomEdit" type="Control"]
 anchor_right = 1.0
@@ -96,7 +103,7 @@ margin_right = 771.0
 margin_bottom = 554.0
 custom_styles/panel = SubResource( 2 )
 
-[node name="ViewportContainer" type="ViewportContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer"]
+[node name="Room3dViewportContainer" type="ViewportContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer"]
 margin_left = 1.0
 margin_top = 1.0
 margin_right = 762.0
@@ -104,12 +111,35 @@ margin_bottom = 553.0
 size_flags_horizontal = 3
 stretch = true
 
-[node name="Viewport" type="Viewport" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer/ViewportContainer"]
+[node name="Viewport" type="Viewport" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer/Room3dViewportContainer"]
 size = Vector2( 761, 552 )
 handle_input_locally = false
 render_target_update_mode = 3
 
-[node name="UMap3DPreview" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer/ViewportContainer/Viewport" instance=ExtResource( 2 )]
+[node name="Room3dDisplay" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer/Room3dViewportContainer/Viewport" instance=ExtResource( 2 )]
+
+[node name="Loading3dSceneNotification" type="CenterContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer"]
+margin_left = 1.0
+margin_top = 1.0
+margin_right = 762.0
+margin_bottom = 553.0
+
+[node name="PanelContainer" type="PanelContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer/Loading3dSceneNotification"]
+margin_left = 311.0
+margin_top = 261.0
+margin_right = 450.0
+margin_bottom = 291.0
+custom_styles/panel = SubResource( 3 )
+
+[node name="Label" type="Label" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer/Loading3dSceneNotification/PanelContainer"]
+margin_left = 4.0
+margin_top = 4.0
+margin_right = 135.0
+margin_bottom = 26.0
+text = "Loading 3d Scene..."
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="VSplitContainer" type="VSplitContainer" parent="EditorContainer/VBoxContainer/HSplitContainer"]
 margin_left = 779.0
@@ -130,7 +160,6 @@ margin_bottom = 277.0
 tab_align = 0
 
 [node name="BG" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer"]
-visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 5.0
@@ -149,6 +178,7 @@ __meta__ = {
 }
 
 [node name="Enemy" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer"]
+visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 5.0

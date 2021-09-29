@@ -42,13 +42,17 @@ namespace UAssetAPI.StructTypes
 
         public RichCurveKeyProperty(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("RichCurveKey");
+
         }
 
         public RichCurveKeyProperty()
         {
-            Type = new FName("RichCurveKey");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("RichCurveKey");
+        public override bool HasCustomStructSerialization { get { return true; } }
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {

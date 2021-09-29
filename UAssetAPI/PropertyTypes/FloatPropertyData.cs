@@ -3,17 +3,23 @@ using System.IO;
 
 namespace UAssetAPI.PropertyTypes
 {
+    /// <summary>
+    /// Describes an IEEE 32-bit floating point variable.
+    /// </summary>
     public class FloatPropertyData : PropertyData<float>
     {
         public FloatPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("FloatProperty");
+
         }
 
         public FloatPropertyData()
         {
-            Type = new FName("FloatProperty");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("FloatProperty");
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {

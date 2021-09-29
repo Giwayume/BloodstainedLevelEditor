@@ -8,13 +8,17 @@ namespace UAssetAPI.StructTypes
     {
         public GuidPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("Guid");
+
         }
 
         public GuidPropertyData()
         {
-            Type = new FName("Guid");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("Guid");
+        public override bool HasCustomStructSerialization { get { return true; } } 
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
@@ -45,6 +49,13 @@ namespace UAssetAPI.StructTypes
         public override void FromString(string[] d)
         {
             if (Guid.TryParse(d[0], out Guid res)) Value = res;
+        }
+
+        protected override void HandleCloned(PropertyData res)
+        {
+            GuidPropertyData cloningProperty = (GuidPropertyData)res;
+
+            cloningProperty.Value = new Guid(Value.ToByteArray());
         }
     }
 }

@@ -2,6 +2,9 @@ extends Camera
 
 export(float, 0.0, 1.0) var sensitivity = 0.25
 
+# Updated by RoomEdit.gd
+var can_capture_mouse = false
+
 # Mouse state
 var _mouse_position = Vector2(0.0, 0.0)
 var _total_pitch = 0.0
@@ -22,12 +25,13 @@ var _q = false
 var _e = false
 
 func _input(event):
+	
 	# Receives mouse motion
 	if event is InputEventMouseMotion:
 		_mouse_position = event.relative
 	
 	# Receives mouse button input
-	if event is InputEventMouseButton:
+	if can_capture_mouse and event is InputEventMouseButton:
 		match event.button_index:
 			BUTTON_RIGHT: # Only allows rotation if right click down
 				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED if event.pressed else Input.MOUSE_MODE_VISIBLE)

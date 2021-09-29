@@ -85,37 +85,37 @@ size_flags_vertical = 3
 custom_styles/panel = ExtResource( 6 )
 
 [node name="VBoxContainer" type="VBoxContainer" parent="RoomSelectContainer/VBoxContainer/MapEditContainer"]
-margin_left = 8.0
-margin_top = 8.0
-margin_right = 1000.0
-margin_bottom = 546.0
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 1003.0
+margin_bottom = 549.0
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="MarginContainer" type="MarginContainer" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer"]
-margin_right = 992.0
+margin_right = 998.0
 margin_bottom = 26.0
 custom_constants/margin_bottom = 4
 
 [node name="GameMapLabel" type="Label" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer/MarginContainer"]
-margin_right = 992.0
+margin_right = 998.0
 margin_bottom = 22.0
 text = "Game Map"
 align = 1
 
 [node name="MapRoomListSplitContainer" type="HSplitContainer" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer"]
 margin_top = 30.0
-margin_right = 992.0
-margin_bottom = 538.0
+margin_right = 998.0
+margin_bottom = 544.0
 size_flags_vertical = 3
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="MapContainer" type="PanelContainer" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer/MapRoomListSplitContainer"]
-margin_right = 492.0
-margin_bottom = 508.0
+margin_right = 495.0
+margin_bottom = 514.0
 rect_clip_content = true
 size_flags_horizontal = 3
 custom_styles/panel = SubResource( 1 )
@@ -124,9 +124,9 @@ custom_styles/panel = SubResource( 1 )
 
 [node name="CenterContainer" type="CenterContainer" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer/MapRoomListSplitContainer/MapContainer"]
 margin_left = 1.0
-margin_top = 466.0
-margin_right = 491.0
-margin_bottom = 507.0
+margin_top = 472.0
+margin_right = 494.0
+margin_bottom = 513.0
 rect_min_size = Vector2( 0, 35 )
 size_flags_horizontal = 3
 size_flags_vertical = 8
@@ -135,8 +135,8 @@ __meta__ = {
 }
 
 [node name="MarginContainer" type="MarginContainer" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer/MapRoomListSplitContainer/MapContainer/CenterContainer"]
-margin_left = 91.0
-margin_right = 398.0
+margin_left = 93.0
+margin_right = 400.0
 margin_bottom = 41.0
 size_flags_horizontal = 4
 custom_constants/margin_bottom = 8
@@ -216,42 +216,42 @@ __meta__ = {
 }
 
 [node name="PackageNameSelectContainer" type="VBoxContainer" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer/MapRoomListSplitContainer"]
-margin_left = 500.0
-margin_right = 992.0
-margin_bottom = 508.0
+margin_left = 503.0
+margin_right = 998.0
+margin_bottom = 514.0
 size_flags_horizontal = 3
 
 [node name="GridContainer" type="GridContainer" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer/MapRoomListSplitContainer/PackageNameSelectContainer"]
-margin_right = 492.0
+margin_right = 495.0
 margin_bottom = 22.0
 columns = 2
 
 [node name="SearchLevelNameEdit" type="LineEdit" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer/MapRoomListSplitContainer/PackageNameSelectContainer/GridContainer"]
-margin_right = 444.0
+margin_right = 447.0
 margin_bottom = 22.0
 size_flags_horizontal = 3
 placeholder_text = "Filter rooms..."
 
 [node name="SearchLevelNameClearButton" type="Button" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer/MapRoomListSplitContainer/PackageNameSelectContainer/GridContainer"]
-margin_left = 448.0
-margin_right = 492.0
+margin_left = 451.0
+margin_right = 495.0
 margin_bottom = 22.0
 text = "Clear"
 
 [node name="LevelNameList" type="ItemList" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer/MapRoomListSplitContainer/PackageNameSelectContainer"]
 margin_top = 26.0
-margin_right = 492.0
-margin_bottom = 482.0
+margin_right = 495.0
+margin_bottom = 488.0
 size_flags_vertical = 3
 items = [ "m04ASD_000", null, false ]
 
 [node name="VBoxContainer" type="VBoxContainer" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer/MapRoomListSplitContainer/PackageNameSelectContainer"]
-margin_top = 486.0
-margin_right = 492.0
-margin_bottom = 508.0
+margin_top = 492.0
+margin_right = 495.0
+margin_bottom = 514.0
 
 [node name="EditSelectedRoomButton" type="Button" parent="RoomSelectContainer/VBoxContainer/MapEditContainer/VBoxContainer/MapRoomListSplitContainer/PackageNameSelectContainer/VBoxContainer"]
-margin_right = 492.0
+margin_right = 495.0
 margin_bottom = 22.0
 text = "Edit Room"
 

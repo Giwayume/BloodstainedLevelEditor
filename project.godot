@@ -31,6 +31,10 @@ config/icon="res://Icon.png"
 Editor="*res://Scenes/Editor.gd"
 UAssetParser="*res://Scenes/UAssetParser.cs"
 
+[debug]
+
+gdscript/warnings/return_value_discarded=false
+
 [global]
 
 unit=false

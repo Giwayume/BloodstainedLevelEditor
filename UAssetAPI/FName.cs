@@ -1,22 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace UAssetAPI
 {
-    /*
-        Unreal string - consists of a string and an encoding
-    */
-    public class FString
+    /// <summary>
+    /// Unreal string - consists of a string and an encoding
+    /// </summary>
+    public class FString : ICloneable
     {
         public string Value;
         public Encoding Encoding;
-
         public override string ToString()
         {
+            if (this == null || Value == null) return "null";
             return Value;
         }
 
@@ -30,6 +26,11 @@ namespace UAssetAPI
         public override int GetHashCode()
         {
             return Value.GetHashCode();
+        }
+
+        public object Clone()
+        {
+            return new FString(Value, Encoding);
         }
 
         public FString(string value, Encoding encoding = null)
@@ -46,13 +47,14 @@ namespace UAssetAPI
         }
     }
 
-    /*
-        Unreal name - consists of an FString (which is serialized as an index in the name map) and an instance number
-    */
-    public class FName
+    /// <summary>
+    /// Unreal name - consists of an FString (which is serialized as an index in the name map) and an instance number
+    /// </summary>
+    public class FName : ICloneable
     {
         public FString Value;
-        public int Number; // Instance number
+        /// <summary>Instance number</summary>
+        public int Number; 
 
         public override string ToString()
         {
@@ -62,7 +64,7 @@ namespace UAssetAPI
         /** Inverse of FName.ToString() */
         public static FName FromString(string val)
         {
-            if (val == "null") return null;
+            if (val == null || val == "null") return null;
             if (val[val.Length - 1] != ')') return new FName(val);
 
             int locLastLeftBracket = val.LastIndexOf('(');
@@ -77,14 +79,19 @@ namespace UAssetAPI
 
         public override bool Equals(object obj)
         {
-            FName name = obj as FName;
-            if (name == null) return false;
+            if (!(obj is FName name)) return false;
+            if (name == obj) return true;
             return this.Value == name.Value && this.Number == name.Number;
         }
 
         public override int GetHashCode()
         {
             return Value.GetHashCode() ^ Number.GetHashCode();
+        }
+
+        public object Clone()
+        {
+            return new FName((FString)Value.Clone(), Number);
         }
 
         public FName(string value, int number = 0)

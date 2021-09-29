@@ -1,7 +1,6 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.IO;
-using System;
-using System.Diagnostics;
 using UAssetAPI.PropertyTypes;
 
 namespace UAssetAPI.StructTypes
@@ -23,7 +22,7 @@ namespace UAssetAPI.StructTypes
         }
     }
 
-    public class LinearColor
+    public class LinearColor : ICloneable
     {
         public float R;
         public float G;
@@ -42,19 +41,28 @@ namespace UAssetAPI.StructTypes
             this.B = B;
             this.A = A;
         }
+
+        public object Clone()
+        {
+            return new LinearColor(this.R, this.G, this.B, this.A);
+        }
     }
 
     public class LinearColorPropertyData : PropertyData<LinearColor> // R, G, B, A
     {
         public LinearColorPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("LinearColor");
+
         }
 
         public LinearColorPropertyData()
         {
-            Type = new FName("LinearColor");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("LinearColor");
+        public override bool HasCustomStructSerialization { get { return true; } }
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {

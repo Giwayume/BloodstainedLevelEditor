@@ -1,20 +1,24 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 
 namespace UAssetAPI.PropertyTypes
 {
+    /// <summary>
+    /// Describes an FName.
+    /// </summary>
     public class NamePropertyData : PropertyData<FName>
     {
         public NamePropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("NameProperty");
+
         }
 
         public NamePropertyData()
         {
-            Type = new FName("NameProperty");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("NameProperty");
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
@@ -39,7 +43,7 @@ namespace UAssetAPI.PropertyTypes
 
         public override string ToString()
         {
-            return Value.ToString();
+            return Value == null ? "null" : Value.ToString();
         }
 
         public override void FromString(string[] d)

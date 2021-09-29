@@ -28,10 +28,12 @@ public class UAssetSnippet {
     }
     public class DetachedObjectPropertyData : PropertyData<int> {
         public List<int> UsedExports = default(List<int>);
+        private static readonly FName CurrentPropertyType = new FName("DetachedObjectProperty");
+        public override FName PropertyType { get { return CurrentPropertyType; } }
         public DetachedObjectPropertyData(FName name, UAsset asset, List<int> usedExports) : base(name, asset) {
-            Type = new FName("DetachedObjectProperty");
             UsedExports = usedExports;
         }
+        public DetachedObjectPropertyData() {}
     }
 
     public UAsset OriginalUAsset;
@@ -109,7 +111,7 @@ public class UAssetSnippet {
                         if (propertyName == "AttachParent") {
                             try {
                                 ExportTree[exportIndex].IsRoot = false;
-                                ExportTree[objectPropertyData.CurrentIndex - 1].AttachedChildren.Add(ExportTree[exportIndex]);
+                                ExportTree[objectPropertyData.Value.Index - 1].AttachedChildren.Add(ExportTree[exportIndex]);
                             } catch (Exception e) {
                                 GD.Print("Set up Attach Parent error ", e);
                             }
@@ -186,7 +188,7 @@ public class UAssetSnippet {
         List<int> referencedObjects = new List<int>();
         foreach (PropertyData propertyData in propertyDataList) {
             if (propertyData is ObjectPropertyData objectPropertyData) {
-                referencedObjects.Add(objectPropertyData.CurrentIndex - 1);
+                referencedObjects.Add(objectPropertyData.Value.Index - 1);
             } else if (propertyData is ArrayPropertyData arrayPropertyData) {
                 referencedObjects = referencedObjects.Concat(GetPropertyDataReferencedObjects(arrayPropertyData.Value.ToList<PropertyData>())).ToList();
             }
@@ -210,7 +212,6 @@ public class UAssetSnippet {
                 newlyAddedImports.Add(originalImportIndex);
                 mappedImports.Add(attachToAsset.Imports.Count);
                 Import clonedImport = CloneImport(originalImport, attachToAsset);
-                clonedImport.Index = attachToAsset.Imports.Count;
                 attachToAsset.Imports.Add(clonedImport);
             }
         }
@@ -235,10 +236,10 @@ public class UAssetSnippet {
         foreach (int originalExportIndex in UsedExports) {
             Export clonedExport = CloneExport(OriginalUAsset.Exports[originalExportIndex], attachToAsset, exportStartIndex);
             try {
-                int oldClassIndex = clonedExport.ReferenceData.ClassIndex;
+                int oldClassIndex = clonedExport.ClassIndex.Index;
                 int oldClassIndexArrayIndex = Math.Abs(oldClassIndex) - 1;
                 if (oldClassIndexArrayIndex >= 0) {
-                    clonedExport.ReferenceData.ClassIndex = -(mappedImports[UsedImports.IndexOf(oldClassIndexArrayIndex)] + 1);
+                    clonedExport.ClassIndex.Index = -(mappedImports[UsedImports.IndexOf(oldClassIndexArrayIndex)] + 1);
                 }
             } catch (Exception e) {
                 GD.Print(e);
@@ -250,7 +251,7 @@ public class UAssetSnippet {
         try {
             FString newName = new FString("TEST_ADD_SNIPPET");
             attachToAsset.AddNameReference(newName);
-            attachToAsset.Exports[exportStartIndex].ReferenceData.ObjectName = new FName("TEST_ADD_SNIPPET", 0);
+            attachToAsset.Exports[exportStartIndex].ObjectName = new FName("TEST_ADD_SNIPPET", 0);
         } catch (Exception e) {
             GD.Print(e);
         }
@@ -260,7 +261,7 @@ public class UAssetSnippet {
         foreach (Export baseExport in attachToAsset.Exports) {
             if (baseExport is LevelExport levelExport) {
                 levelExport.IndexData.Add(exportStartIndex + 1);
-                attachToAsset.Exports[exportStartIndex].ReferenceData.OuterIndex = exportNumber;
+                attachToAsset.Exports[exportStartIndex].OuterIndex = exportNumber;
                 break;
             }
             exportNumber++;
@@ -289,47 +290,43 @@ public class UAssetSnippet {
         FName classPackage = new FName(originalImport.ClassPackage.Value, originalImport.ClassPackage.Number);
         FName className = new FName(originalImport.ClassName.Value, originalImport.ClassName.Number);
         FName objectName = new FName(originalImport.ObjectName.Value, originalImport.ObjectName.Number);
-        Import clonedImport = new Import(classPackage, className, originalImport.OuterIndex, objectName, originalImport.Index);
+        Import clonedImport = new Import(classPackage, className, originalImport.OuterIndex, objectName);
         return clonedImport;
     }
 
     public Export CloneExport(Export export, UAsset attachToAsset, int exportStartIndex) {
-        ExportDetails originalReference = export.ReferenceData;
-        int newOuterIndex = UsedExports.IndexOf(originalReference.OuterIndex - 1);
+        int newOuterIndex = UsedExports.IndexOf(export.OuterIndex - 1);
         if (newOuterIndex != -1) {
             newOuterIndex += exportStartIndex + 1;
         } else {
-            newOuterIndex = originalReference.OuterIndex;
+            newOuterIndex = export.OuterIndex;
         }
-        ExportDetails reference = new ExportDetails(
-            originalReference.ClassIndex,
-            originalReference.SuperIndex,
-            originalReference.TemplateIndex,
-            newOuterIndex,
-            originalReference.ObjectName,
-            originalReference.ObjectFlags,
-            Convert.ToInt32(originalReference.SerialSize),
-            Convert.ToInt32(originalReference.SerialOffset),
-            originalReference.bForcedExport,
-            originalReference.bNotForClient,
-            originalReference.bNotForServer,
-            originalReference.PackageGuid,
-            originalReference.PackageFlags,
-            originalReference.bNotAlwaysLoadedForEditorGame,
-            originalReference.bIsAsset,
-            originalReference.FirstExportDependency,
-            originalReference.SerializationBeforeSerializationDependencies,
-            originalReference.CreateBeforeSerializationDependencies,
-            originalReference.SerializationBeforeCreateDependencies,
-            originalReference.CreateBeforeCreateDependencies
-        );
         byte[] extras = new byte[export.Extras.Length];
         export.Extras.CopyTo(extras, 0);
         Export newExport = new Export(
-            reference,
             attachToAsset,
             extras
         );
+        newExport.ClassIndex = export.ClassIndex;
+        newExport.SuperIndex = export.SuperIndex;
+        newExport.TemplateIndex = export.TemplateIndex;
+        newExport.OuterIndex = newOuterIndex;
+        newExport.ObjectName = export.ObjectName;
+        newExport.ObjectFlags = export.ObjectFlags;
+        newExport.SerialSize = Convert.ToInt32(export.SerialSize);
+        newExport.SerialOffset = Convert.ToInt32(export.SerialOffset);
+        newExport.bForcedExport = export.bForcedExport;
+        newExport.bNotForClient = export.bNotForClient;
+        newExport.bNotForServer = export.bNotForServer;
+        newExport.PackageGuid = export.PackageGuid;
+        newExport.PackageFlags = export.PackageFlags;
+        newExport.bNotAlwaysLoadedForEditorGame = export.bNotAlwaysLoadedForEditorGame;
+        newExport.bIsAsset = export.bIsAsset;
+        newExport.FirstExportDependency = export.FirstExportDependency;
+        newExport.SerializationBeforeSerializationDependencies = export.SerializationBeforeSerializationDependencies;
+        newExport.CreateBeforeSerializationDependencies = export.CreateBeforeSerializationDependencies;
+        newExport.SerializationBeforeCreateDependencies = export.SerializationBeforeCreateDependencies;
+        newExport.CreateBeforeCreateDependencies = export.CreateBeforeCreateDependencies;
         if (export is ClassExport classExport) {
             ClassExport newClassExport = new ClassExport(newExport);
             return newClassExport;
@@ -448,13 +445,13 @@ public class UAssetSnippet {
             }
             else if (propertyData is ObjectPropertyData objectPropertyData) {
                 ObjectPropertyData newObjectPropertyData = new ObjectPropertyData(newPropertyName, attachToAsset);
-                int newCurrentIndex = UsedExports.IndexOf(objectPropertyData.CurrentIndex - 1);
+                int newCurrentIndex = UsedExports.IndexOf(objectPropertyData.Value.Index - 1);
                 if (newCurrentIndex != -1) {
                     newCurrentIndex += exportStartIndex + 1;
                 } else {
                     newCurrentIndex = 0;
                 }
-                newObjectPropertyData.SetCurrentIndex(newCurrentIndex);
+                newObjectPropertyData.Value = FPackageIndex.FromRawIndex(newCurrentIndex);
                 newPropertyDataList.Add(newObjectPropertyData);
             }
             else if (propertyData is SetPropertyData setPropertyData) {
@@ -488,25 +485,24 @@ public class UAssetSnippet {
             else if (propertyData is StrPropertyData strPropertyData) {
                 StrPropertyData newStrPropertyData = new StrPropertyData(newPropertyName, attachToAsset);
                 newStrPropertyData.Value = strPropertyData.Value;
-                newStrPropertyData.Encoding = strPropertyData.Encoding;
                 newPropertyDataList.Add(newStrPropertyData);
             }
             else if (propertyData is TextPropertyData textPropertyData) {
                 TextPropertyData newTextPropertyData = new TextPropertyData(newPropertyName, attachToAsset);
-                string[] newValue = new string[textPropertyData.Value.Length];
-                textPropertyData.Value.CopyTo(newValue, 0);
-                newTextPropertyData.Value = newValue;
-                newTextPropertyData.Flag = textPropertyData.Flag;
+                newTextPropertyData.Value = new FString(textPropertyData.Value.Value, textPropertyData.Value.Encoding);
+                newTextPropertyData.Flags = textPropertyData.Flags;
                 newTextPropertyData.HistoryType = textPropertyData.HistoryType;
-                if (textPropertyData.StringTable != null) {
-                    attachToAsset.AddNameReference(textPropertyData.StringTable.Value);
-                    newTextPropertyData.StringTable = new FName(textPropertyData.StringTable.Value.Value, textPropertyData.StringTable.Number);
+                if (textPropertyData.TableId != null) {
+                    attachToAsset.AddNameReference(textPropertyData.TableId.Value);
+                    newTextPropertyData.TableId = new FName(textPropertyData.TableId.Value.Value, textPropertyData.TableId.Number);
                 }
-                byte[] newExtras = new byte[textPropertyData.Extras.Length];
-                textPropertyData.Extras.CopyTo(newExtras, 0);
-                if (textPropertyData.BaseBlankString != default(FString)) {
-                    attachToAsset.AddNameReference(textPropertyData.BaseBlankString);
-                    newTextPropertyData.BaseBlankString = new FString(textPropertyData.BaseBlankString.Value, textPropertyData.BaseBlankString.Encoding);
+                if (textPropertyData.Namespace != null) {
+                    attachToAsset.AddNameReference(textPropertyData.Namespace);
+                    newTextPropertyData.Namespace = new FString(textPropertyData.Namespace.Value, textPropertyData.Namespace.Encoding);
+                }
+                if (textPropertyData.CultureInvariantString != null) {
+                    attachToAsset.AddNameReference(textPropertyData.CultureInvariantString);
+                    newTextPropertyData.CultureInvariantString = new FString(textPropertyData.CultureInvariantString.Value, textPropertyData.CultureInvariantString.Encoding);
                 }
                 newPropertyDataList.Add(newTextPropertyData);
             }

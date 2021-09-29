@@ -8,13 +8,17 @@ namespace UAssetAPI.StructTypes
     {
         public DateTimePropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("DateTime");
+
         }
 
         public DateTimePropertyData()
         {
-            Type = new FName("DateTime");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("DateTime");
+        public override bool HasCustomStructSerialization { get { return true; } }
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
@@ -45,6 +49,12 @@ namespace UAssetAPI.StructTypes
         public override string ToString()
         {
             return Value.ToString();
+        }
+
+        protected override void HandleCloned(PropertyData res)
+        {
+            DateTimePropertyData cloningProperty = (DateTimePropertyData)res;
+            cloningProperty.Value = new DateTime(cloningProperty.Value.Ticks);
         }
     }
 }

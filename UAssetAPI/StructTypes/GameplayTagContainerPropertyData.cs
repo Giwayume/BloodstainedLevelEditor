@@ -8,13 +8,17 @@ namespace UAssetAPI.StructTypes
     {
         public GameplayTagContainerPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("GameplayTagContainer");
+
         }
 
         public GameplayTagContainerPropertyData()
         {
-            Type = new FName("GameplayTagContainer");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("GameplayTagContainer");
+        public override bool HasCustomStructSerialization { get { return true; } }
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
@@ -56,6 +60,18 @@ namespace UAssetAPI.StructTypes
                 oup += Convert.ToString(Value[i]) + ", ";
             }
             return oup.Remove(oup.Length - 2) + ")";
+        }
+
+        protected override void HandleCloned(PropertyData res)
+        {
+            GameplayTagContainerPropertyData cloningProperty = (GameplayTagContainerPropertyData)res;
+
+            NamePropertyData[] newData = new NamePropertyData[this.Value.Length];
+            for (int i = 0; i < this.Value.Length; i++)
+            {
+                newData[i] = (NamePropertyData)this.Value[i].Clone();
+            }
+            cloningProperty.Value = newData;
         }
     }
 }

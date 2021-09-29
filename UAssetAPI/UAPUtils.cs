@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -46,30 +45,16 @@ namespace UAssetAPI
             return ReadFStringWithEncoding(reader)?.Value;
         }
 
-        public static string ReadFStringWithGUID(this BinaryReader reader, out uint guid)
-        {
-            string str = reader.ReadFString();
-            if (!string.IsNullOrEmpty(str))
-            {
-                guid = reader.ReadUInt32();
-            }
-            else
-            {
-                guid = 0;
-            }
-            return str;
-        }
-
-        public static FString ReadFStringWithGUIDAndEncoding(this BinaryReader reader, out uint guid)
+        public static FString ReadNameMapString(this BinaryReader reader, out uint hashes)
         {
             FString str = reader.ReadFStringWithEncoding();
             if (!string.IsNullOrEmpty(str.Value))
             {
-                guid = reader.ReadUInt32();
+                hashes = reader.ReadUInt32();
             }
             else
             {
-                guid = 0;
+                hashes = 0;
             }
             return str;
         }
@@ -104,19 +89,9 @@ namespace UAssetAPI
             else return val;
         }
 
-        public static int GetImportIndex(int index)
-        {
-            return -(index + 1);
-        }
-
-        public static int GetNormalIndex(int index)
-        {
-            return -(index + 1);
-        }
-
         public static FString GetImportNameReferenceWithoutZero(int j, UAsset asset)
         {
-            FString refer = asset.GetImportObjectName(j).Value;
+            FString refer = new FPackageIndex(j).ToImport(asset).ObjectName.Value;
             if (!asset.NameReferenceContains(refer)) return refer;
             return asset.GetNameReferenceWithoutZero(asset.SearchNameReference(refer));
         }

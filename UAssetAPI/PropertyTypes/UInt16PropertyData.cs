@@ -3,17 +3,23 @@ using System.IO;
 
 namespace UAssetAPI.PropertyTypes
 {
+    /// <summary>
+    /// Describes a 16-bit unsigned integer variable.
+    /// </summary>
     public class UInt16PropertyData : PropertyData<ushort>
     {
         public UInt16PropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("UInt16Property");
+
         }
 
         public UInt16PropertyData()
         {
-            Type = new FName("UInt16Property");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("UInt16Property");
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {

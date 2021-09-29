@@ -8,13 +8,17 @@ namespace UAssetAPI.StructTypes
     {
         public ColorPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("Color");
+
         }
 
         public ColorPropertyData()
         {
-            Type = new FName("Color");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("Color");
+        public override bool HasCustomStructSerialization { get { return true; } }
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
@@ -23,11 +27,7 @@ namespace UAssetAPI.StructTypes
                 reader.ReadByte();
             }
 
-            byte R = reader.ReadByte();
-            byte G = reader.ReadByte();
-            byte B = reader.ReadByte();
-            byte A = reader.ReadByte();
-            Value = Color.FromArgb(A, R, G, B);
+            Value = Color.FromArgb(reader.ReadInt32());
         }
 
         public override int Write(BinaryWriter writer, bool includeHeader)
@@ -37,11 +37,8 @@ namespace UAssetAPI.StructTypes
                 writer.Write((byte)0);
             }
 
-            writer.Write(Value.R);
-            writer.Write(Value.G);
-            writer.Write(Value.B);
-            writer.Write(Value.A);
-            return sizeof(byte) * 4;
+            writer.Write(Value.ToArgb());
+            return sizeof(int);
         }
 
         public override string ToString()
@@ -56,6 +53,12 @@ namespace UAssetAPI.StructTypes
             if (!int.TryParse(d[2], out int colorB)) return;
             if (!int.TryParse(d[3], out int colorA)) return;
             Value = Color.FromArgb(colorA, colorR, colorG, colorB);
+        }
+
+        protected override void HandleCloned(PropertyData res)
+        {
+            ColorPropertyData cloningProperty = (ColorPropertyData)res;
+            cloningProperty.Value = Color.FromArgb(this.Value.ToArgb());
         }
     }
 }

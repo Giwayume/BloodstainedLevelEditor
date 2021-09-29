@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO;
+using UAssetAPI.PropertyTypes;
 
-namespace UAssetAPI.PropertyTypes
+namespace UAssetAPI.StructTypes
 {
     public class SoftAssetPathPropertyData : PropertyData<FName>
     {
@@ -13,13 +9,17 @@ namespace UAssetAPI.PropertyTypes
 
         public SoftAssetPathPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("SoftAssetPath");
+
         }
 
         public SoftAssetPathPropertyData()
         {
-            Type = new FName("SoftAssetPath");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("SoftAssetPath");
+        public override bool HasCustomStructSerialization { get { return true; } }
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {

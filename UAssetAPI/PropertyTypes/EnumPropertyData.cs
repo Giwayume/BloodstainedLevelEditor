@@ -2,19 +2,25 @@
 
 namespace UAssetAPI.PropertyTypes
 {
+    /// <summary>
+    /// Describes an enumeration value.
+    /// </summary>
     public class EnumPropertyData : PropertyData<FName>
     {
         public FName EnumType;
 
         public EnumPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("EnumProperty");
+
         }
 
         public EnumPropertyData()
         {
-            Type = new FName("EnumProperty");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("EnumProperty");
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
@@ -65,6 +71,12 @@ namespace UAssetAPI.PropertyTypes
             {
                 Value = null;
             }
+        }
+
+        protected override void HandleCloned(PropertyData res)
+        {
+            EnumPropertyData cloningProperty = (EnumPropertyData)res;
+            cloningProperty.EnumType = (FName)this.EnumType?.Clone();
         }
     }
 }

@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UAssetAPI.PropertyTypes;
 
 namespace UAssetAPI.StructTypes
@@ -33,13 +29,17 @@ namespace UAssetAPI.StructTypes
 
         public ViewTargetBlendParamsPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("ViewTargetBlendParams");
+
         }
 
         public ViewTargetBlendParamsPropertyData()
         {
-            Type = new FName("ViewTargetBlendParams");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("ViewTargetBlendParams");
+        public override bool HasCustomStructSerialization { get { return true; } }
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {

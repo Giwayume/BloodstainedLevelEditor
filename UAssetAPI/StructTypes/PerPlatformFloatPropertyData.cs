@@ -9,13 +9,17 @@ namespace UAssetAPI.StructTypes
     {
         public PerPlatformFloatPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("PerPlatformFloat");
+
         }
 
         public PerPlatformFloatPropertyData()
         {
-            Type = new FName("PerPlatformFloat");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("PerPlatformFloat");
+        public override bool HasCustomStructSerialization { get { return true; } }
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
@@ -44,7 +48,7 @@ namespace UAssetAPI.StructTypes
             {
                 writer.Write(Value[i]);
             }
-            return sizeof(float) * Value.Length;
+            return sizeof(int) + sizeof(float) * Value.Length;
         }
 
         public override void FromString(string[] d)

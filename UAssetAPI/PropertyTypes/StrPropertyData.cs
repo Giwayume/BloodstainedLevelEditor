@@ -3,19 +3,23 @@ using System.Text;
 
 namespace UAssetAPI.PropertyTypes
 {
-    public class StrPropertyData : PropertyData<string>
+    /// <summary>
+    /// Describes an FString.
+    /// </summary>
+    public class StrPropertyData : PropertyData<FString>
     {
-        public Encoding Encoding = Encoding.ASCII;
-
         public StrPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("StrProperty");
+
         }
 
         public StrPropertyData()
         {
-            Type = new FName("StrProperty");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("StrProperty");
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
@@ -24,9 +28,7 @@ namespace UAssetAPI.PropertyTypes
                 reader.ReadByte();
             }
 
-            FString ustr = reader.ReadFStringWithEncoding();
-            if (ustr != null) Encoding = ustr.Encoding;
-            Value = ustr != null ? ustr.Value : null;
+            Value = reader.ReadFStringWithEncoding();
         }
 
         public override int Write(BinaryWriter writer, bool includeHeader)
@@ -37,19 +39,20 @@ namespace UAssetAPI.PropertyTypes
             }
 
             int here = (int)writer.BaseStream.Position;
-            writer.WriteFString(new FString(Value, Encoding));
+            writer.WriteFString(Value);
             return (int)writer.BaseStream.Position - here;
         }
 
         public override string ToString()
         {
-            return Value;
+            return Value.ToString();
         }
 
         public override void FromString(string[] d)
         {
-            Value = d[0];
-            if (d.Length >= 5) Encoding = (d[4].Equals("utf-16") ? Encoding.Unicode : Encoding.ASCII);
+            var encoding = Encoding.ASCII;
+            if (d.Length >= 5) encoding = (d[4].Equals("utf-16") ? Encoding.Unicode : Encoding.ASCII);
+            Value = new FString(d[0], encoding);
         }
     }
 }

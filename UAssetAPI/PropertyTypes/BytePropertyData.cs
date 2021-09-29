@@ -10,6 +10,9 @@ namespace UAssetAPI.PropertyTypes
         Long,
     }
 
+    /// <summary>
+    /// Describes a byte or an enumeration value.
+    /// </summary>
     public class BytePropertyData : PropertyData<int>
     {
         public BytePropertyType ByteType;
@@ -17,13 +20,16 @@ namespace UAssetAPI.PropertyTypes
 
         public BytePropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("ByteProperty");
+
         }
 
         public BytePropertyData()
         {
-            Type = new FName("ByteProperty");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("ByteProperty");
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {

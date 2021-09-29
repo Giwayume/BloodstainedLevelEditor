@@ -8,13 +8,17 @@ namespace UAssetAPI.StructTypes
     {
         public TimespanPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("Timespan");
+
         }
 
         public TimespanPropertyData()
         {
-            Type = new FName("Timespan");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("Timespan");
+        public override bool HasCustomStructSerialization { get { return true; } }
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
@@ -45,6 +49,12 @@ namespace UAssetAPI.StructTypes
         public override string ToString()
         {
             return Value.ToString();
+        }
+
+        protected override void HandleCloned(PropertyData res)
+        {
+            TimespanPropertyData cloningProperty = (TimespanPropertyData)res;
+            cloningProperty.Value = new TimeSpan(cloningProperty.Value.Ticks);
         }
     }
 }

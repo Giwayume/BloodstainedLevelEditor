@@ -179,49 +179,47 @@ public class UAssetParser : Control {
         }
 
         // Parse map data uasset
-        UAsset uAsset = new UAsset(outputPath + "/" + mapDataTablePath, UE4Version.VER_UE4_18, true, true);
+        UAsset uAsset = new UAsset(outputPath + "/" + mapDataTablePath, UE4Version.VER_UE4_18);
         foreach (Export baseExport in uAsset.Exports) {
             // Data table
             if (baseExport is DataTableExport export) {
-                if (export.ReferenceData.ObjectName.Value.ToString() == "PB_DT_RoomMaster") {
+                if (export.ObjectName.Value.ToString() == "PB_DT_RoomMaster") {
                     // Loop through table rows
-                    foreach (DataTableEntry dataTableEntry in export.Data2.Table) {
+                    foreach (StructPropertyData structPropertyData in export.Table.Data) {
                         Godot.Collections.Dictionary<string, object> mapRoom = new Godot.Collections.Dictionary<string, object>();
-                        if (dataTableEntry.Data is StructPropertyData structPropertyData) {
-                            foreach (PropertyData propertyData in structPropertyData.Value) {
-                                string propertyName = propertyData.Name.Value.ToString();
-                                string propertyType = propertyData.Type.Value.ToString();
-                                string propertyNameSnakeCase = CamelCaseToSnakeCase(propertyName);
-                                try {
-                                    if (propertyData is NamePropertyData namePropertyData) {
-                                        mapRoom[propertyNameSnakeCase] = namePropertyData.Value.Value.ToString();
-                                    } else if (propertyData is StrPropertyData strPropertyData) {
-                                        mapRoom[propertyNameSnakeCase] = strPropertyData.Value;
-                                    } else if (propertyData is BytePropertyData bytePropertyData) {
-                                        mapRoom[propertyNameSnakeCase] = bytePropertyData.Value;
-                                    } else if (propertyData is BoolPropertyData boolPropertyData) {
-                                        mapRoom[propertyNameSnakeCase] = boolPropertyData.Value;
-                                    } else if (propertyData is IntPropertyData intPropertyData) {
-                                        mapRoom[propertyNameSnakeCase] = intPropertyData.Value;
-                                    } else if (propertyData is FloatPropertyData floatPropertyData) {
-                                        mapRoom[propertyNameSnakeCase] = floatPropertyData.Value;
-                                    } else if (propertyData is EnumPropertyData enumPropertyData) {
-                                        mapRoom[propertyNameSnakeCase] = enumPropertyData.Value.Value.ToString();
-                                    } else if (propertyData is ArrayPropertyData arrayPropertyData) {
-                                        Godot.Collections.Array refArray = new Godot.Collections.Array();
-                                        foreach (PropertyData arrayItem in arrayPropertyData.Value) {
-                                            if (arrayItem is NamePropertyData arrayNamePropertyData) {
-                                                refArray.Add(arrayNamePropertyData.Value.Value.ToString());
-                                            } else if (arrayItem is IntPropertyData arrayIntPropertyData) {
-                                                refArray.Add(arrayIntPropertyData.Value);
-                                            }
+                        foreach (PropertyData propertyData in structPropertyData.Value) {
+                            string propertyName = propertyData.Name.Value.ToString();
+                            string propertyNameSnakeCase = CamelCaseToSnakeCase(propertyName);
+                            try {
+                                if (propertyData is NamePropertyData namePropertyData) {
+                                    mapRoom[propertyNameSnakeCase] = namePropertyData.Value.Value.ToString();
+                                } else if (propertyData is StrPropertyData strPropertyData) {
+                                    FString strPropertyValue = strPropertyData.Value;
+                                    mapRoom[propertyNameSnakeCase] = (strPropertyValue == null) ? null : strPropertyValue.Value;
+                                } else if (propertyData is BytePropertyData bytePropertyData) {
+                                    mapRoom[propertyNameSnakeCase] = bytePropertyData.Value.ToString();
+                                } else if (propertyData is BoolPropertyData boolPropertyData) {
+                                    mapRoom[propertyNameSnakeCase] = boolPropertyData.Value;
+                                } else if (propertyData is IntPropertyData intPropertyData) {
+                                    mapRoom[propertyNameSnakeCase] = intPropertyData.Value;
+                                } else if (propertyData is FloatPropertyData floatPropertyData) {
+                                    mapRoom[propertyNameSnakeCase] = floatPropertyData.Value;
+                                } else if (propertyData is EnumPropertyData enumPropertyData) {
+                                    mapRoom[propertyNameSnakeCase] = enumPropertyData.Value.Value.ToString();
+                                } else if (propertyData is ArrayPropertyData arrayPropertyData) {
+                                    Godot.Collections.Array refArray = new Godot.Collections.Array();
+                                    foreach (PropertyData arrayItem in arrayPropertyData.Value) {
+                                        if (arrayItem is NamePropertyData arrayNamePropertyData) {
+                                            refArray.Add(arrayNamePropertyData.Value.Value.ToString());
+                                        } else if (arrayItem is IntPropertyData arrayIntPropertyData) {
+                                            refArray.Add(arrayIntPropertyData.Value);
                                         }
-                                        mapRoom[propertyNameSnakeCase] = refArray;
                                     }
-                                } catch (Exception e) {
-                                    GD.Print(propertyName);
-                                    GD.Print(e);
+                                    mapRoom[propertyNameSnakeCase] = refArray;
                                 }
+                            } catch (Exception e) {
+                                GD.Print(propertyName);
+                                GD.Print(e);
                             }
                         }
                         _mapRooms.Add(mapRoom);
@@ -252,6 +250,31 @@ public class UAssetParser : Control {
             if (!System.IO.File.Exists(outputFolder + "/" + levelAssets[key])) {
                 ExtractAssetToFolder(_assetPathToPakFilePathMap[levelAssets[key]], levelAssets[key], outputFolder);
             }
+        }
+    }
+
+    private void EnsureModelCache(string assetPath) {
+        try {
+            string extractAssetOutputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
+            string extractModelOutputFolder = ProjectSettings.GlobalizePath(@"user://ModelCache");
+            string ueViewerPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/UEViewer/umodel_64.exe");
+            if (!System.IO.File.Exists(extractAssetOutputFolder + "/" + assetPath)) {
+                ExtractAssetToFolder(_assetPathToPakFilePathMap[assetPath], assetPath, extractAssetOutputFolder);
+            }
+            if (!System.IO.File.Exists(extractModelOutputFolder + "/" + assetPath.Replace(".uasset", ".gltf"))) {
+                using (Process ueExtract = new Process()) {
+                    ueExtract.StartInfo.FileName = ueViewerPath;
+                    ueExtract.StartInfo.Arguments = @" -path=" + "\"" + extractAssetOutputFolder + "\"" + @" -out=" + "\"" + extractModelOutputFolder + "/BloodstainedRotN/Content/\"" + @" -game=ue4.18 -export -gltf " + assetPath.Replace("BloodstainedRotN/Content/", "/game/");
+                    ueExtract.StartInfo.UseShellExecute = false;
+                    ueExtract.StartInfo.RedirectStandardOutput = true;
+                    ueExtract.Start();
+                    string output = ueExtract.StandardOutput.ReadToEnd();
+                    ueExtract.WaitForExit();
+                }
+            }
+        } catch (Exception e) {
+            GD.Print("Error extracting model asset: ", assetPath);
+            GD.Print(e);
         }
     }
 
@@ -287,7 +310,7 @@ public class UAssetParser : Control {
         // Parse uasset
         try {
             GD.Print("Parsing UAsset ", assetPath);
-            UAsset uAsset = new UAsset(outputPath + "/" + assetPath, UE4Version.VER_UE4_18, true, true);
+            UAsset uAsset = new UAsset(outputPath + "/" + assetPath, UE4Version.VER_UE4_18);
             GD.Print("Data preserved: " + (uAsset.VerifyParsing() ? "YES" : "NO"));
 
             int blueprintExportIndex = -1;
@@ -296,7 +319,7 @@ public class UAssetParser : Control {
             int exportIndex = 0;
             foreach (Export baseExport in uAsset.Exports) {
                 if (baseExport is NormalExport export) {
-                    FName objectFName = export.ReferenceData.ObjectName;
+                    FName objectFName = export.ObjectName;
                     if (objectName == objectFName.Value + "(" +  objectFName.Number + ")") {
                         blueprintExportIndex = exportIndex;
                         break;
@@ -338,13 +361,24 @@ public class UAssetParser : Control {
         if (_blueprintSnippets.ContainsKey(dictionaryKey)) {
             UAssetSnippet snippet = _blueprintSnippets[dictionaryKey];
             GD.Print("Parsing UAsset ", targetAssetFilePath);
-            UAsset uAsset = new UAsset(targetAssetFilePath, UE4Version.VER_UE4_18, true, true);
+            UAsset uAsset = new UAsset(targetAssetFilePath, UE4Version.VER_UE4_18);
             GD.Print("Data preserved: " + (uAsset.VerifyParsing() ? "YES" : "NO"));
             snippet.AddToUAsset(uAsset);
             uAsset.Write(targetAssetFilePath);
         } else {
             GD.Print("Cached blueprint not found. ", dictionaryKey);
         }
+    }
+
+    public Godot.Collections.Dictionary<string, object> GetRoomDefinition(string levelName) {
+        ExtractRoomAssets(levelName);
+        string outputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
+        Godot.Collections.Dictionary<string, object> roomDefinition = new Godot.Collections.Dictionary<string, object>();
+        Godot.Collections.Dictionary<string, string> levelAssets = _levelNameToAssetPathMap[levelName];
+        if (levelAssets.ContainsKey("bg")) {
+            roomDefinition["bg"] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets["bg"], UE4Version.VER_UE4_18));
+        }
+        return roomDefinition;
     }
 
     public static string CamelCaseToSnakeCase(string text) {

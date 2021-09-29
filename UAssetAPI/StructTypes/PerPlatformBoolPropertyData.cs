@@ -9,13 +9,17 @@ namespace UAssetAPI.StructTypes
     {
         public PerPlatformBoolPropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("PerPlatformBool");
+
         }
 
         public PerPlatformBoolPropertyData()
         {
-            Type = new FName("PerPlatformBool");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("PerPlatformBool");
+        public override bool HasCustomStructSerialization { get { return true; } }
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
@@ -44,7 +48,7 @@ namespace UAssetAPI.StructTypes
             {
                 writer.Write(Value[i]);
             }
-            return sizeof(bool) * Value.Length;
+            return sizeof(int) + sizeof(bool) * Value.Length;
         }
 
         public override void FromString(string[] d)

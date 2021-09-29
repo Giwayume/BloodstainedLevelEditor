@@ -1,13 +1,33 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace UAssetAPI.PropertyTypes
 {
-    public abstract class PropertyData
+    /// <summary>
+    /// Generic property class.
+    /// </summary>
+    public abstract class PropertyData : ICloneable
     {
+        /// <summary>
+        /// The name of this property.
+        /// </summary>
         public FName Name = new FName("");
-        public FName Type = new FName("");
+
+        /// <summary>
+        /// The duplication index of this property. Used to distinguish properties with the same name in the same struct.
+        /// </summary>
         public int DuplicationIndex = 0;
+
+        /// <summary>
+        /// The offset of this property on disk. This is for the user only, and has no bearing in the API itself.
+        /// </summary>
+        public long Offset = -1;
+
+        /// <summary>
+        /// The asset that this property is parsed with.
+        /// </summary>
         public UAsset Asset;
+
         public object RawValue;
 
         public void SetObject(object value)
@@ -31,6 +51,10 @@ namespace UAssetAPI.PropertyTypes
 
         }
 
+        private static FName FallbackPropertyType = new FName(string.Empty);
+        public virtual bool HasCustomStructSerialization { get { return false; } }
+        public virtual FName PropertyType { get { return FallbackPropertyType; } }
+
         public virtual void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
 
@@ -46,10 +70,32 @@ namespace UAssetAPI.PropertyTypes
         {
 
         }
+
+        /// <summary>
+        /// Performs a deep clone of the current PropertyData instance.
+        /// </summary>
+        /// <returns>A deep copy of the current property.</returns>
+        public object Clone()
+        {
+            var res = (PropertyData)MemberwiseClone();
+            res.Name = (FName)this.Name.Clone();
+            if (res.RawValue is ICloneable cloneableValue) res.RawValue = cloneableValue.Clone();
+
+            HandleCloned(res);
+            return res;
+        }
+
+        protected virtual void HandleCloned(PropertyData res)
+        {
+            // Child classes can implement this for custom cloning behavior
+        }
     }
 
     public abstract class PropertyData<T> : PropertyData
     {
+        /// <summary>
+        /// The main value of this property. Properties may contain other values as well, in which case they will be present as other fields in the child class.
+        /// </summary>
         public T Value
         {
             get => GetObject<T>();

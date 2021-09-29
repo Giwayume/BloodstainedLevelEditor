@@ -3,6 +3,9 @@ using System.IO;
 
 namespace UAssetAPI.PropertyTypes
 {
+    /// <summary>
+    /// Describes a function bound to an Object.
+    /// </summary>
     public class FMulticastDelegate
     {
         /** Uncertain what this is for; if you find out, please let me know */
@@ -22,18 +25,23 @@ namespace UAssetAPI.PropertyTypes
         }
     }
 
-
+    /// <summary>
+    /// Describes a list of functions bound to an Object.
+    /// </summary>
     public class MulticastDelegatePropertyData : PropertyData<FMulticastDelegate[]>
     {
         public MulticastDelegatePropertyData(FName name, UAsset asset) : base(name, asset)
         {
-            Type = new FName("MulticastDelegateProperty");
+
         }
 
         public MulticastDelegatePropertyData()
         {
-            Type = new FName("MulticastDelegateProperty");
+
         }
+
+        private static readonly FName CurrentPropertyType = new FName("MulticastDelegateProperty");
+        public override FName PropertyType { get { return CurrentPropertyType; } }
 
         public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
@@ -79,6 +87,19 @@ namespace UAssetAPI.PropertyTypes
         public override void FromString(string[] d)
         {
             
+        }
+
+        protected override void HandleCloned(PropertyData res)
+        {
+            MulticastDelegatePropertyData cloningProperty = (MulticastDelegatePropertyData)res;
+
+            FMulticastDelegate[] newData = new FMulticastDelegate[this.Value.Length];
+            for (int i = 0; i < this.Value.Length; i++)
+            {
+                newData[i] = new FMulticastDelegate(this.Value[i].Number, (FName)this.Value[i].Delegate.Clone());
+            }
+
+            cloningProperty.Value = newData;
         }
     }
 }

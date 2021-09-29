@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>UAssetAPI</RootNamespace>
     <AssemblyName>UAssetAPI</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -43,18 +44,33 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CustomVersion.cs" />
+    <Compile Include="ExportTypes\ClassExport.cs" />
+    <Compile Include="ExportTypes\DataTableExport.cs" />
+    <Compile Include="ExportTypes\LevelExport.cs" />
+    <Compile Include="ExportTypes\NormalExport.cs" />
+    <Compile Include="ExportTypes\FunctionExport.cs" />
+    <Compile Include="ExportTypes\RawExport.cs" />
+    <Compile Include="ExportTypes\EnumExport.cs" />
+    <Compile Include="ExportTypes\StringTableExport.cs" />
+    <Compile Include="ExportTypes\StructExport.cs" />
+    <Compile Include="FieldTypes\FField.cs" />
     <Compile Include="FName.cs" />
     <Compile Include="Flags.cs" />
+    <Compile Include="FObjectResource.cs" />
+    <Compile Include="FPackageIndex.cs" />
     <Compile Include="FWorldTileInfo.cs" />
+    <Compile Include="StructTypes\SkeletalMeshSamplingLODBuiltDataPropertyData.cs" />
+    <Compile Include="StructTypes\SkeletalMeshAreaWeightedTriangleSamplerPropertyData.cs" />
+    <Compile Include="StructTypes\SoftObjectPathPropertyData.cs" />
+    <Compile Include="StructTypes\WeightedRandomSamplerPropertyData.cs" />
     <Compile Include="UAsset.cs" />
-    <Compile Include="Export.cs" />
-    <Compile Include="ExportDetails.cs" />
+    <Compile Include="ExportTypes\Export.cs" />
     <Compile Include="CRCGenerator.cs" />
     <Compile Include="PropertyTypes\ArrayPropertyData.cs" />
     <Compile Include="PropertyTypes\SetPropertyData.cs" />
     <Compile Include="PropertyTypes\BoolPropertyData.cs" />
     <Compile Include="PropertyTypes\BytePropertyData.cs" />
-    <Compile Include="PropertyTypes\SoftClassPathPropertyData.cs" />
+    <Compile Include="StructTypes\SoftClassPathPropertyData.cs" />
     <Compile Include="PropertyTypes\UnknownPropertyData.cs" />
     <Compile Include="StructTypes\ColorPropertyData.cs" />
     <Compile Include="StructTypes\MaterialInputProperties.cs" />
@@ -62,7 +78,7 @@
     <Compile Include="StructTypes\PerPlatformBoolPropertyData.cs" />
     <Compile Include="StructTypes\PerPlatformIntPropertyData.cs" />
     <Compile Include="StructTypes\RichCurveKeyProperty.cs" />
-    <Compile Include="PropertyTypes\SoftAssetPathPropertyData.cs" />
+    <Compile Include="StructTypes\SoftAssetPathPropertyData.cs" />
     <Compile Include="StructTypes\TimespanPropertyData.cs" />
     <Compile Include="StructTypes\DateTimePropertyData.cs" />
     <Compile Include="PropertyTypes\EnumPropertyData.cs" />
@@ -100,9 +116,6 @@
     <Compile Include="StructTypes\ViewTargetBlendParamsPropertyData.cs" />
     <Compile Include="UE4Version.cs" />
     <Compile Include="UAPUtils.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
