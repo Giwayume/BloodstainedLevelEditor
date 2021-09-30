@@ -72,7 +72,7 @@ margin_right = 63.0
 margin_bottom = 22.0
 focus_mode = 2
 text = "Package"
-items = [ "Test In-Game", null, 0, false, false, 0, 0, null, "", false, "Edit Map", null, 0, false, false, 1, 0, null, "", false, "", null, 0, false, false, 2, 0, null, "", true, "Exit", null, 0, false, false, 3, 0, null, "", false ]
+items = [ "Test In-Game", null, 0, false, false, 0, 0, null, "", false, "View Map", null, 0, false, false, 1, 0, null, "", false, "", null, 0, false, false, 2, 0, null, "", true, "Exit", null, 0, false, false, 3, 0, null, "", false ]
 switch_on_hover = true
 
 [node name="EditMenuButton" type="MenuButton" parent="EditorContainer/VBoxContainer/MenuBarContainer/HBoxContainer"]

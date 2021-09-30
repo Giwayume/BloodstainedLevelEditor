@@ -26,6 +26,8 @@ var is_extracting_3d_models: bool = false
 var bg_root: Spatial
 
 var gltf_loader: DynamicGLTFLoader
+var cached_models: Dictionary
+
 var room_definition: Dictionary
 var model_load_waitlist: Array = []
 var current_waitlist_item: Dictionary
@@ -52,8 +54,19 @@ func start_extract_3d_model_thread():
 	if not is_extracting_3d_models:
 		is_extracting_3d_models = true
 		emit_signal("loading_start")
-	extract_3d_model_thread = Thread.new()
-	extract_3d_model_thread.start(self, "extract_3d_model_thread_function")
+	
+	# Check if model already cached, callback immediately if so
+	var package_path = current_waitlist_item["definition"]["static_mesh_asset_path"]
+	if cached_models.has(package_path):
+		extract_3d_model_thread = null
+		var loaded_model = cached_models[package_path]
+		if loaded_model != null:
+			current_waitlist_item["callback_instance"].call_deferred(current_waitlist_item["callback_method"], loaded_model.duplicate(0))
+		end_extract_3d_model_thread()
+	# Start thread to load model if not cached
+	else:
+		extract_3d_model_thread = Thread.new()
+		extract_3d_model_thread.start(self, "extract_3d_model_thread_function")
 
 func extract_3d_model_thread_function(_noop):
 	if (current_waitlist_item.has("definition") and current_waitlist_item["definition"].has("static_mesh_asset_path")):
@@ -62,18 +75,27 @@ func extract_3d_model_thread_function(_noop):
 	call_deferred("end_extract_3d_model_thread")
 
 func end_extract_3d_model_thread():
-	extract_3d_model_thread.wait_to_finish()
+	if extract_3d_model_thread != null:
+		extract_3d_model_thread.wait_to_finish()
 	
-	var model_cache_path = ProjectSettings.globalize_path(@"user://ModelCache")
 	var package_path = current_waitlist_item["definition"]["static_mesh_asset_path"]
-	var model_full_path = model_cache_path + "/" + package_path.replace(".uasset", ".gltf");
-	var loaded_model = gltf_loader.import_scene(model_full_path, 1, 1);
-	if loaded_model != null:
-		current_waitlist_item["callback_instance"].call_deferred(current_waitlist_item["callback_method"], loaded_model)
+	if not cached_models.has(package_path):
+		var model_cache_path = ProjectSettings.globalize_path(@"user://ModelCache")
+		var model_full_path = model_cache_path + "/" + package_path.replace(".uasset", ".gltf");
+		var loaded_model = gltf_loader.import_scene(model_full_path, 1, 1);
+		if uasset_parser.CachedModelResourcesByAssetPath.has(package_path):
+			var model_resources = uasset_parser.CachedModelResourcesByAssetPath[package_path]
+			for child_node in loaded_model.get_children():
+				if child_node is MeshInstance:
+					for i in child_node.get_surface_material_count():
+						print_debug(child_node.get_surface_material(i))
+		cached_models[package_path] = loaded_model
+		if loaded_model != null:
+			current_waitlist_item["callback_instance"].call_deferred(current_waitlist_item["callback_method"], loaded_model.duplicate(0))
 	
 	if len(model_load_waitlist) > 0:
 		current_waitlist_item = model_load_waitlist.pop_front()
-		call_deferred("start_extract_3d_model_thread")
+		start_extract_3d_model_thread()
 	else:
 		is_extracting_3d_models = false
 		emit_signal("loading_end")

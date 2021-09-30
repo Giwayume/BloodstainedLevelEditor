@@ -60,6 +60,19 @@ public class UAssetParser : Control {
     }
 
     /**
+     * When EnsureModelCache is called, this dictionary is populated with lists of material/texture assets used by the model (by asset path)
+     */
+    private Godot.Collections.Dictionary<string, object> _cachedModelResourcesByAssetPath = new Godot.Collections.Dictionary<string, object>();
+    public Godot.Collections.Dictionary<string, object> CachedModelResourcesByAssetPath {
+        get {
+            return _cachedModelResourcesByAssetPath;
+        }
+        set {
+            _cachedModelResourcesByAssetPath = value;
+        }
+    }
+
+    /**
      * Map of "filename|uassetPath|objectName" key to snippet object for blueprint reuse.
      */
     private Dictionary<string, UAssetSnippet> _blueprintSnippets = new Dictionary<string, UAssetSnippet>();
@@ -258,13 +271,23 @@ public class UAssetParser : Control {
             string extractAssetOutputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
             string extractModelOutputFolder = ProjectSettings.GlobalizePath(@"user://ModelCache");
             string ueViewerPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/UEViewer/umodel_64.exe");
+
+            // Extract model uasset to output folder
             if (!System.IO.File.Exists(extractAssetOutputFolder + "/" + assetPath)) {
+                _cachedModelResourcesByAssetPath.Remove(assetPath);
                 ExtractAssetToFolder(_assetPathToPakFilePathMap[assetPath], assetPath, extractAssetOutputFolder);
             }
+
+            // Extract material imports inside model
+            if (!_cachedModelResourcesByAssetPath.ContainsKey(assetPath)) {
+                _cachedModelResourcesByAssetPath[assetPath] = ExtractModelMaterialsRecursive(assetPath);
+            }
+
+            // Extract gltf and png textures from model uasset
             if (!System.IO.File.Exists(extractModelOutputFolder + "/" + assetPath.Replace(".uasset", ".gltf"))) {
                 using (Process ueExtract = new Process()) {
                     ueExtract.StartInfo.FileName = ueViewerPath;
-                    ueExtract.StartInfo.Arguments = @" -path=" + "\"" + extractAssetOutputFolder + "\"" + @" -out=" + "\"" + extractModelOutputFolder + "/BloodstainedRotN/Content/\"" + @" -game=ue4.18 -export -gltf " + assetPath.Replace("BloodstainedRotN/Content/", "/game/");
+                    ueExtract.StartInfo.Arguments = @" -export -path=" + "\"" + extractAssetOutputFolder + "\"" + @" -out=" + "\"" + extractModelOutputFolder + "/BloodstainedRotN/Content/\"" + @" -game=ue4.18 -gltf -png " + assetPath;
                     ueExtract.StartInfo.UseShellExecute = false;
                     ueExtract.StartInfo.RedirectStandardOutput = true;
                     ueExtract.Start();
@@ -276,6 +299,44 @@ public class UAssetParser : Control {
             GD.Print("Error extracting model asset: ", assetPath);
             GD.Print(e);
         }
+    }
+
+    public Godot.Collections.Array<Godot.Collections.Dictionary<string, object>> ExtractModelMaterialsRecursive(string assetPath) {
+        Godot.Collections.Array<Godot.Collections.Dictionary<string, object>> extractedMaterials = new Godot.Collections.Array<Godot.Collections.Dictionary<string, object>>();
+        string extractAssetOutputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
+        string assetFileName = assetPath.Split("/").Last();
+        UAsset asset = new UAsset(extractAssetOutputFolder + "/" + assetPath, UE4Version.VER_UE4_18);
+        // Assume is mesh
+        if (!assetFileName.StartsWith("MI_")) {
+            foreach (Export export in asset.Exports) {
+
+            }
+        }
+        // Build list of materials.
+        foreach (Import import in asset.Imports) {
+            if (import.ClassName.Value.Value == "Package") {
+                if (import.ObjectName.Value.Value.StartsWith("/Game")) {
+                    if (import.ObjectName.Value.Value.Split("/").Last().StartsWith("MI_")) {
+                        string materialAssetPath = import.ObjectName.Value.Value.Replace("/Game/", "BloodstainedRotN/Content/") + ".uasset";
+                        // extractedAssetPaths.Add(materialAssetPath);
+                        try {
+                            if (!System.IO.File.Exists(extractAssetOutputFolder + "/" + materialAssetPath)) {
+                                ExtractAssetToFolder(_assetPathToPakFilePathMap[materialAssetPath], materialAssetPath, extractAssetOutputFolder);
+                            }
+                            // extractedAssetPaths = extractedAssetPaths.Concat(ExtractModelMaterialsRecursive(materialAssetPath)).ToList();
+                        } catch (Exception e) {
+                            GD.Print("Failed to extract material " + materialAssetPath);
+                            GD.Print(e);
+                        }
+                    }
+                    else if (import.ObjectName.Value.Value.Split("/").Last().StartsWith("T_")) {
+                        string textureAssetPath = import.ObjectName.Value.Value.Replace("/Game/", "BloodstainedRotN/Content/") + ".uasset";
+                        // extractedAssetPaths.Add(textureAssetPath);
+                    }
+                }
+            }
+        }
+        return extractedMaterials;
     }
 
     public void PackageAndInstallMod(string packageName) {
