@@ -13,9 +13,15 @@ _global_script_classes=[ {
 "class": "EditorConfig",
 "language": "GDScript",
 "path": "res://Utility/EditorConfig.gd"
+}, {
+"base": "Reference",
+"class": "MeshRayCast",
+"language": "GDScript",
+"path": "res://Utility/MeshRayCast.gd"
 } ]
 _global_script_class_icons={
-"EditorConfig": ""
+"EditorConfig": "",
+"MeshRayCast": ""
 }
 
 [application]
@@ -35,6 +41,10 @@ UAssetParser="*res://Scenes/UAssetParser.cs"
 
 gdscript/warnings/return_value_discarded=false
 
+[editor_plugins]
+
+enabled=PoolStringArray( "res://addons/Line3D/plugin.cfg" )
+
 [global]
 
 unit=false
@@ -46,6 +56,7 @@ theme/custom="res://EditorTheme/MainTheme.tres"
 [layer_names]
 
 2d_render/layer_1="default"
+3d_render/layer_1="default"
 
 [physics]
 

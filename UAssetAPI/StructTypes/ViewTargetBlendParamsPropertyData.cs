@@ -1,9 +1,14 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System;
 using System.IO;
 using UAssetAPI.PropertyTypes;
 
 namespace UAssetAPI.StructTypes
 {
+    /// <summary>
+    /// Options that define how to blend when changing view targets in <see cref="ViewTargetBlendParamsPropertyData"/>.
+    /// </summary>
     public enum ViewTargetBlendFunction
     {
         /** Camera does a simple linear interpolation. */
@@ -19,15 +24,23 @@ namespace UAssetAPI.StructTypes
         VTBlend_MAX,
     }
 
-    // Referred to as FViewTargetTransitionParams in the UE4 src
+    /// <summary>
+    /// A set of parameters to describe how to transition between view targets.
+    /// Referred to as FViewTargetTransitionParams in the Unreal Engine.
+    /// </summary>
     public class ViewTargetBlendParamsPropertyData : PropertyData
     {
+        [JsonProperty]
         public float BlendTime;
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
         public ViewTargetBlendFunction BlendFunction;
+        [JsonProperty]
         public float BlendExp;
+        [JsonProperty]
         public bool bLockOutgoing;
 
-        public ViewTargetBlendParamsPropertyData(FName name, UAsset asset) : base(name, asset)
+        public ViewTargetBlendParamsPropertyData(FName name) : base(name)
         {
 
         }
@@ -41,7 +54,7 @@ namespace UAssetAPI.StructTypes
         public override bool HasCustomStructSerialization { get { return true; } }
         public override FName PropertyType { get { return CurrentPropertyType; } }
 
-        public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
+        public override void Read(AssetBinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
             if (includeHeader)
             {
@@ -54,7 +67,7 @@ namespace UAssetAPI.StructTypes
             bLockOutgoing = reader.ReadInt32() != 0;
         }
 
-        public override int Write(BinaryWriter writer, bool includeHeader)
+        public override int Write(AssetBinaryWriter writer, bool includeHeader)
         {
             if (includeHeader)
             {
@@ -68,7 +81,7 @@ namespace UAssetAPI.StructTypes
             return sizeof(float) * 2 + sizeof(byte) + sizeof(int);
         }
 
-        public override void FromString(string[] d)
+        public override void FromString(string[] d, UAsset asset)
         {
             if (float.TryParse(d[0], out float res1)) BlendTime = res1;
             if (Enum.TryParse(d[1], out ViewTargetBlendFunction res2)) BlendFunction = res2;

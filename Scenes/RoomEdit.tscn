@@ -1,8 +1,7 @@
-[gd_scene load_steps=7 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://Scenes/RoomEdit.gd" type="Script" id=1]
 [ext_resource path="res://Scenes/Room3dDisplay.tscn" type="PackedScene" id=2]
-[ext_resource path="res://EditorTheme/PanelContainerForeground.tres" type="StyleBox" id=3]
 
 [sub_resource type="StyleBoxEmpty" id=1]
 content_margin_left = 4.0
@@ -114,6 +113,7 @@ stretch = true
 [node name="Viewport" type="Viewport" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer/Room3dViewportContainer"]
 size = Vector2( 761, 552 )
 handle_input_locally = false
+msaa = 2
 render_target_update_mode = 3
 
 [node name="Room3dDisplay" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/PanelContainer/Room3dViewportContainer/Viewport" instance=ExtResource( 2 )]
@@ -167,12 +167,9 @@ margin_top = 29.0
 margin_right = -5.0
 margin_bottom = -5.0
 
-[node name="Label" type="Label" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/BG"]
+[node name="BackgroundTree" type="Tree" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/BG"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-size_flags_horizontal = 3
-text = "Background editing is not available yet."
-autowrap = true
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -226,38 +223,56 @@ size_flags_vertical = 3
 custom_constants/margin_right = 8
 custom_constants/margin_bottom = 8
 
-[node name="PanelContainer" type="PanelContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer"]
+[node name="TabContainer" type="TabContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer"]
 margin_right = 237.0
 margin_bottom = 269.0
-custom_styles/panel = ExtResource( 3 )
+tab_align = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer"]
+[node name="Inspector" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
 margin_left = 5.0
-margin_top = 5.0
-margin_right = 232.0
-margin_bottom = 264.0
+margin_top = 29.0
+margin_right = -5.0
+margin_bottom = -5.0
 
-[node name="GridContainer" type="GridContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer/VBoxContainer"]
+[node name="Assets" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 5.0
+margin_top = 29.0
+margin_right = -5.0
+margin_bottom = -5.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Assets"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="GridContainer" type="GridContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Assets/VBoxContainer"]
 margin_right = 227.0
 margin_bottom = 22.0
 columns = 2
 
-[node name="LineEdit" type="LineEdit" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer/VBoxContainer/GridContainer"]
+[node name="LineEdit" type="LineEdit" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Assets/VBoxContainer/GridContainer"]
 margin_right = 179.0
 margin_bottom = 22.0
 size_flags_horizontal = 3
 placeholder_text = "Filter Assets..."
 
-[node name="Button" type="Button" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer/VBoxContainer/GridContainer"]
+[node name="Button" type="Button" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Assets/VBoxContainer/GridContainer"]
 margin_left = 183.0
 margin_right = 227.0
 margin_bottom = 22.0
 text = "Clear"
 
-[node name="ItemList" type="ItemList" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/PanelContainer/VBoxContainer"]
+[node name="ItemList" type="ItemList" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Assets/VBoxContainer"]
 margin_top = 26.0
 margin_right = 227.0
-margin_bottom = 259.0
+margin_bottom = 235.0
 size_flags_vertical = 3
 
 [node name="LoadingStatusContainer" type="Control" parent="."]

@@ -3,6 +3,8 @@ extends Control
 var folder_path: String = ""
 var default_install_locations: Array = [
 	"C:/Program Files/Steam/steamapps/common/Bloodstained Ritual of the Night",
+	"C:/Program Files (x86)/Steam/steamapps/common/Bloodstained Ritual of the Night",
+	"C:/Program Files/GOG Galaxy/Games/Bloodstained Ritual of the Night",
 	"C:/Program Files (x86)/GOG Galaxy/Games/Bloodstained Ritual of the Night",
 	"X:/Steam/steamapps/common/Bloodstained Ritual of the Night"
 ]

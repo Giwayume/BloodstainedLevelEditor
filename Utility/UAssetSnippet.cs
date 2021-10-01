@@ -1,7 +1,6 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -30,7 +29,7 @@ public class UAssetSnippet {
         public List<int> UsedExports = default(List<int>);
         private static readonly FName CurrentPropertyType = new FName("DetachedObjectProperty");
         public override FName PropertyType { get { return CurrentPropertyType; } }
-        public DetachedObjectPropertyData(FName name, UAsset asset, List<int> usedExports) : base(name, asset) {
+        public DetachedObjectPropertyData(FName name, List<int> usedExports) : base(name) {
             UsedExports = usedExports;
         }
         public DetachedObjectPropertyData() {}
@@ -72,13 +71,13 @@ public class UAssetSnippet {
         importIndex = 0;
         foreach (Import import in OriginalUAsset.Imports) {
             UAssetImportTreeItem importTreeItem = ImportTree[importIndex];
-            if (import.OuterIndex < 0) {
-                int parentImportIndex = import.OuterIndex;
+            if (import.OuterIndex.Index < 0) {
+                int parentImportIndex = import.OuterIndex.Index;
                 while (parentImportIndex != 0) {
                     int arrayParentIndex = Math.Abs(parentImportIndex) - 1;
                     if (arrayParentIndex >= 0 && arrayParentIndex < ImportTree.Count) {
                         importTreeItem.ParentImports.Add(arrayParentIndex);
-                        parentImportIndex = OriginalUAsset.Imports[arrayParentIndex].OuterIndex;
+                        parentImportIndex = OriginalUAsset.Imports[arrayParentIndex].OuterIndex.Index;
                     } else {
                         break;
                     }
@@ -220,11 +219,11 @@ public class UAssetSnippet {
             if (newlyAddedImports.IndexOf(i) > -1) {
                 int mappedImportIndex = mappedImports[i];
                 try {
-                    int arrayOuterIndex = Math.Abs(attachToAsset.Imports[mappedImportIndex].OuterIndex) - 1;
+                    int arrayOuterIndex = Math.Abs(attachToAsset.Imports[mappedImportIndex].OuterIndex.Index) - 1;
                     // Reassign outerIndex if it's not 0 (top level package)
                     if (arrayOuterIndex != -1) {
                         int usedImportIndex = UsedImports.IndexOf(arrayOuterIndex);
-                        attachToAsset.Imports[mappedImportIndex].OuterIndex = -(mappedImports[usedImportIndex] + 1);
+                        attachToAsset.Imports[mappedImportIndex].OuterIndex.Index = -(mappedImports[usedImportIndex] + 1);
                     }
                 } catch (Exception e) {
                     GD.Print(e);
@@ -261,7 +260,7 @@ public class UAssetSnippet {
         foreach (Export baseExport in attachToAsset.Exports) {
             if (baseExport is LevelExport levelExport) {
                 levelExport.IndexData.Add(exportStartIndex + 1);
-                attachToAsset.Exports[exportStartIndex].OuterIndex = exportNumber;
+                attachToAsset.Exports[exportStartIndex].OuterIndex.Index = exportNumber;
                 break;
             }
             exportNumber++;
@@ -295,11 +294,11 @@ public class UAssetSnippet {
     }
 
     public Export CloneExport(Export export, UAsset attachToAsset, int exportStartIndex) {
-        int newOuterIndex = UsedExports.IndexOf(export.OuterIndex - 1);
+        int newOuterIndex = UsedExports.IndexOf(export.OuterIndex.Index - 1);
         if (newOuterIndex != -1) {
             newOuterIndex += exportStartIndex + 1;
         } else {
-            newOuterIndex = export.OuterIndex;
+            newOuterIndex = export.OuterIndex.Index;
         }
         byte[] extras = new byte[export.Extras.Length];
         export.Extras.CopyTo(extras, 0);
@@ -310,7 +309,7 @@ public class UAssetSnippet {
         newExport.ClassIndex = export.ClassIndex;
         newExport.SuperIndex = export.SuperIndex;
         newExport.TemplateIndex = export.TemplateIndex;
-        newExport.OuterIndex = newOuterIndex;
+        newExport.OuterIndex = FPackageIndex.FromRawIndex(newOuterIndex);
         newExport.ObjectName = export.ObjectName;
         newExport.ObjectFlags = export.ObjectFlags;
         newExport.SerialSize = Convert.ToInt32(export.SerialSize);
@@ -354,17 +353,17 @@ public class UAssetSnippet {
             FName newPropertyName = new FName(propertyData.Name.Value.Value, propertyData.Name.Number);
             attachToAsset.AddNameReference(newPropertyName.Value);
             if (propertyData is ArrayPropertyData arrayPropertyData) {
-                ArrayPropertyData newArrayPropertyData = new ArrayPropertyData(newPropertyName, attachToAsset);
+                ArrayPropertyData newArrayPropertyData = new ArrayPropertyData(newPropertyName);
                 newArrayPropertyData.Value = ClonePropertyData(arrayPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex).ToArray();
                 newPropertyDataList.Add(newArrayPropertyData);
             }
             else if (propertyData is BoolPropertyData boolPropertyData) {
-                BoolPropertyData newBoolPropertyData = new BoolPropertyData(newPropertyName, attachToAsset);
+                BoolPropertyData newBoolPropertyData = new BoolPropertyData(newPropertyName);
                 newBoolPropertyData.Value = boolPropertyData.Value;
                 newPropertyDataList.Add(newBoolPropertyData);
             }
             else if (propertyData is BytePropertyData bytePropertyData) {
-                BytePropertyData newBytePropertyData = new BytePropertyData(newPropertyName, attachToAsset);
+                BytePropertyData newBytePropertyData = new BytePropertyData(newPropertyName);
                 newBytePropertyData.ByteType = bytePropertyData.ByteType;
                 FString byteValueName = OriginalUAsset.GetNameReference(bytePropertyData.Value);
                 attachToAsset.AddNameReference(byteValueName);
@@ -375,7 +374,7 @@ public class UAssetSnippet {
                 newPropertyDataList.Add(newBytePropertyData);
             }
             else if (propertyData is EnumPropertyData enumPropertyData) {
-                EnumPropertyData newEnumPropertyData = new EnumPropertyData(newPropertyName, attachToAsset);
+                EnumPropertyData newEnumPropertyData = new EnumPropertyData(newPropertyName);
                 FName newEnumValue = new FName(enumPropertyData.Value.Value.Value, enumPropertyData.Value.Number);
                 FName newEnumType = new FName(enumPropertyData.EnumType.Value.Value, enumPropertyData.EnumType.Number);
                 attachToAsset.AddNameReference(newEnumValue.Value);
@@ -385,47 +384,35 @@ public class UAssetSnippet {
                 newPropertyDataList.Add(newEnumPropertyData);
             }
             else if (propertyData is FloatPropertyData floatPropertyData) {
-                FloatPropertyData newFloatPropertyData = new FloatPropertyData(newPropertyName, attachToAsset);
+                FloatPropertyData newFloatPropertyData = new FloatPropertyData(newPropertyName);
                 newFloatPropertyData.Value = floatPropertyData.Value;
                 newPropertyDataList.Add(newFloatPropertyData);
             }
             else if (propertyData is Int8PropertyData int8PropertyData) {
-                Int8PropertyData newInt8PropertyData = new Int8PropertyData(newPropertyName, attachToAsset);
+                Int8PropertyData newInt8PropertyData = new Int8PropertyData(newPropertyName);
                 newInt8PropertyData.Value = int8PropertyData.Value;
                 newPropertyDataList.Add(newInt8PropertyData);
             }
             else if (propertyData is Int16PropertyData int16PropertyData) {
-                Int16PropertyData newInt16PropertyData = new Int16PropertyData(newPropertyName, attachToAsset);
+                Int16PropertyData newInt16PropertyData = new Int16PropertyData(newPropertyName);
                 newInt16PropertyData.Value = int16PropertyData.Value;
                 newPropertyDataList.Add(newInt16PropertyData);
             }
             else if (propertyData is Int64PropertyData int64PropertyData) {
-                Int64PropertyData newInt64PropertyData = new Int64PropertyData(newPropertyName, attachToAsset);
+                Int64PropertyData newInt64PropertyData = new Int64PropertyData(newPropertyName);
                 newInt64PropertyData.Value = int64PropertyData.Value;
                 newPropertyDataList.Add(newInt64PropertyData);
             }
             else if (propertyData is IntPropertyData intPropertyData) {
-                IntPropertyData newIntPropertyData = new IntPropertyData(newPropertyName, attachToAsset);
+                IntPropertyData newIntPropertyData = new IntPropertyData(newPropertyName);
                 newIntPropertyData.Value = intPropertyData.Value;
                 newPropertyDataList.Add(newIntPropertyData);
             }
             else if (propertyData is MapPropertyData mapPropertyData) {
-                MapPropertyData newMapPropertyData = new MapPropertyData(newPropertyName, attachToAsset);
-                newMapPropertyData.Value = (OrderedDictionary)DeepClone(mapPropertyData.Value);
-                FName[] newDummyEntry = new FName[mapPropertyData.dummyEntry.Length];
-                for (int i = 0; i < mapPropertyData.dummyEntry.Length; i++) {
-                    FName dummyEntry = mapPropertyData.dummyEntry[i];
-                    attachToAsset.AddNameReference(dummyEntry.Value);
-                    newDummyEntry[i] = new FName(dummyEntry.Value.Value);
-                }
-                newMapPropertyData.dummyEntry = mapPropertyData.dummyEntry; // TODO - Need new object?
-                if (newMapPropertyData.KeysToRemove != null) {
-                    newMapPropertyData.KeysToRemove = (OrderedDictionary)DeepClone(mapPropertyData.Value);
-                }
-                newPropertyDataList.Add(newMapPropertyData);
+                newPropertyDataList.Add((MapPropertyData)mapPropertyData.Clone());
             }
             else if (propertyData is MulticastDelegatePropertyData multicastDelegatePropertyData) {
-                MulticastDelegatePropertyData newMulticastDelegatePropertyData = new MulticastDelegatePropertyData(newPropertyName, attachToAsset);
+                MulticastDelegatePropertyData newMulticastDelegatePropertyData = new MulticastDelegatePropertyData(newPropertyName);
                 FMulticastDelegate[] newValue = new FMulticastDelegate[multicastDelegatePropertyData.Value.Length];
                 for (int i = 0; i < multicastDelegatePropertyData.Value.Length; i++) {
                     attachToAsset.AddNameReference(multicastDelegatePropertyData.Value[i].Delegate.Value);
@@ -438,13 +425,13 @@ public class UAssetSnippet {
                 newPropertyDataList.Add(newMulticastDelegatePropertyData);
             }
             else if (propertyData is NamePropertyData namePropertyData) {
-                NamePropertyData newNamePropertyData = new NamePropertyData(newPropertyName, attachToAsset);
+                NamePropertyData newNamePropertyData = new NamePropertyData(newPropertyName);
                 attachToAsset.AddNameReference(namePropertyData.Value.Value);
                 newNamePropertyData.Value = new FName(namePropertyData.Value.Value.Value, namePropertyData.Value.Number);
                 newPropertyDataList.Add(newNamePropertyData);
             }
             else if (propertyData is ObjectPropertyData objectPropertyData) {
-                ObjectPropertyData newObjectPropertyData = new ObjectPropertyData(newPropertyName, attachToAsset);
+                ObjectPropertyData newObjectPropertyData = new ObjectPropertyData(newPropertyName);
                 int newCurrentIndex = UsedExports.IndexOf(objectPropertyData.Value.Index - 1);
                 if (newCurrentIndex != -1) {
                     newCurrentIndex += exportStartIndex + 1;
@@ -455,40 +442,28 @@ public class UAssetSnippet {
                 newPropertyDataList.Add(newObjectPropertyData);
             }
             else if (propertyData is SetPropertyData setPropertyData) {
-                SetPropertyData newSetPropertyData = new SetPropertyData(newPropertyName, attachToAsset);
+                SetPropertyData newSetPropertyData = new SetPropertyData(newPropertyName);
                 newSetPropertyData.Value = ClonePropertyData(setPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex).ToArray();
                 newSetPropertyData.RemovedItems = ClonePropertyData(setPropertyData.RemovedItems.ToList<PropertyData>(), attachToAsset, exportStartIndex).ToArray();
                 newSetPropertyData.RemovedItemsDummyStruct = setPropertyData.RemovedItemsDummyStruct; // TODO - Need new object?
                 newPropertyDataList.Add(newSetPropertyData);
             }
             else if (propertyData is SoftAssetPathPropertyData softAssetPathPropertyData) {
-                SoftAssetPathPropertyData newSoftAssetPathPropertyData = new SoftAssetPathPropertyData(newPropertyName, attachToAsset);
-                attachToAsset.AddNameReference(softAssetPathPropertyData.Value.Value);
-                newSoftAssetPathPropertyData.Value = new FName(softAssetPathPropertyData.Value.Value.Value, softAssetPathPropertyData.Value.Number);
-                newSoftAssetPathPropertyData.ID = softAssetPathPropertyData.ID;
-                newPropertyDataList.Add(newSoftAssetPathPropertyData);
+                newPropertyDataList.Add((SoftAssetPathPropertyData)softAssetPathPropertyData.Clone());
             }
             else if (propertyData is SoftClassPathPropertyData softClassPathPropertyData) {
-                SoftClassPathPropertyData newSoftClassPathPropertyData = new SoftClassPathPropertyData(newPropertyName, attachToAsset);
-                attachToAsset.AddNameReference(softClassPathPropertyData.Value.Value);
-                newSoftClassPathPropertyData.Value = new FName(softClassPathPropertyData.Value.Value.Value, softClassPathPropertyData.Value.Number);
-                newSoftClassPathPropertyData.ID = softClassPathPropertyData.ID;
-                newPropertyDataList.Add(newSoftClassPathPropertyData);
+                newPropertyDataList.Add((SoftClassPathPropertyData)softClassPathPropertyData.Clone());
             }
             else if (propertyData is SoftObjectPropertyData softObjectPropertyData) {
-                SoftObjectPropertyData newSoftObjectPropertyData = new SoftObjectPropertyData(newPropertyName, attachToAsset);
-                attachToAsset.AddNameReference(softObjectPropertyData.Value.Value);
-                newSoftObjectPropertyData.Value = new FName(softObjectPropertyData.Value.Value.Value, softObjectPropertyData.Value.Number);
-                newSoftObjectPropertyData.ID = softObjectPropertyData.ID;
-                newPropertyDataList.Add(newSoftObjectPropertyData);
+                newPropertyDataList.Add((SoftObjectPropertyData)softObjectPropertyData.Clone());
             }
             else if (propertyData is StrPropertyData strPropertyData) {
-                StrPropertyData newStrPropertyData = new StrPropertyData(newPropertyName, attachToAsset);
+                StrPropertyData newStrPropertyData = new StrPropertyData(newPropertyName);
                 newStrPropertyData.Value = strPropertyData.Value;
                 newPropertyDataList.Add(newStrPropertyData);
             }
             else if (propertyData is TextPropertyData textPropertyData) {
-                TextPropertyData newTextPropertyData = new TextPropertyData(newPropertyName, attachToAsset);
+                TextPropertyData newTextPropertyData = new TextPropertyData(newPropertyName);
                 newTextPropertyData.Value = new FString(textPropertyData.Value.Value, textPropertyData.Value.Encoding);
                 newTextPropertyData.Flags = textPropertyData.Flags;
                 newTextPropertyData.HistoryType = textPropertyData.HistoryType;
@@ -507,198 +482,126 @@ public class UAssetSnippet {
                 newPropertyDataList.Add(newTextPropertyData);
             }
             else if (propertyData is UInt16PropertyData uInt16PropertyData) {
-                UInt16PropertyData newUInt16PropertyData = new UInt16PropertyData(newPropertyName, attachToAsset);
+                UInt16PropertyData newUInt16PropertyData = new UInt16PropertyData(newPropertyName);
                 newUInt16PropertyData.Value = uInt16PropertyData.Value;
                 newPropertyDataList.Add(newUInt16PropertyData);
             }
             else if (propertyData is UInt32PropertyData uInt32PropertyData) {
-                UInt32PropertyData newUInt32PropertyData = new UInt32PropertyData(newPropertyName, attachToAsset);
+                UInt32PropertyData newUInt32PropertyData = new UInt32PropertyData(newPropertyName);
                 newUInt32PropertyData.Value = uInt32PropertyData.Value;
                 newPropertyDataList.Add(newUInt32PropertyData);
             }
             else if (propertyData is UInt64PropertyData uInt64PropertyData) {
-                UInt64PropertyData newUInt64PropertyData = new UInt64PropertyData(newPropertyName, attachToAsset);
+                UInt64PropertyData newUInt64PropertyData = new UInt64PropertyData(newPropertyName);
                 newUInt64PropertyData.Value = uInt64PropertyData.Value;
                 newPropertyDataList.Add(newUInt64PropertyData);
             }
             else if (propertyData is UnknownPropertyData unknownPropertyData) {
-                UnknownPropertyData newUnknownPropertyData = new UnknownPropertyData(newPropertyName, attachToAsset);
+                UnknownPropertyData newUnknownPropertyData = new UnknownPropertyData(newPropertyName);
                 newUnknownPropertyData.Value = unknownPropertyData.Value;
                 newPropertyDataList.Add(newUnknownPropertyData);
             }
             else if (propertyData is BoxPropertyData boxPropertyData) {
-                BoxPropertyData newBoxPropertyData = new BoxPropertyData(newPropertyName, attachToAsset);
+                BoxPropertyData newBoxPropertyData = new BoxPropertyData(newPropertyName);
                 newBoxPropertyData.Value = (VectorPropertyData[])ClonePropertyData(boxPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex).ToArray();
                 newBoxPropertyData.IsValid = boxPropertyData.IsValid;
                 newPropertyDataList.Add(newBoxPropertyData);
             }
             else if (propertyData is ColorPropertyData colorPropertyData) {
-                ColorPropertyData newColorPropertyData = new ColorPropertyData(newPropertyName, attachToAsset);
+                ColorPropertyData newColorPropertyData = new ColorPropertyData(newPropertyName);
                 newColorPropertyData.Value = System.Drawing.Color.FromArgb(colorPropertyData.Value.A, colorPropertyData.Value.R, colorPropertyData.Value.G, colorPropertyData.Value.B);
                 newPropertyDataList.Add(newColorPropertyData);
             }
             else if (propertyData is DateTimePropertyData dateTimePropertyData) {
-                DateTimePropertyData newDateTimePropertyData = new DateTimePropertyData(newPropertyName, attachToAsset);
+                DateTimePropertyData newDateTimePropertyData = new DateTimePropertyData(newPropertyName);
                 newDateTimePropertyData.Value = dateTimePropertyData.Value;
                 newPropertyDataList.Add(newDateTimePropertyData);
             }
             else if (propertyData is GameplayTagContainerPropertyData gameplayTagContainerPropertyData) {
-                GameplayTagContainerPropertyData newGameplayTagContainerPropertyData = new GameplayTagContainerPropertyData(newPropertyName, attachToAsset);
+                GameplayTagContainerPropertyData newGameplayTagContainerPropertyData = new GameplayTagContainerPropertyData(newPropertyName);
                 newGameplayTagContainerPropertyData.Value = (NamePropertyData[])ClonePropertyData(gameplayTagContainerPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex).ToArray();
                 newPropertyDataList.Add(newGameplayTagContainerPropertyData);
             }
             else if (propertyData is GuidPropertyData guidPropertyData) {
-                GuidPropertyData newGuidPropertyData = new GuidPropertyData(newPropertyName, attachToAsset);
+                GuidPropertyData newGuidPropertyData = new GuidPropertyData(newPropertyName);
                 newGuidPropertyData.Value = guidPropertyData.Value;
                 newPropertyDataList.Add(newGuidPropertyData);
             }
             else if (propertyData is IntPointPropertyData intPointPropertyData) {
-                IntPointPropertyData newIntPointPropertyData = new IntPointPropertyData(newPropertyName, attachToAsset);
+                IntPointPropertyData newIntPointPropertyData = new IntPointPropertyData(newPropertyName);
                 int[] newValue = new int[intPointPropertyData.Value.Length];
                 intPointPropertyData.Value.CopyTo(newValue, 0);
                 newIntPointPropertyData.Value = newValue;
                 newPropertyDataList.Add(newIntPointPropertyData);
             }
             else if (propertyData is LinearColorPropertyData linearColorPropertyData) {
-                LinearColorPropertyData newLinearColorPropertyData = new LinearColorPropertyData(newPropertyName, attachToAsset);
+                LinearColorPropertyData newLinearColorPropertyData = new LinearColorPropertyData(newPropertyName);
                 newLinearColorPropertyData.Value = new LinearColor(linearColorPropertyData.Value.R, linearColorPropertyData.Value.G, linearColorPropertyData.Value.B, linearColorPropertyData.Value.A);
                 newPropertyDataList.Add(newLinearColorPropertyData);
             }
             else if (propertyData is ExpressionInputPropertyData expressionInputPropertyData) {
-                ExpressionInputPropertyData newExpressionInputPropertyData = new ExpressionInputPropertyData(newPropertyName, attachToAsset);
-                newExpressionInputPropertyData.OutputIndex = expressionInputPropertyData.OutputIndex;
-                newExpressionInputPropertyData.InputName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{expressionInputPropertyData.InputName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newExpressionInputPropertyData.ExpressionName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{expressionInputPropertyData.ExpressionName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newExpressionInputPropertyData.Value = expressionInputPropertyData.Value;
-                newPropertyDataList.Add(newExpressionInputPropertyData);
+                newPropertyDataList.Add((ExpressionInputPropertyData)expressionInputPropertyData.Clone());
             }
             else if (propertyData is MaterialAttributesInputPropertyData materialAttributesInputPropertyData) {
-                MaterialAttributesInputPropertyData newMaterialAttributesInputPropertyData = new MaterialAttributesInputPropertyData(newPropertyName, attachToAsset);
-                newMaterialAttributesInputPropertyData.OutputIndex = materialAttributesInputPropertyData.OutputIndex;
-                newMaterialAttributesInputPropertyData.InputName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{materialAttributesInputPropertyData.InputName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newMaterialAttributesInputPropertyData.ExpressionName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{materialAttributesInputPropertyData.ExpressionName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newMaterialAttributesInputPropertyData.Value = materialAttributesInputPropertyData.Value;
-                newPropertyDataList.Add(newMaterialAttributesInputPropertyData);
+                newPropertyDataList.Add((MaterialAttributesInputPropertyData)materialAttributesInputPropertyData.Clone());
             }
             else if (propertyData is ColorMaterialInputPropertyData colorMaterialInputPropertyData) {
-                ColorMaterialInputPropertyData newColorMaterialInputPropertyData = new ColorMaterialInputPropertyData(newPropertyName, attachToAsset);
-                newColorMaterialInputPropertyData.OutputIndex = colorMaterialInputPropertyData.OutputIndex;
-                newColorMaterialInputPropertyData.InputName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{colorMaterialInputPropertyData.InputName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newColorMaterialInputPropertyData.ExpressionName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{colorMaterialInputPropertyData.ExpressionName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newColorMaterialInputPropertyData.Value = (ColorPropertyData)ClonePropertyData(new List<PropertyData>{colorMaterialInputPropertyData.Value}, attachToAsset, exportStartIndex).ToArray()[0];
-                newPropertyDataList.Add(newColorMaterialInputPropertyData);
+                newPropertyDataList.Add((ColorMaterialInputPropertyData)colorMaterialInputPropertyData.Clone());
             }
             else if (propertyData is ScalarMaterialInputPropertyData scalarMaterialInputPropertyData) {
-                ScalarMaterialInputPropertyData newScalarMaterialInputPropertyData = new ScalarMaterialInputPropertyData(newPropertyName, attachToAsset);
-                newScalarMaterialInputPropertyData.OutputIndex = scalarMaterialInputPropertyData.OutputIndex;
-                newScalarMaterialInputPropertyData.InputName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{scalarMaterialInputPropertyData.InputName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newScalarMaterialInputPropertyData.ExpressionName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{scalarMaterialInputPropertyData.ExpressionName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newScalarMaterialInputPropertyData.Value = scalarMaterialInputPropertyData.Value;
-                newPropertyDataList.Add(newScalarMaterialInputPropertyData);
+                newPropertyDataList.Add((ScalarMaterialInputPropertyData)scalarMaterialInputPropertyData.Clone());
             }
             else if (propertyData is ShadingModelMaterialInputPropertyData shadingModelMaterialInputPropertyData) {
-                ShadingModelMaterialInputPropertyData newShadingModelMaterialInputPropertyData = new ShadingModelMaterialInputPropertyData(newPropertyName, attachToAsset);
-                newShadingModelMaterialInputPropertyData.OutputIndex = shadingModelMaterialInputPropertyData.OutputIndex;
-                newShadingModelMaterialInputPropertyData.InputName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{shadingModelMaterialInputPropertyData.InputName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newShadingModelMaterialInputPropertyData.ExpressionName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{shadingModelMaterialInputPropertyData.ExpressionName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newShadingModelMaterialInputPropertyData.Value = shadingModelMaterialInputPropertyData.Value;
-                newPropertyDataList.Add(newShadingModelMaterialInputPropertyData);
+                newPropertyDataList.Add((ShadingModelMaterialInputPropertyData)shadingModelMaterialInputPropertyData.Clone());
             }
             else if (propertyData is VectorMaterialInputPropertyData vectorMaterialInputPropertyData) {
-                VectorMaterialInputPropertyData newVectorMaterialInputPropertyData = new VectorMaterialInputPropertyData(newPropertyName, attachToAsset);
-                newVectorMaterialInputPropertyData.OutputIndex = vectorMaterialInputPropertyData.OutputIndex;
-                newVectorMaterialInputPropertyData.InputName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{vectorMaterialInputPropertyData.InputName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newVectorMaterialInputPropertyData.ExpressionName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{vectorMaterialInputPropertyData.ExpressionName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newVectorMaterialInputPropertyData.Value = (VectorPropertyData)ClonePropertyData(new List<PropertyData>{vectorMaterialInputPropertyData.Value}, attachToAsset, exportStartIndex).ToArray()[0];
-                newPropertyDataList.Add(newVectorMaterialInputPropertyData);
+                newPropertyDataList.Add((VectorMaterialInputPropertyData)vectorMaterialInputPropertyData.Clone());
             }
             else if (propertyData is Vector2MaterialInputPropertyData vector2MaterialInputPropertyData) {
-                Vector2MaterialInputPropertyData newVector2MaterialInputPropertyData = new Vector2MaterialInputPropertyData(newPropertyName, attachToAsset);
-                newVector2MaterialInputPropertyData.OutputIndex = vector2MaterialInputPropertyData.OutputIndex;
-                newVector2MaterialInputPropertyData.InputName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{vector2MaterialInputPropertyData.InputName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newVector2MaterialInputPropertyData.ExpressionName = (NamePropertyData)ClonePropertyData(new List<PropertyData>{vector2MaterialInputPropertyData.ExpressionName}, attachToAsset, exportStartIndex).ToArray()[0];
-                newVector2MaterialInputPropertyData.Value = (Vector2DPropertyData)ClonePropertyData(new List<PropertyData>{vector2MaterialInputPropertyData.Value}, attachToAsset, exportStartIndex).ToArray()[0];
-                newPropertyDataList.Add(newVector2MaterialInputPropertyData);
+                newPropertyDataList.Add((Vector2MaterialInputPropertyData)vector2MaterialInputPropertyData.Clone());
             }
             else if (propertyData is PerPlatformBoolPropertyData perPlatformBoolPropertyData) {
-                PerPlatformBoolPropertyData newPerPlatformBoolPropertyData = new PerPlatformBoolPropertyData(newPropertyName, attachToAsset);
+                PerPlatformBoolPropertyData newPerPlatformBoolPropertyData = new PerPlatformBoolPropertyData(newPropertyName);
                 bool[] newValue = new bool[perPlatformBoolPropertyData.Value.Length];
                 perPlatformBoolPropertyData.Value.CopyTo(newValue, 0);
                 newPerPlatformBoolPropertyData.Value = newValue;
                 newPropertyDataList.Add(newPerPlatformBoolPropertyData);
             }
             else if (propertyData is PerPlatformFloatPropertyData perPlatformFloatPropertyData) {
-                PerPlatformFloatPropertyData newPerPlatformFloatPropertyData = new PerPlatformFloatPropertyData(newPropertyName, attachToAsset);
+                PerPlatformFloatPropertyData newPerPlatformFloatPropertyData = new PerPlatformFloatPropertyData(newPropertyName);
                 float[] newValue = new float[perPlatformFloatPropertyData.Value.Length];
                 perPlatformFloatPropertyData.Value.CopyTo(newValue, 0);
                 newPerPlatformFloatPropertyData.Value = newValue;
                 newPropertyDataList.Add(newPerPlatformFloatPropertyData);
             }
             else if (propertyData is QuatPropertyData quatPropertyData) {
-                QuatPropertyData newQuatPropertyData = new QuatPropertyData(newPropertyName, attachToAsset);
-                float[] newValue = new float[quatPropertyData.Value.Length];
-                quatPropertyData.Value.CopyTo(newValue, 0);
-                newQuatPropertyData.Value = newValue;
-                newPropertyDataList.Add(newQuatPropertyData);
+                newPropertyDataList.Add((QuatPropertyData)quatPropertyData.Clone());
             }
-            else if (propertyData is RichCurveKeyProperty richCurveKeyProperty) {
-                RichCurveKeyProperty newRichCurveKeyProperty = new RichCurveKeyProperty(newPropertyName, attachToAsset);
-                newRichCurveKeyProperty.InterpMode = richCurveKeyProperty.InterpMode;
-                newRichCurveKeyProperty.TangentMode = richCurveKeyProperty.TangentMode;
-                newRichCurveKeyProperty.TangentWeightMode = richCurveKeyProperty.TangentWeightMode;
-                newRichCurveKeyProperty.Time = richCurveKeyProperty.Time;
-                newRichCurveKeyProperty.Value = richCurveKeyProperty.Value;
-                newRichCurveKeyProperty.ArriveTangent = richCurveKeyProperty.ArriveTangent;
-                newRichCurveKeyProperty.ArriveTangentWeight = richCurveKeyProperty.ArriveTangentWeight;
-                newRichCurveKeyProperty.LeaveTangent = richCurveKeyProperty.LeaveTangent;
-                newRichCurveKeyProperty.LeaveTangentWeight = richCurveKeyProperty.LeaveTangentWeight;
-                newPropertyDataList.Add(newRichCurveKeyProperty);
+            else if (propertyData is RichCurveKeyPropertyData richCurveKeyPropertyData) {
+                newPropertyDataList.Add((RichCurveKeyPropertyData)richCurveKeyPropertyData.Clone());
             }
             else if (propertyData is RotatorPropertyData rotatorPropertyData) {
-                RotatorPropertyData newRotatorPropertyData = new RotatorPropertyData(newPropertyName, attachToAsset);
-                float[] newValue = new float[rotatorPropertyData.Value.Length];
-                rotatorPropertyData.Value.CopyTo(newValue, 0);
-                newRotatorPropertyData.Value = newValue;
-                newPropertyDataList.Add(newRotatorPropertyData);
+                newPropertyDataList.Add((RotatorPropertyData)rotatorPropertyData.Clone());
             }
             else if (propertyData is StructPropertyData structPropertyData) {
-                StructPropertyData newStructPropertyData = new StructPropertyData(newPropertyName, attachToAsset);
-                newStructPropertyData.Value = ClonePropertyData(structPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex).ToArray();
-                if (structPropertyData != null) {
-                    attachToAsset.AddNameReference(structPropertyData.StructType.Value);
-                    newStructPropertyData.StructType = new FName(structPropertyData.StructType.Value.Value, structPropertyData.StructType.Number);
-                }
-                newStructPropertyData.StructGUID = structPropertyData.StructGUID;
-                newPropertyDataList.Add(newStructPropertyData);
+                newPropertyDataList.Add((StructPropertyData)structPropertyData.Clone());
             }
             else if (propertyData is TimespanPropertyData timespanPropertyData) {
-                TimespanPropertyData newTimespanPropertyData = new TimespanPropertyData(newPropertyName, attachToAsset);
+                TimespanPropertyData newTimespanPropertyData = new TimespanPropertyData(newPropertyName);
                 newTimespanPropertyData.Value = timespanPropertyData.Value;
                 newPropertyDataList.Add(newTimespanPropertyData);
             }
             else if (propertyData is Vector2DPropertyData vector2DPropertyData) {
-                Vector2DPropertyData newVector2DPropertyData = new Vector2DPropertyData(newPropertyName, attachToAsset);
-                float[] newValue = new float[vector2DPropertyData.Value.Length];
-                vector2DPropertyData.Value.CopyTo(newValue, 0);
-                newVector2DPropertyData.Value = newValue;
-                newPropertyDataList.Add(newVector2DPropertyData);
+                newPropertyDataList.Add((Vector2DPropertyData)vector2DPropertyData.Clone());
             }
             else if (propertyData is Vector4PropertyData vector4PropertyData) {
-                Vector4PropertyData newVector4PropertyData = new Vector4PropertyData(newPropertyName, attachToAsset);
-                float[] newValue = new float[vector4PropertyData.Value.Length];
-                vector4PropertyData.Value.CopyTo(newValue, 0);
-                newVector4PropertyData.Value = newValue;
-                newPropertyDataList.Add(newVector4PropertyData);
+                newPropertyDataList.Add((Vector4PropertyData)vector4PropertyData.Clone());
             }
             else if (propertyData is VectorPropertyData vectorPropertyData) {
-                VectorPropertyData newVectorPropertyData = new VectorPropertyData(newPropertyName, attachToAsset);
-                float[] newValue = new float[vectorPropertyData.Value.Length];
-                vectorPropertyData.Value.CopyTo(newValue, 0);
-                newVectorPropertyData.Value = newValue;
-                newPropertyDataList.Add(newVectorPropertyData);
+                newPropertyDataList.Add((VectorPropertyData)vectorPropertyData.Clone());
             }
             else if (propertyData is ViewTargetBlendParamsPropertyData viewTargetBlendParamsPropertyData) {
-                ViewTargetBlendParamsPropertyData newViewTargetBlendParamsPropertyData = new ViewTargetBlendParamsPropertyData(newPropertyName, attachToAsset);
+                ViewTargetBlendParamsPropertyData newViewTargetBlendParamsPropertyData = new ViewTargetBlendParamsPropertyData(newPropertyName);
                 newViewTargetBlendParamsPropertyData.BlendTime = viewTargetBlendParamsPropertyData.BlendTime;
                 newViewTargetBlendParamsPropertyData.BlendFunction = viewTargetBlendParamsPropertyData.BlendFunction;
                 newViewTargetBlendParamsPropertyData.BlendExp = viewTargetBlendParamsPropertyData.BlendExp;

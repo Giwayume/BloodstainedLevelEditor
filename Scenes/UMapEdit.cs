@@ -198,7 +198,7 @@ class ParsedPackage
 //                 GD.Print("Reading UAsset: " + uAssetPath);
 //                 UAsset uAsset = new UAsset(uAssetPath, UE4Version.VER_UE4_18, true, true);
 //                 parsedPackage.uAsset = uAsset;
-//                 GD.Print("Data preserved? " + (uAsset.VerifyParsing() ? "YES" : "NO"));
+//                 GD.Print("Data preserved? " + (uAsset.VerifyBinaryEquality() ? "YES" : "NO"));
 
 //                 // Gather package names and paths.
 //                 foreach (Import import in uAsset.Imports) {

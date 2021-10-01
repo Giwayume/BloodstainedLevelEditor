@@ -301,40 +301,138 @@ public class UAssetParser : Control {
         }
     }
 
-    public Godot.Collections.Array<Godot.Collections.Dictionary<string, object>> ExtractModelMaterialsRecursive(string assetPath) {
-        Godot.Collections.Array<Godot.Collections.Dictionary<string, object>> extractedMaterials = new Godot.Collections.Array<Godot.Collections.Dictionary<string, object>>();
+    public Godot.Collections.Array<Godot.Collections.Dictionary<string, object>> ExtractModelMaterialsRecursive(string assetPath, Godot.Collections.Array<Godot.Collections.Dictionary<string, object>> extractedMaterials = default(Godot.Collections.Array<Godot.Collections.Dictionary<string, object>>), int materialIndex = -1) {
+        if (extractedMaterials == default(Godot.Collections.Array<Godot.Collections.Dictionary<string, object>>)) {
+            extractedMaterials = new Godot.Collections.Array<Godot.Collections.Dictionary<string, object>>();
+        }
         string extractAssetOutputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
         string assetFileName = assetPath.Split("/").Last();
-        UAsset asset = new UAsset(extractAssetOutputFolder + "/" + assetPath, UE4Version.VER_UE4_18);
-        // Assume is mesh
-        if (!assetFileName.StartsWith("MI_")) {
-            foreach (Export export in asset.Exports) {
-
+        try {
+            UAsset asset = new UAsset(extractAssetOutputFolder + "/" + assetPath, UE4Version.VER_UE4_18);
+            string assetType = "mesh";
+            if (assetFileName.StartsWith("MI_") || assetFileName.StartsWith("M_") || assetFileName.StartsWith("MIP_")) {
+                assetType = "material";
+            } else if (assetFileName.StartsWith("T_")) {
+                assetType = "texture";
             }
-        }
-        // Build list of materials.
-        foreach (Import import in asset.Imports) {
-            if (import.ClassName.Value.Value == "Package") {
-                if (import.ObjectName.Value.Value.StartsWith("/Game")) {
-                    if (import.ObjectName.Value.Value.Split("/").Last().StartsWith("MI_")) {
-                        string materialAssetPath = import.ObjectName.Value.Value.Replace("/Game/", "BloodstainedRotN/Content/") + ".uasset";
-                        // extractedAssetPaths.Add(materialAssetPath);
-                        try {
-                            if (!System.IO.File.Exists(extractAssetOutputFolder + "/" + materialAssetPath)) {
-                                ExtractAssetToFolder(_assetPathToPakFilePathMap[materialAssetPath], materialAssetPath, extractAssetOutputFolder);
+            // Assume is mesh
+            if (assetType == "mesh") {
+                foreach (Export baseExport in asset.Exports) {
+                    if (baseExport.bIsAsset && baseExport is NormalExport export) {
+                        foreach (PropertyData propertyData in export.Data) {
+                            string propertyName = propertyData.Name.Value.Value;
+                            if (propertyName == "StaticMaterials" && propertyData is ArrayPropertyData staticMaterialsData) {
+                                foreach (PropertyData staticMaterial in staticMaterialsData.Value) {
+                                    if (staticMaterial is StructPropertyData staticMaterialStruct) {
+                                        foreach (PropertyData staticMaterialProperty in staticMaterialStruct.Value) {
+                                            string staticMaterialPropertyName = staticMaterialProperty.Name.Value.Value;
+                                            if (staticMaterialPropertyName == "MaterialInterface") {
+                                                if (staticMaterialProperty is ObjectPropertyData materialInterface) {
+                                                    if (materialInterface.Value.IsImport()) {
+                                                        Godot.Collections.Dictionary<string, object> materialDictionary = new Godot.Collections.Dictionary<string, object>();
+                                                        materialDictionary["material_name"] = materialInterface.Value.ToImport(asset).ObjectName.Value.Value;
+                                                        materialDictionary["texture"] = new Godot.Collections.Dictionary<string, string>();
+                                                        extractedMaterials.Add(materialDictionary);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                            // extractedAssetPaths = extractedAssetPaths.Concat(ExtractModelMaterialsRecursive(materialAssetPath)).ToList();
-                        } catch (Exception e) {
-                            GD.Print("Failed to extract material " + materialAssetPath);
-                            GD.Print(e);
                         }
-                    }
-                    else if (import.ObjectName.Value.Value.Split("/").Last().StartsWith("T_")) {
-                        string textureAssetPath = import.ObjectName.Value.Value.Replace("/Game/", "BloodstainedRotN/Content/") + ".uasset";
-                        // extractedAssetPaths.Add(textureAssetPath);
+                        break;
                     }
                 }
             }
+            // Build list of materials.
+            foreach (Import import in asset.Imports) {
+                if (import.ClassName.Value.Value == "Package") {
+                    if (import.ObjectName.Value.Value.StartsWith("/Game")) {
+                        string packageFileName = import.ObjectName.Value.Value.Split("/").Last();
+                        if (packageFileName.StartsWith("MI_") || packageFileName.StartsWith("M_") || packageFileName.StartsWith("MIP_")) {
+                            string materialAssetPath = import.ObjectName.Value.Value.Replace("/Game/", "BloodstainedRotN/Content/") + ".uasset";
+                            bool isParentMaterial = false;
+                            if (materialIndex == -1) {
+                                isParentMaterial = true;
+                                for (materialIndex = 0; materialIndex < extractedMaterials.Count; materialIndex++) {
+                                    if ((string)extractedMaterials[materialIndex]["material_name"] == packageFileName) {
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!isParentMaterial) {
+                                extractedMaterials[materialIndex]["material_asset_path"] = materialAssetPath;
+                            }
+                            try {
+                                if (!System.IO.File.Exists(extractAssetOutputFolder + "/" + materialAssetPath)) {
+                                    ExtractAssetToFolder(_assetPathToPakFilePathMap[materialAssetPath], materialAssetPath, extractAssetOutputFolder);
+                                }
+                                extractedMaterials = ExtractModelMaterialsRecursive(materialAssetPath, extractedMaterials, materialIndex);
+                            } catch (Exception e) {
+                                GD.Print("Failed to extract material " + materialAssetPath);
+                                GD.Print(e);
+                            }
+                        }
+                        else if (packageFileName.StartsWith("T_")) {
+                            Godot.Collections.Dictionary<string, object> materialDef = extractedMaterials[materialIndex];
+                            Godot.Collections.Dictionary textureDef = (Godot.Collections.Dictionary)materialDef["texture"];
+                            string textureAssetPath = import.ObjectName.Value.Value.Replace("/Game/", "BloodstainedRotN/Content/") + ".uasset";
+                            try {
+                                if (!System.IO.File.Exists(extractAssetOutputFolder + "/" + textureAssetPath)) {
+                                    ExtractAssetToFolder(_assetPathToPakFilePathMap[textureAssetPath], textureAssetPath, extractAssetOutputFolder);
+                                }
+                            } catch (Exception e) {
+                                GD.Print("Failed to extract texture " + textureAssetPath);
+                                GD.Print(e);
+                            }
+                            try {
+                                object whatever = textureDef["albedo"];
+                            } catch (Exception e) {
+                                if (packageFileName.EndsWith("_D") || packageFileName.EndsWith("_Col") || packageFileName.EndsWith("_Color")) {
+                                    textureDef["albedo"] = textureAssetPath;
+                                }
+                            }
+                            try {
+                                object whatever = textureDef["normal"];
+                            } catch (Exception e) {
+                                if (packageFileName.EndsWith("_N")) {
+                                    textureDef["normal"] = textureAssetPath;
+                                }
+                            }
+                            try {
+                                object whatever = textureDef["roughness"];
+                            } catch (Exception e) {
+                                if (
+                                    (packageFileName.EndsWith("_RoMaAo") || packageFileName.EndsWith("_ORM") || packageFileName.EndsWith("_AoMeGI"))
+                                ) {
+                                    textureDef["roughness"] = textureAssetPath;
+                                }
+                            }
+                            try {
+                                object whatever = textureDef["metallic"];
+                            } catch (Exception e) {
+                                if (
+                                    (packageFileName.EndsWith("_RoMaAo") || packageFileName.EndsWith("_ORM") || packageFileName.EndsWith("_AoMeGI"))
+                                ) {
+                                    textureDef["metallic"] = textureAssetPath;
+                                }
+                            }
+                            try {
+                                object whatever = textureDef["ao"];
+                            } catch (Exception e) {
+                                if (
+                                    (packageFileName.EndsWith("_RoMaAo") || packageFileName.EndsWith("_ORM"))
+                                ) {
+                                    textureDef["ao"] = textureAssetPath;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            GD.Print(e);
         }
         return extractedMaterials;
     }
@@ -372,7 +470,7 @@ public class UAssetParser : Control {
         try {
             GD.Print("Parsing UAsset ", assetPath);
             UAsset uAsset = new UAsset(outputPath + "/" + assetPath, UE4Version.VER_UE4_18);
-            GD.Print("Data preserved: " + (uAsset.VerifyParsing() ? "YES" : "NO"));
+            GD.Print("Data preserved: " + (uAsset.VerifyBinaryEquality() ? "YES" : "NO"));
 
             int blueprintExportIndex = -1;
 
@@ -423,7 +521,7 @@ public class UAssetParser : Control {
             UAssetSnippet snippet = _blueprintSnippets[dictionaryKey];
             GD.Print("Parsing UAsset ", targetAssetFilePath);
             UAsset uAsset = new UAsset(targetAssetFilePath, UE4Version.VER_UE4_18);
-            GD.Print("Data preserved: " + (uAsset.VerifyParsing() ? "YES" : "NO"));
+            GD.Print("Data preserved: " + (uAsset.VerifyBinaryEquality() ? "YES" : "NO"));
             snippet.AddToUAsset(uAsset);
             uAsset.Write(targetAssetFilePath);
         } else {

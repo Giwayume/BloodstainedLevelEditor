@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -19,6 +20,7 @@ namespace UAssetAPI
     /// <summary>
     /// UObject resource type for objects that are contained within this package and can be referenced by other packages.
     /// </summary>
+    [JsonObject(MemberSerialization.OptOut)]
     public class Export : FObjectResource, ICloneable
     {
         ///<summary>Location of this export's class (import/other export). 0 = this export is a UClass</summary>
@@ -91,9 +93,11 @@ namespace UAssetAPI
         /// Miscellaneous, unparsed export data, stored as a byte array.
         /// </summary>
         public byte[] Extras;
+
         /// <summary>
         /// The asset that this export is parsed with.
         /// </summary>
+        [JsonIgnore]
         public UAsset Asset;
 
         public Export(UAsset asset, byte[] extras)
@@ -107,12 +111,12 @@ namespace UAssetAPI
 
         }
 
-        public virtual void Read(BinaryReader reader, int nextStarting = 0)
+        public virtual void Read(AssetBinaryReader reader, int nextStarting = 0)
         {
 
         }
 
-        public virtual void Write(BinaryWriter writer)
+        public virtual void Write(AssetBinaryWriter writer)
         {
 
         }
@@ -164,6 +168,11 @@ namespace UAssetAPI
             return res;
         }
 
+        /// <summary>
+        /// Creates a child export instance with the same export details as the current export.
+        /// </summary>
+        /// <typeparam name="T">The type of child export to create.</typeparam>
+        /// <returns>An instance of the child export type provided with the export details copied over.</returns>
         public T ConvertToChildExport<T>() where T : Export, new()
         {
             InitAllFields();

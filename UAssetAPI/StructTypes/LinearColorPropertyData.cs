@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Drawing;
 using System.IO;
 using UAssetAPI.PropertyTypes;
@@ -22,11 +23,18 @@ namespace UAssetAPI.StructTypes
         }
     }
 
+    /// <summary>
+    /// A linear, 32-bit/component floating point RGBA color.
+    /// </summary>
     public class LinearColor : ICloneable
     {
+        [JsonProperty]
         public float R;
+        [JsonProperty]
         public float G;
+        [JsonProperty]
         public float B;
+        [JsonProperty]
         public float A;
 
         public LinearColor()
@@ -50,7 +58,7 @@ namespace UAssetAPI.StructTypes
 
     public class LinearColorPropertyData : PropertyData<LinearColor> // R, G, B, A
     {
-        public LinearColorPropertyData(FName name, UAsset asset) : base(name, asset)
+        public LinearColorPropertyData(FName name) : base(name)
         {
 
         }
@@ -64,7 +72,7 @@ namespace UAssetAPI.StructTypes
         public override bool HasCustomStructSerialization { get { return true; } }
         public override FName PropertyType { get { return CurrentPropertyType; } }
 
-        public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
+        public override void Read(AssetBinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
             if (includeHeader)
             {
@@ -80,7 +88,7 @@ namespace UAssetAPI.StructTypes
             };
         }
 
-        public override int Write(BinaryWriter writer, bool includeHeader)
+        public override int Write(AssetBinaryWriter writer, bool includeHeader)
         {
             if (includeHeader)
             {
@@ -99,7 +107,7 @@ namespace UAssetAPI.StructTypes
             return Value.ToString();
         }
 
-        public override void FromString(string[] d)
+        public override void FromString(string[] d, UAsset asset)
         {
             if (!float.TryParse(d[0], out float colorR)) return;
             if (!float.TryParse(d[1], out float colorG)) return;

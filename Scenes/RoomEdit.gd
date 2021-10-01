@@ -9,6 +9,7 @@ var parse_pak_thread: Thread
 var get_room_definition_thread: Thread
 var parse_enemy_blueprint_thread: Thread
 
+var background_tree: Tree
 var editor_container: Control
 var loading_3d_scene_notification: Control
 var loading_status_container: Control
@@ -18,15 +19,9 @@ var menu_button_edit: MenuButton
 var room_3d_display: Spatial
 var room_3d_display_camera: Camera
 var room_3d_viewport_container: ViewportContainer
-var world_outliner_tree: Tree
-var world_outliner_tree_root: TreeItem
-var world_outliner_tree_bg: TreeItem
-var world_outliner_tree_enemy: TreeItem
-var world_outliner_tree_enemy_normal: TreeItem
-var world_outliner_tree_enemy_hard: TreeItem
-var world_outliner_tree_gimmick: TreeItem
-var world_outliner_tree_event: TreeItem
-var world_outliner_tree_rv: TreeItem
+
+var background_tree_root: TreeItem
+var background_tree_map: Dictionary
 
 var room_definition: Dictionary
 
@@ -41,8 +36,9 @@ func _ready():
 	if not editor.selected_package:
 		editor.selected_package = "MyTest"
 	if not editor.selected_level_name:
-		editor.selected_level_name = "m04GDN_015"
+		editor.selected_level_name = "m02VIL_006"
 	
+	background_tree = find_node("BackgroundTree", true, true)
 	editor_container = find_node("EditorContainer", true, true)
 	loading_3d_scene_notification = find_node("Loading3dSceneNotification", true, true)
 	loading_status_container = find_node("LoadingStatusContainer", true, true)
@@ -57,6 +53,9 @@ func _ready():
 	loading_status_container.show()
 	loading_3d_scene_notification.hide()
 	
+	background_tree_root = background_tree.create_item()
+	background_tree_root.set_text(0, "World")
+	
 	menu_button_package.get_popup().connect("id_pressed", self, "on_menu_popup_package_pressed")
 	
 	room_3d_display.connect("loading_start", self, "on_room_3d_display_loading_start")
@@ -69,12 +68,15 @@ func _input(event):
 	var parent = get_parent()
 	var viewport_position = room_3d_viewport_container.rect_global_position
 	var global_mouse_position = get_global_mouse_position()
-	room_3d_display_camera.can_capture_mouse = (
+	var can_capture_mouse = (
 		global_mouse_position.x > viewport_position.x and
 		global_mouse_position.y > viewport_position.y and
 		global_mouse_position.x < viewport_position.x + room_3d_viewport_container.rect_size.x and
 		global_mouse_position.y < viewport_position.y + room_3d_viewport_container.rect_size.y
 	)
+	room_3d_display.can_capture_mouse = can_capture_mouse
+	room_3d_display_camera.can_capture_mouse = can_capture_mouse
+	room_3d_display_camera.viewport_position = viewport_position
 
 ###########
 # THREADS #

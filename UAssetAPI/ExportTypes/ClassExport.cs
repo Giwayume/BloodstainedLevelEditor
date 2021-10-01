@@ -1,33 +1,12 @@
+using Newtonsoft.Json;
 using System.IO;
+using System.Linq;
 
 namespace UAssetAPI
 {
-    public class FunctionData
-    {
-
-    }
-
-    public class FunctionCategory : Export
-    {
-
-    }
-    public struct FunctionDataEntry
-    {
-        public FName Name;
-        public int Category;
-
-        public FunctionDataEntry(FName name, int category)
-        {
-            Name = name;
-            Category = category;
-        }
-
-        public override string ToString()
-        {
-            return "(" + Name.ToString() + ", " + Category + ")";
-        }
-    }
-
+    /// <summary>
+    /// An interface that a UClass (<see cref="ClassExport"/>) implements.
+    /// </summary>
     public struct SerializedInterfaceReference
     {
         public int Class;
@@ -50,7 +29,8 @@ namespace UAssetAPI
         /// <summary>
         /// Map of all functions by name contained in this class
         /// </summary>
-        public FunctionDataEntry[] FuncMap; // TMap<FName, UFunction*>
+        [JsonConverter(typeof(TMapJsonConverter<FName, FPackageIndex>))]
+        public TMap<FName, FPackageIndex> FuncMap;
 
         /// <summary>
         /// Class flags; See <see cref="EClassFlags"/> for more information
@@ -108,18 +88,18 @@ namespace UAssetAPI
 
         }
 
-        public override void Read(BinaryReader reader, int nextStarting)
+        public override void Read(AssetBinaryReader reader, int nextStarting)
         {
             base.Read(reader, nextStarting);
 
             int numFuncIndexEntries = reader.ReadInt32();
-            FuncMap = new FunctionDataEntry[numFuncIndexEntries];
+            FuncMap = new TMap<FName, FPackageIndex>();
             for (int i = 0; i < numFuncIndexEntries; i++)
             {
-                FName functionName = reader.ReadFName(Asset);
-                int functionCategory = reader.ReadInt32();
+                FName functionName = reader.ReadFName();
+                FPackageIndex functionExport = FPackageIndex.FromRawIndex(reader.ReadInt32());
 
-                FuncMap[i] = new FunctionDataEntry(functionName, functionCategory);
+                FuncMap.Add(functionName, functionExport);
             }
 
             ClassFlags = (EClassFlags)reader.ReadUInt32();
@@ -130,7 +110,7 @@ namespace UAssetAPI
             }
 
             ClassWithin = new FPackageIndex(reader.ReadInt32());
-            ClassConfigName = reader.ReadFName(Asset);
+            ClassConfigName = reader.ReadFName();
             Asset.AddNameReference(ClassConfigName.Value);
 
             int numInterfaces = 0;
@@ -175,15 +155,15 @@ namespace UAssetAPI
             // CDO serialization usually comes after this export has finished serializing
         }
 
-        public override void Write(BinaryWriter writer)
+        public override void Write(AssetBinaryWriter writer)
         {
             base.Write(writer);
 
-            writer.Write(FuncMap.Length);
-            for (int i = 0; i < FuncMap.Length; i++)
+            writer.Write(FuncMap.Count);
+            for (int i = 0; i < FuncMap.Count; i++)
             {
-                writer.WriteFName(FuncMap[i].Name, Asset);
-                writer.Write((int)FuncMap[i].Category);
+                writer.Write(FuncMap.Keys.ElementAt(i));
+                writer.Write(FuncMap[i].Index);
             }
 
             EClassFlags serializingClassFlags = ClassFlags;
@@ -194,7 +174,7 @@ namespace UAssetAPI
             writer.Write((uint)serializingClassFlags);
 
             writer.Write(ClassWithin.Index);
-            writer.WriteFName(ClassConfigName, Asset);
+            writer.Write(ClassConfigName);
 
             if (Asset.EngineVersion < UE4Version.VER_UE4_UCLASS_SERIALIZE_INTERFACES_AFTER_LINKING)
             {
@@ -211,7 +191,7 @@ namespace UAssetAPI
 
             writer.Write(bDeprecatedForceScriptOrder ? 1 : 0);
 
-            writer.WriteFName(new FName("None"), Asset);
+            writer.Write(new FName("None"));
 
             if (Asset.EngineVersion >= UE4Version.VER_UE4_ADD_COOKED_TO_UCLASS)
             {

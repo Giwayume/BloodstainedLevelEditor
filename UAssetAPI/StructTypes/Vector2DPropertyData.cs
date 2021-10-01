@@ -1,12 +1,24 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.IO;
 using UAssetAPI.PropertyTypes;
 
 namespace UAssetAPI.StructTypes
 {
-    public class Vector2DPropertyData : PropertyData<float[]> // X, Y
+    /// <summary>
+    /// A vector in 2-D space composed of components (X, Y) with floating point precision.
+    /// </summary>
+    public class Vector2DPropertyData : PropertyData
     {
-        public Vector2DPropertyData(FName name, UAsset asset) : base(name, asset)
+        /// <summary>Vector's X-component.</summary>
+        [JsonProperty]
+        public float X;
+
+        /// <summary>Vector's Y-component.</summary>
+        [JsonProperty]
+        public float Y;
+
+        public Vector2DPropertyData(FName name) : base(name)
         {
 
         }
@@ -20,49 +32,38 @@ namespace UAssetAPI.StructTypes
         public override bool HasCustomStructSerialization { get { return true; } }
         public override FName PropertyType { get { return CurrentPropertyType; } }
 
-        public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
+        public override void Read(AssetBinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
             if (includeHeader)
             {
                 reader.ReadByte();
             }
 
-            Value = new float[2];
-            for (int i = 0; i < 2; i++)
-            {
-                Value[i] = reader.ReadSingle();
-            }
+            X = reader.ReadSingle();
+            Y = reader.ReadSingle();
         }
 
-        public override int Write(BinaryWriter writer, bool includeHeader)
+        public override int Write(AssetBinaryWriter writer, bool includeHeader)
         {
             if (includeHeader)
             {
                 writer.Write((byte)0);
             }
 
-            for (int i = 0; i < 2; i++)
-            {
-                writer.Write(Value[i]);
-            }
+            writer.Write(X);
+            writer.Write(Y);
             return sizeof(float) * 2;
         }
 
-        public override void FromString(string[] d)
+        public override void FromString(string[] d, UAsset asset)
         {
-            Value = new float[2];
-            if (float.TryParse(d[0], out float res1)) Value[0] = res1;
-            if (float.TryParse(d[1], out float res2)) Value[1] = res2;
+            if (float.TryParse(d[0], out float res1)) X = res1;
+            if (float.TryParse(d[1], out float res2)) Y = res2;
         }
 
         public override string ToString()
         {
-            string oup = "(";
-            for (int i = 0; i < Value.Length; i++)
-            {
-                oup += Convert.ToString(Value[i]) + ", ";
-            }
-            return oup.Remove(oup.Length - 2) + ")";
+            return "(" + X + ", " + Y + ")";
         }
     }
 }

@@ -1,12 +1,33 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.IO;
 using UAssetAPI.PropertyTypes;
 
 namespace UAssetAPI.StructTypes
 {
-    public class QuatPropertyData : PropertyData<float[]>
+    /// <summary>
+    /// Floating point quaternion that can represent a rotation about an axis in 3-D space.
+    /// The X, Y, Z, W components also double as the Axis/Angle format.
+    /// </summary>
+    public class QuatPropertyData : PropertyData
     {
-        public QuatPropertyData(FName name, UAsset asset) : base(name, asset)
+        /// <summary>The quaternion's X-component.</summary>
+        [JsonProperty]
+        public float X;
+
+        /// <summary>The quaternion's Y-component.</summary>
+        [JsonProperty]
+        public float Y;
+
+        /// <summary>The quaternion's Z-component.</summary>
+        [JsonProperty]
+        public float Z;
+
+        /// <summary>The quaternion's W-component.</summary>
+        [JsonProperty]
+        public float W;
+
+        public QuatPropertyData(FName name) : base(name)
         {
 
         }
@@ -20,51 +41,44 @@ namespace UAssetAPI.StructTypes
         public override bool HasCustomStructSerialization { get { return true; } }
         public override FName PropertyType { get { return CurrentPropertyType; } }
 
-        public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
+        public override void Read(AssetBinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
             if (includeHeader)
             {
                 reader.ReadByte();
             }
 
-            Value = new float[4];
-            for (int i = 0; i < 4; i++)
-            {
-                Value[i] = reader.ReadSingle();
-            }
+            X = reader.ReadSingle();
+            Y = reader.ReadSingle();
+            Z = reader.ReadSingle();
+            W = reader.ReadSingle();
         }
 
-        public override int Write(BinaryWriter writer, bool includeHeader)
+        public override int Write(AssetBinaryWriter writer, bool includeHeader)
         {
             if (includeHeader)
             {
                 writer.Write((byte)0);
             }
 
-            for (int i = 0; i < 4; i++)
-            {
-                writer.Write(Value[i]);
-            }
+            writer.Write(X);
+            writer.Write(Y);
+            writer.Write(Z);
+            writer.Write(W);
             return sizeof(float) * 4;
         }
 
-        public override void FromString(string[] d)
+        public override void FromString(string[] d, UAsset asset)
         {
-            Value = new float[4];
-            if (float.TryParse(d[0], out float res1)) Value[0] = res1;
-            if (float.TryParse(d[1], out float res2)) Value[1] = res2;
-            if (float.TryParse(d[2], out float res3)) Value[2] = res3;
-            if (float.TryParse(d[3], out float res4)) Value[3] = res4;
+            if (float.TryParse(d[0], out float res1)) X = res1;
+            if (float.TryParse(d[1], out float res2)) Y = res2;
+            if (float.TryParse(d[2], out float res3)) Z = res3;
+            if (float.TryParse(d[3], out float res4)) W = res4;
         }
 
         public override string ToString()
         {
-            string oup = "(";
-            for (int i = 0; i < Value.Length; i++)
-            {
-                oup += Convert.ToString(Value[i]) + ", ";
-            }
-            return oup.Remove(oup.Length - 2) + ")";
+            return "(" + X + ", " + Y + ", " + Z + ", " + W + ")";
         }
     }
 }

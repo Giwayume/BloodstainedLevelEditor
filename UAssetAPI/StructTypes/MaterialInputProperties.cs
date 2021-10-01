@@ -1,63 +1,59 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Newtonsoft.Json;
 using UAssetAPI.PropertyTypes;
 
 namespace UAssetAPI.StructTypes
 {
     public abstract class MaterialInputPropertyData<T> : PropertyData<T>
     {
+        [JsonProperty]
         public byte[] Extras;
+        [JsonProperty]
         public int OutputIndex;
-        public NamePropertyData InputName;
-        public NamePropertyData ExpressionName;
+        [JsonProperty]
+        public FName InputName;
+        [JsonProperty]
+        public FName ExpressionName;
 
         public MaterialInputPropertyData()
         {
 
         }
 
-        public MaterialInputPropertyData(FName name, UAsset asset) : base(name, asset)
+        public MaterialInputPropertyData(FName name) : base(name)
         {
 
         }
 
-        protected void ReadExpressionInput(BinaryReader reader, bool includeHeader, long leng)
+        protected void ReadExpressionInput(AssetBinaryReader reader, bool includeHeader, long leng)
         {
             OutputIndex = reader.ReadInt32();
-            InputName = new NamePropertyData(Name, Asset);
-            InputName.Read(reader, false, 0);
+            InputName = reader.ReadFName();
             Extras = reader.ReadBytes(20); // always 0s
-            ExpressionName = new NamePropertyData(Name, Asset);
-            ExpressionName.Read(reader, false, 0);
+            ExpressionName = reader.ReadFName();
             return;
         }
 
-        protected int WriteExpressionInput(BinaryWriter writer, bool includeHeader)
+        protected int WriteExpressionInput(AssetBinaryWriter writer, bool includeHeader)
         {
             writer.Write(OutputIndex);
-            int nameSizeA = InputName.Write(writer, false);
+            writer.Write(InputName);
             writer.Write(Extras); // always 0s
-            int nameSizeB = ExpressionName.Write(writer, false);
-            return nameSizeA + nameSizeB + sizeof(int) + 20;
+            writer.Write(ExpressionName);
+            return (sizeof(int) * 2) * 2 + sizeof(int) + 20;
         }
 
         protected override void HandleCloned(PropertyData res)
         {
             MaterialInputPropertyData<T> cloningProperty = (MaterialInputPropertyData<T>)res;
-            cloningProperty.InputName = (NamePropertyData)this.InputName.Clone();
-            cloningProperty.InputName = (NamePropertyData)this.ExpressionName.Clone();
+            cloningProperty.InputName = (FName)this.InputName.Clone();
+            cloningProperty.InputName = (FName)this.ExpressionName.Clone();
             cloningProperty.Extras = (byte[])this.Extras.Clone();
         }
     }
 
     public class ExpressionInputPropertyData : MaterialInputPropertyData<int>
     {
-        public ExpressionInputPropertyData(FName name, UAsset asset) : base(name, asset)
+        public ExpressionInputPropertyData(FName name) : base(name)
         {
 
         }
@@ -71,7 +67,7 @@ namespace UAssetAPI.StructTypes
         public override bool HasCustomStructSerialization { get { return true; } }
         public override FName PropertyType { get { return CurrentPropertyType; } }
 
-        public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
+        public override void Read(AssetBinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
             if (includeHeader)
             {
@@ -81,7 +77,7 @@ namespace UAssetAPI.StructTypes
             ReadExpressionInput(reader, false, 0);
         }
 
-        public override int Write(BinaryWriter writer, bool includeHeader)
+        public override int Write(AssetBinaryWriter writer, bool includeHeader)
         {
             if (includeHeader)
             {
@@ -94,7 +90,7 @@ namespace UAssetAPI.StructTypes
 
     public class MaterialAttributesInputPropertyData : MaterialInputPropertyData<int>
     {
-        public MaterialAttributesInputPropertyData(FName name, UAsset asset) : base(name, asset)
+        public MaterialAttributesInputPropertyData(FName name) : base(name)
         {
 
         }
@@ -108,7 +104,7 @@ namespace UAssetAPI.StructTypes
         public override bool HasCustomStructSerialization { get { return true; } }
         public override FName PropertyType { get { return CurrentPropertyType; } }
 
-        public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
+        public override void Read(AssetBinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
             if (includeHeader)
             {
@@ -118,7 +114,7 @@ namespace UAssetAPI.StructTypes
             ReadExpressionInput(reader, false, 0);
         }
 
-        public override int Write(BinaryWriter writer, bool includeHeader)
+        public override int Write(AssetBinaryWriter writer, bool includeHeader)
         {
             if (includeHeader)
             {
@@ -131,7 +127,7 @@ namespace UAssetAPI.StructTypes
 
     public class ColorMaterialInputPropertyData : MaterialInputPropertyData<ColorPropertyData>
     {
-        public ColorMaterialInputPropertyData(FName name, UAsset asset) : base(name, asset)
+        public ColorMaterialInputPropertyData(FName name) : base(name)
         {
 
         }
@@ -145,7 +141,7 @@ namespace UAssetAPI.StructTypes
         public override bool HasCustomStructSerialization { get { return true; } }
         public override FName PropertyType { get { return CurrentPropertyType; } }
 
-        public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
+        public override void Read(AssetBinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
             if (includeHeader)
             {
@@ -154,11 +150,11 @@ namespace UAssetAPI.StructTypes
 
             ReadExpressionInput(reader, false, 0);
             reader.ReadInt32(); // always 0
-            Value = new ColorPropertyData(Name, Asset);
+            Value = new ColorPropertyData(Name);
             Value.Read(reader, false, 0);
         }
 
-        public override int Write(BinaryWriter writer, bool includeHeader)
+        public override int Write(AssetBinaryWriter writer, bool includeHeader)
         {
             if (includeHeader)
             {
@@ -173,7 +169,7 @@ namespace UAssetAPI.StructTypes
 
     public class ScalarMaterialInputPropertyData : MaterialInputPropertyData<float>
     {
-        public ScalarMaterialInputPropertyData(FName name, UAsset asset) : base(name, asset)
+        public ScalarMaterialInputPropertyData(FName name) : base(name)
         {
 
         }
@@ -187,7 +183,7 @@ namespace UAssetAPI.StructTypes
         public override bool HasCustomStructSerialization { get { return true; } }
         public override FName PropertyType { get { return CurrentPropertyType; } }
 
-        public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
+        public override void Read(AssetBinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
             if (includeHeader)
             {
@@ -199,7 +195,7 @@ namespace UAssetAPI.StructTypes
             Value = reader.ReadSingle();
         }
 
-        public override int Write(BinaryWriter writer, bool includeHeader)
+        public override int Write(AssetBinaryWriter writer, bool includeHeader)
         {
             if (includeHeader)
             {
@@ -215,7 +211,7 @@ namespace UAssetAPI.StructTypes
 
     public class ShadingModelMaterialInputPropertyData : MaterialInputPropertyData<uint>
     {
-        public ShadingModelMaterialInputPropertyData(FName name, UAsset asset) : base(name, asset)
+        public ShadingModelMaterialInputPropertyData(FName name) : base(name)
         {
 
         }
@@ -229,7 +225,7 @@ namespace UAssetAPI.StructTypes
         public override bool HasCustomStructSerialization { get { return true; } }
         public override FName PropertyType { get { return CurrentPropertyType; } }
 
-        public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
+        public override void Read(AssetBinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
             if (includeHeader)
             {
@@ -241,7 +237,7 @@ namespace UAssetAPI.StructTypes
             Value = reader.ReadUInt32();
         }
 
-        public override int Write(BinaryWriter writer, bool includeHeader)
+        public override int Write(AssetBinaryWriter writer, bool includeHeader)
         {
             if (includeHeader)
             {
@@ -257,7 +253,7 @@ namespace UAssetAPI.StructTypes
 
     public class VectorMaterialInputPropertyData : MaterialInputPropertyData<VectorPropertyData>
     {
-        public VectorMaterialInputPropertyData(FName name, UAsset asset) : base(name, asset)
+        public VectorMaterialInputPropertyData(FName name) : base(name)
         {
 
         }
@@ -271,7 +267,7 @@ namespace UAssetAPI.StructTypes
         public override bool HasCustomStructSerialization { get { return true; } }
         public override FName PropertyType { get { return CurrentPropertyType; } }
 
-        public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
+        public override void Read(AssetBinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
             if (includeHeader)
             {
@@ -280,11 +276,11 @@ namespace UAssetAPI.StructTypes
 
             ReadExpressionInput(reader, false, 0);
             reader.ReadInt32(); // always 0
-            Value = new VectorPropertyData(Name, Asset);
+            Value = new VectorPropertyData(Name);
             Value.Read(reader, false, 0);
         }
 
-        public override int Write(BinaryWriter writer, bool includeHeader)
+        public override int Write(AssetBinaryWriter writer, bool includeHeader)
         {
             if (includeHeader)
             {
@@ -299,7 +295,7 @@ namespace UAssetAPI.StructTypes
 
     public class Vector2MaterialInputPropertyData : MaterialInputPropertyData<Vector2DPropertyData>
     {
-        public Vector2MaterialInputPropertyData(FName name, UAsset asset) : base(name, asset)
+        public Vector2MaterialInputPropertyData(FName name) : base(name)
         {
 
         }
@@ -313,7 +309,7 @@ namespace UAssetAPI.StructTypes
         public override bool HasCustomStructSerialization { get { return true; } }
         public override FName PropertyType { get { return CurrentPropertyType; } }
 
-        public override void Read(BinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
+        public override void Read(AssetBinaryReader reader, bool includeHeader, long leng1, long leng2 = 0)
         {
             if (includeHeader)
             {
@@ -322,11 +318,11 @@ namespace UAssetAPI.StructTypes
 
             ReadExpressionInput(reader, false, 0);
             reader.ReadInt32(); // always 0
-            Value = new Vector2DPropertyData(Name, Asset);
+            Value = new Vector2DPropertyData(Name);
             Value.Read(reader, false, 0);
         }
 
-        public override int Write(BinaryWriter writer, bool includeHeader)
+        public override int Write(AssetBinaryWriter writer, bool includeHeader)
         {
             if (includeHeader)
             {

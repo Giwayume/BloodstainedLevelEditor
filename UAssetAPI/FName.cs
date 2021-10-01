@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
+using System.ComponentModel;
 using System.Text;
 
 namespace UAssetAPI
@@ -6,10 +8,12 @@ namespace UAssetAPI
     /// <summary>
     /// Unreal string - consists of a string and an encoding
     /// </summary>
+    [JsonConverter(typeof(FStringJsonConverter))]
     public class FString : ICloneable
     {
         public string Value;
         public Encoding Encoding;
+
         public override string ToString()
         {
             if (this == null || Value == null) return "null";
@@ -18,9 +22,29 @@ namespace UAssetAPI
 
         public override bool Equals(object obj)
         {
-            FString str = obj as FString;
-            if (str == null) return false;
-            return this.Value == str.Value && this.Encoding == str.Encoding;
+            if (obj is FString fStr)
+            {
+                if (fStr == null) return false;
+                return this.Value == fStr.Value && this.Encoding == fStr.Encoding;
+            }
+            else if (obj is string str)
+            {
+                return this.Value == str;
+            }
+
+            return false;
+        }
+
+        public static bool operator ==(FString one, FString two)
+        {
+            if (one is null || two is null) return one is null && two is null;
+            return one.Equals(two);
+        }
+
+        public static bool operator !=(FString one, FString two)
+        {
+            if (one is null || two is null) return !(one is null && two is null);
+            return !one.Equals(two);
         }
 
         public override int GetHashCode()
@@ -35,7 +59,7 @@ namespace UAssetAPI
 
         public FString(string value, Encoding encoding = null)
         {
-            if (encoding == null) encoding = Encoding.ASCII;
+            if (encoding == null) encoding = Encoding.UTF8.GetByteCount(value) == value.Length ? Encoding.ASCII : Encoding.Unicode;
 
             Value = value;
             Encoding = encoding;
@@ -50,6 +74,7 @@ namespace UAssetAPI
     /// <summary>
     /// Unreal name - consists of an FString (which is serialized as an index in the name map) and an instance number
     /// </summary>
+    [JsonConverter(typeof(FNameJsonConverter))]
     public class FName : ICloneable
     {
         public FString Value;
@@ -65,7 +90,7 @@ namespace UAssetAPI
         public static FName FromString(string val)
         {
             if (val == null || val == "null") return null;
-            if (val[val.Length - 1] != ')') return new FName(val);
+            if (val.Length == 0 || val[val.Length - 1] != ')') return new FName(val);
 
             int locLastLeftBracket = val.LastIndexOf('(');
             if (locLastLeftBracket < 0) return new FName(val);
@@ -80,8 +105,19 @@ namespace UAssetAPI
         public override bool Equals(object obj)
         {
             if (!(obj is FName name)) return false;
-            if (name == obj) return true;
-            return this.Value == name.Value && this.Number == name.Number;
+            return (this.Value == name.Value || this.Value.Value == name.Value.Value) && this.Number == name.Number;
+        }
+
+        public static bool operator ==(FName one, FName two)
+        {
+            if (one is null || two is null) return one is null && two is null;
+            return one.Equals(two);
+        }
+
+        public static bool operator !=(FName one, FName two)
+        {
+            if (one is null || two is null) return !(one is null && two is null);
+            return !one.Equals(two);
         }
 
         public override int GetHashCode()
@@ -102,7 +138,7 @@ namespace UAssetAPI
             }
             else
             {
-                Value = new FString(value, Encoding.UTF8.GetByteCount(value) == value.Length ? Encoding.ASCII : Encoding.Unicode);
+                Value = new FString(value);
             }
             Number = number;
         }

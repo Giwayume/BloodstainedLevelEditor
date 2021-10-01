@@ -35,7 +35,7 @@ public class UMapAsDictionaryTree {
         int exportIndex = 0;
         foreach (Export export in uAsset.Exports) {
             // Populate exportDependencyMap
-            int outerIndexInArray = (export.OuterIndex) - 1;
+            int outerIndexInArray = (export.OuterIndex.Index) - 1;
             if (!exportDependencyMap.ContainsKey(outerIndexInArray)) {
                 exportDependencyMap[outerIndexInArray] = new List<int>();
             }
@@ -92,7 +92,7 @@ public class UMapAsDictionaryTree {
                         FPackageIndex staticMeshPointer = objectPropertyData.Value;
                         if (staticMeshPointer.IsImport()) {
                             Import staticMeshImport = staticMeshPointer.ToImport(uAsset);
-                            int packageArrayIndex = Math.Abs(staticMeshImport.OuterIndex) - 1;
+                            int packageArrayIndex = Math.Abs(staticMeshImport.OuterIndex.Index) - 1;
                             if (packageArrayIndex > -1) {
                                 Import packageImport = uAsset.Imports[packageArrayIndex];
                                 treeNode["static_mesh_name"] = staticMeshImport.ObjectName.Value.Value;
@@ -106,21 +106,21 @@ public class UMapAsDictionaryTree {
                 else if (propertyName == "RelativeLocation") {
                     if (propertyData is StructPropertyData structPropertyData) {
                         if (structPropertyData.Value[0] is VectorPropertyData vectorPropertyData) {
-                            treeNode["translation"] = ConvertLocationFromUnrealToGodot(vectorPropertyData.Value);
+                            treeNode["translation"] = ConvertLocationFromUnrealToGodot(new float[]{vectorPropertyData.X, vectorPropertyData.Y, vectorPropertyData.Z});
                         }
                     }
                 }
                 else if (propertyName == "RelativeRotation") {
                     if (propertyData is StructPropertyData structPropertyData) {
                         if (structPropertyData.Value[0] is RotatorPropertyData rotatorPropertyData) {
-                            treeNode["rotation_degrees"] = ConvertRotationFromUnrealToGodot(rotatorPropertyData.Value);
+                            treeNode["rotation_degrees"] = ConvertRotationFromUnrealToGodot(new float[]{rotatorPropertyData.Pitch, rotatorPropertyData.Yaw, rotatorPropertyData.Roll});
                         }
                     }
                 }
                 else if (propertyName == "RelativeScale3D") {
                     if (propertyData is StructPropertyData structPropertyData) {
                         if (structPropertyData.Value[0] is VectorPropertyData vectorPropertyData) {
-                            treeNode["scale"] = ConvertScaleFromUnrealToGodot(vectorPropertyData.Value);
+                            treeNode["scale"] = ConvertScaleFromUnrealToGodot(new float[]{vectorPropertyData.X, vectorPropertyData.Y, vectorPropertyData.Z});
                         }
                     }
                 }

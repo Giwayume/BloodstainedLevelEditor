@@ -4,10 +4,12 @@ export(float, 0.0, 1.0) var sensitivity = 0.25
 
 # Updated by RoomEdit.gd
 var can_capture_mouse = false
+var viewport_position: Vector2 = Vector2()
 
 # Mouse state
 var _mouse_position = Vector2(0.0, 0.0)
 var _total_pitch = 0.0
+var _captured_mouse_position = Vector2(0.0, 0.0)
 
 # Movement state
 var _direction = Vector3(0.0, 0.0, 0.0)
@@ -34,7 +36,11 @@ func _input(event):
 	if can_capture_mouse and event is InputEventMouseButton:
 		match event.button_index:
 			BUTTON_RIGHT: # Only allows rotation if right click down
+				if event.pressed:
+					_captured_mouse_position = get_viewport().get_mouse_position()
 				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED if event.pressed else Input.MOUSE_MODE_VISIBLE)
+				if not event.pressed:
+					get_viewport().warp_mouse(viewport_position + _captured_mouse_position)
 			BUTTON_WHEEL_UP: # Increases max velocity
 				_vel_multiplier = clamp(_vel_multiplier * 1.1, 0.2, 20)
 			BUTTON_WHEEL_DOWN: # Decereases max velocity
