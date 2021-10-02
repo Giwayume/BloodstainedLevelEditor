@@ -9,7 +9,7 @@ var selected_level_name: String = ""
 var loading_screen: Control
 
 func _ready():
-	pass # Replace with function body.
+	PhysicsLayers3d.read_layers()
 
 func read_config():
 	return EditorConfig.read_config()

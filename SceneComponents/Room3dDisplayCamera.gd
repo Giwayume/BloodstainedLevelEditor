@@ -3,7 +3,8 @@ extends Camera
 export(float, 0.0, 1.0) var sensitivity = 0.25
 
 # Updated by RoomEdit.gd
-var can_capture_mouse = false
+var can_capture_mouse: bool = false
+var can_capture_keyboard: bool = false
 var viewport_position: Vector2 = Vector2()
 
 # Mouse state
@@ -41,10 +42,10 @@ func _input(event):
 				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED if event.pressed else Input.MOUSE_MODE_VISIBLE)
 				if not event.pressed:
 					get_viewport().warp_mouse(viewport_position + _captured_mouse_position)
-			BUTTON_WHEEL_UP: # Increases max velocity
-				_vel_multiplier = clamp(_vel_multiplier * 1.1, 0.2, 20)
-			BUTTON_WHEEL_DOWN: # Decereases max velocity
-				_vel_multiplier = clamp(_vel_multiplier / 1.1, 0.2, 20)
+#			BUTTON_WHEEL_UP: # Increases max velocity
+#				_vel_multiplier = clamp(_vel_multiplier * 1.1, 0.2, 20)
+#			BUTTON_WHEEL_DOWN: # Decereases max velocity
+#				_vel_multiplier = clamp(_vel_multiplier / 1.1, 0.2, 20)
 
 	# Receives key input
 	if event is InputEventKey:
@@ -69,27 +70,28 @@ func _process(delta):
 
 # Updates camera movement
 func _update_movement(delta):
-	# Computes desired direction from key states
-	_direction = Vector3(_d as float - _a as float, 
-						 _e as float - _q as float,
-						 _s as float - _w as float)
-	
-	# Computes the change in velocity due to desired direction and "drag"
-	# The "drag" is a constant acceleration on the camera to bring it's velocity to 0
-	var offset = _direction.normalized() * _acceleration * _vel_multiplier * delta \
-		+ _velocity.normalized() * _deceleration * _vel_multiplier * delta
-	
-	# Checks if we should bother translating the camera
-	if _direction == Vector3.ZERO and offset.length_squared() > _velocity.length_squared():
-		# Sets the velocity to 0 to prevent jittering due to imperfect deceleration
-		_velocity = Vector3.ZERO
-	else:
-		# Clamps speed to stay within maximum value (_vel_multiplier)
-		_velocity.x = clamp(_velocity.x + offset.x, -_vel_multiplier, _vel_multiplier)
-		_velocity.y = clamp(_velocity.y + offset.y, -_vel_multiplier, _vel_multiplier)
-		_velocity.z = clamp(_velocity.z + offset.z, -_vel_multiplier, _vel_multiplier)
-	
-		translate(_velocity * delta)
+	if can_capture_keyboard:
+		# Computes desired direction from key states
+		_direction = Vector3(_d as float - _a as float, 
+							 _e as float - _q as float,
+							 _s as float - _w as float)
+		
+		# Computes the change in velocity due to desired direction and "drag"
+		# The "drag" is a constant acceleration on the camera to bring it's velocity to 0
+		var offset = _direction.normalized() * _acceleration * _vel_multiplier * delta \
+			+ _velocity.normalized() * _deceleration * _vel_multiplier * delta
+		
+		# Checks if we should bother translating the camera
+		if _direction == Vector3.ZERO and offset.length_squared() > _velocity.length_squared():
+			# Sets the velocity to 0 to prevent jittering due to imperfect deceleration
+			_velocity = Vector3.ZERO
+		else:
+			# Clamps speed to stay within maximum value (_vel_multiplier)
+			_velocity.x = clamp(_velocity.x + offset.x, -_vel_multiplier, _vel_multiplier)
+			_velocity.y = clamp(_velocity.y + offset.y, -_vel_multiplier, _vel_multiplier)
+			_velocity.z = clamp(_velocity.z + offset.z, -_vel_multiplier, _vel_multiplier)
+		
+			translate(_velocity * delta)
 
 # Updates mouse look 
 func _update_mouselook():

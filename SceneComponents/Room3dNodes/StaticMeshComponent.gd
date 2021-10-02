@@ -1,10 +1,12 @@
 extends Spatial
 
+var room_3d_display: Spatial
+var definition: Dictionary
+var is_tree_leaf: bool = true
+
 var selection_box_material = preload("res://Materials/EditorSelectionBox.tres")
 var selection_mesh_material = preload("res://Materials/EditorSelectionMesh.tres")
 var selection_line_size = 0.05
-var room_3d_display: Spatial
-var definition: Dictionary
 var loaded_model: Spatial
 var loaded_model_mesh_instance: MeshInstance
 var loaded_model_mesh: Mesh
@@ -41,6 +43,8 @@ func on_3d_model_loaded(new_loaded_model):
 			var box_shape = BoxShape.new()
 			box_shape.extents = aabb.size / 2
 			area.translation = aabb.position + (box_shape.extents)
+			area.collision_layer = PhysicsLayers3d.layers.editor_select
+			area.collision_mask = PhysicsLayers3d.layers.none
 			collision_shape.set_shape(box_shape)
 			area.add_child(collision_shape)
 			add_child(area)

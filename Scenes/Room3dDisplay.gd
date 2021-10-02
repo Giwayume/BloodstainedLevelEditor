@@ -2,6 +2,7 @@ extends Spatial
 
 signal loading_start
 signal loading_end
+signal selection_changed
 
 var custom_component_scripts = {
 	"BlueprintGeneratedClass": {
@@ -15,6 +16,10 @@ var custom_component_scripts = {
 	"StaticMeshComponent": {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/StaticMeshComponent.gd")
+	},
+	"Unknown": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/Unknown.gd")
 	}
 }
 
@@ -29,14 +34,18 @@ var camera: Camera
 var gltf_loader: DynamicGLTFLoader
 var cached_models: Dictionary
 
-var can_capture_mouse: bool
+# Updated by RoomEdit.gd
+var can_capture_mouse: bool = false
+var can_capture_keyboard: bool = false
 var room_definition: Dictionary
+
 var model_load_waitlist: Array = []
 var current_waitlist_item: Dictionary
 var selected_nodes: Array
 
 var is_mouse_button_left_down: bool = false
 var is_mouse_button_right_down: bool = false
+var is_shift_modifier_pressed: bool = false
 
 #############
 # LIFECYCLE #
@@ -56,9 +65,13 @@ func _input(event):
 			BUTTON_LEFT:
 				is_mouse_button_left_down = event.pressed
 				if event.pressed and not is_mouse_button_right_down:
-					select_object_at_mouse()
+					select_object_at_mouse(is_shift_modifier_pressed)
 			BUTTON_RIGHT:
 				is_mouse_button_right_down = event.pressed
+
+	if event is InputEventKey:
+		if event.scancode == KEY_SHIFT:
+			is_shift_modifier_pressed = event.pressed
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 #func _process(delta):
@@ -170,12 +183,13 @@ func load_3d_model(definition: Dictionary, callback_instance: Object, callback_m
 func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 	var node = Spatial.new()
 	var is_auto_placement = true
+	var script_def = custom_component_scripts["Unknown"]
 	if custom_component_scripts.has(definition["type"]):
-		var script_def = custom_component_scripts[definition["type"]]
-		is_auto_placement = script_def.auto_placement
-		node.set_script(script_def.script)
-		node.definition = definition
-		node.room_3d_display = self
+		script_def = custom_component_scripts[definition["type"]]
+	is_auto_placement = script_def.auto_placement
+	node.set_script(script_def.script)
+	node.definition = definition
+	node.room_3d_display = self
 	parent.add_child(node)
 	node.name = definition["type"] + "__" + definition["name"]
 	if is_auto_placement:
@@ -186,19 +200,23 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 # OBJECT SELECTION #
 ####################
 
-func select_object_at_mouse():
-	for selected_node in selected_nodes:
-		selected_node.deselect()
+func select_object_at_mouse(is_add: bool = false):
+	if not is_add:
+		for selected_node in selected_nodes:
+			selected_node.deselect()
 	var ray_length = 100
 	var mouse_pos = get_viewport().get_mouse_position()
 	var ray_from = camera.project_ray_origin(mouse_pos)
 	var ray_to = ray_from + camera.project_ray_normal(mouse_pos) * ray_length
 	var space_state = get_world().direct_space_state
 	var intersections: Array = []
-	var current_intersection = space_state.intersect_ray(ray_from, ray_to, [], 2147483647, false, true)
+	# Find all intersections on ray
+	var collision_mask = PhysicsLayers3d.layers.editor_select
+	var current_intersection = space_state.intersect_ray(ray_from, ray_to, [], collision_mask, true, true)
 	while current_intersection != null and current_intersection.has("collider"):
-		intersections.push_back(current_intersection.collider)
-		current_intersection = space_state.intersect_ray(ray_from, ray_to, intersections, 2147483647, false, true)
+		if not intersections.has(current_intersection.collider):
+			intersections.push_back(current_intersection.collider)
+		current_intersection = space_state.intersect_ray(ray_from, ray_to, intersections, collision_mask, false, true)
 	var closest_intersection = null
 	var closest_point = Vector3()
 	var closest_intersect_distance = INF
@@ -212,11 +230,14 @@ func select_object_at_mouse():
 				closest_intersection = intersection
 	if closest_intersection != null:
 		var collider_parent = closest_intersection.get_parent()
-		collider_parent.select()
-		selected_nodes = [collider_parent]
-	
-#	var selection = space_state.intersect_ray(ray_from, ray_to, [], 2147483647, false, true)
-#	if selection and selection.collider:
-#		var collider_parent = selection.collider.get_parent()
-#		collider_parent.select()
-#		selected_nodes = [collider_parent]
+		if is_add:
+			if selected_nodes.has(collider_parent):
+				collider_parent.deselect()
+				selected_nodes.erase(collider_parent)
+			else:
+				collider_parent.select()
+				selected_nodes.push_back(collider_parent)
+		else:
+			collider_parent.select()
+			selected_nodes = [collider_parent]
+	emit_signal("selection_changed", selected_nodes)
