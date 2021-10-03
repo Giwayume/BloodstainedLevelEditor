@@ -3,7 +3,7 @@ extends Control
 var enemy_profiles = load("res://Config/EnemyProfiles.gd").enemy_profiles
 var viewport_ui_container_normal_style = preload("res://EditorTheme/ViewportUiContainerNormal.tres")
 var viewport_ui_container_focus_style = preload("res://EditorTheme/ViewportUiContainerFocus.tres")
-var selectable_types = ["StaticMeshComponent"]
+var selectable_types = ["StaticMeshActor", "StaticMeshComponent"]
 
 var editor: Node
 var uasset_parser: Node

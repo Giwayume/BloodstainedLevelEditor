@@ -3,6 +3,7 @@ extends Spatial
 var room_3d_display: Spatial
 var definition: Dictionary
 var is_tree_leaf: bool = true
+var use_parent_as_proxy: bool = false
 
 var selection_box_material = preload("res://Materials/EditorSelectionBox.tres")
 var selection_mesh_material = preload("res://Materials/EditorSelectionMesh.tres")
@@ -21,6 +22,8 @@ func _ready():
 		scale = definition["scale"]
 	if definition.has("static_mesh_name"):
 		room_3d_display.load_3d_model(definition, self, "on_3d_model_loaded")
+	if get_parent().definition["type"] == "StaticMeshActor":
+		use_parent_as_proxy = true
 
 func _process(delta):
 	if model_just_selected_timeout > 0:
@@ -52,7 +55,7 @@ func on_3d_model_loaded(new_loaded_model):
 			break
 
 func select():
-	if not get_node_or_null("SelectionOutline"):
+	if loaded_model_mesh_instance != null and not get_node_or_null("SelectionOutline"):
 		loaded_model_mesh_instance.material_override = null
 		
 		var selection_overlay_model = loaded_model.duplicate(0)
@@ -158,10 +161,11 @@ func select():
 #		outline_container.name = "SelectionOutline"
 
 func deselect():
-	var selection_outline = get_node_or_null("SelectionOutline")
-	if selection_outline != null:
-		selection_outline.get_parent().remove_child(selection_outline)
-	var selection_mesh = get_node_or_null("SelectionMesh")
-	if selection_mesh != null:
-		selection_mesh.get_parent().remove_child(selection_mesh)
-	loaded_model.show()
+	if loaded_model_mesh_instance != null:
+		var selection_outline = get_node_or_null("SelectionOutline")
+		if selection_outline != null:
+			selection_outline.get_parent().remove_child(selection_outline)
+		var selection_mesh = get_node_or_null("SelectionMesh")
+		if selection_mesh != null:
+			selection_mesh.get_parent().remove_child(selection_mesh)
+		loaded_model.show()

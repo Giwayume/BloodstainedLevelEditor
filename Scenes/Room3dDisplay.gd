@@ -13,6 +13,10 @@ var custom_component_scripts = {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/SceneComponent.gd")
 	},
+	"StaticMeshActor": {
+		"auto_placement": false,
+		"script": preload("res://SceneComponents/Room3dNodes/StaticMeshActor.gd")
+	},
 	"StaticMeshComponent": {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/StaticMeshComponent.gd")
@@ -229,15 +233,17 @@ func select_object_at_mouse(is_add: bool = false):
 				closest_point = cast_result.closest
 				closest_intersection = intersection
 	if closest_intersection != null:
-		var collider_parent = closest_intersection.get_parent()
+		var node_to_select = closest_intersection.get_parent()
+		if "use_parent_as_proxy" in node_to_select and node_to_select["use_parent_as_proxy"]:
+			node_to_select = node_to_select.get_parent()
 		if is_add:
-			if selected_nodes.has(collider_parent):
-				collider_parent.deselect()
-				selected_nodes.erase(collider_parent)
+			if selected_nodes.has(node_to_select):
+				node_to_select.deselect()
+				selected_nodes.erase(node_to_select)
 			else:
-				collider_parent.select()
-				selected_nodes.push_back(collider_parent)
+				node_to_select.select()
+				selected_nodes.push_back(node_to_select)
 		else:
-			collider_parent.select()
-			selected_nodes = [collider_parent]
+			node_to_select.select()
+			selected_nodes = [node_to_select]
 	emit_signal("selection_changed", selected_nodes)
