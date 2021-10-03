@@ -32,6 +32,10 @@ var background_tree: Dictionary = {
 
 var room_definition: Dictionary
 
+var is_any_menu_popup_visible: bool = false
+var is_mouse_in_3d_viewport_range: bool = false
+var is_3d_viewport_focused: bool = false
+
 #############
 # LIFECYCLE #
 #############
@@ -66,6 +70,8 @@ func _ready():
 	background_tree.root_item.disable_folding = true
 	
 	menu_button_package.get_popup().connect("id_pressed", self, "on_menu_popup_package_pressed")
+	menu_button_package.get_popup().connect("visibility_changed", self, "on_any_menu_popup_visibility_changed")
+	menu_button_edit.get_popup().connect("visibility_changed", self, "on_any_menu_popup_visibility_changed")
 	
 	background_tree.tree.connect("multi_selected", self, "on_background_tree_multi_selected")
 	room_3d_display.connect("loading_start", self, "on_room_3d_display_loading_start")
@@ -75,26 +81,23 @@ func _ready():
 	room_3d_focus_container.connect("focus_exited", self, "on_room_3d_focus_container_blur")
 	
 	start_parse_pak_thread()
-	
+
 func _input(event):
 	# Tell Room3dDisplay if it should capture mouse events
 	var parent = get_parent()
 	var viewport_position = room_3d_viewport_container.rect_global_position
 	var global_mouse_position = get_global_mouse_position()
-	var can_capture_mouse = (
+	is_mouse_in_3d_viewport_range = (
 		global_mouse_position.x > viewport_position.x and
 		global_mouse_position.y > viewport_position.y and
 		global_mouse_position.x < viewport_position.x + room_3d_viewport_container.rect_size.x and
 		global_mouse_position.y < viewport_position.y + room_3d_viewport_container.rect_size.y
 	)
-	var can_capture_keyboard = room_3d_focus_container.has_focus()
-	room_3d_display.can_capture_mouse = can_capture_mouse
-	room_3d_display.can_capture_keyboard = can_capture_keyboard
-	room_3d_display_camera.can_capture_mouse = can_capture_mouse
-	room_3d_display_camera.can_capture_keyboard = can_capture_keyboard
+	is_3d_viewport_focused = room_3d_focus_container.has_focus()
 	room_3d_display_camera.viewport_position = viewport_position
+	update_3d_viewport_input_tracking()
 	if event is InputEventMouseButton:
-		if can_capture_mouse and event.pressed:
+		if is_mouse_in_3d_viewport_range and event.pressed:
 			room_3d_focus_container.call_deferred("grab_focus")
 
 ###########
@@ -173,6 +176,10 @@ func threads_finished():
 # CALLBACKS #
 #############
 
+func on_any_menu_popup_visibility_changed():
+	is_any_menu_popup_visible = menu_button_package.get_popup().visible or menu_button_edit.get_popup().visible
+
+
 func on_background_tree_multi_selected(item: TreeItem, column: int, selected: bool):
 	var current_tree: Dictionary = background_tree
 	var selected_nodes = room_3d_display.selected_nodes
@@ -225,8 +232,8 @@ func on_room_3d_focus_container_focus():
 
 func on_room_3d_focus_container_blur():
 	room_3d_focus_container.add_stylebox_override("panel", viewport_ui_container_normal_style)
-	room_3d_display.can_capture_mouse = false
-	room_3d_display_camera.can_capture_mouse = false
+	is_3d_viewport_focused = false
+	update_3d_viewport_input_tracking()
 
 func tree_uncollapse_from_item(item: TreeItem):
 	item.set_collapsed(false)
@@ -237,6 +244,14 @@ func tree_uncollapse_from_item(item: TreeItem):
 ###########
 # METHODS #
 ###########
+
+func update_3d_viewport_input_tracking():
+	var can_capture_mouse = is_mouse_in_3d_viewport_range and not is_any_menu_popup_visible
+	var can_capture_keyboard = is_3d_viewport_focused and not is_any_menu_popup_visible
+	room_3d_display.can_capture_mouse = can_capture_mouse
+	room_3d_display.can_capture_keyboard = can_capture_keyboard
+	room_3d_display_camera.can_capture_mouse = can_capture_mouse
+	room_3d_display_camera.can_capture_keyboard = can_capture_keyboard
 
 func setup_after_load():
 	setup_3d_view()
