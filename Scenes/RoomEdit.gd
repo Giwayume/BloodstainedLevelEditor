@@ -1,6 +1,6 @@
 extends Control
 
-var enemy_profiles = load("res://Config/EnemyProfiles.gd").enemy_profiles
+var enemy_profiles = preload("res://Config/EnemyProfiles.gd").enemy_profiles
 var viewport_ui_container_normal_style = preload("res://EditorTheme/ViewportUiContainerNormal.tres")
 var viewport_ui_container_focus_style = preload("res://EditorTheme/ViewportUiContainerFocus.tres")
 var selectable_types = ["StaticMeshActor", "StaticMeshComponent"]
@@ -22,6 +22,10 @@ var room_3d_display: Spatial
 var room_3d_display_camera: Camera
 var room_3d_focus_container: PanelContainer
 var room_3d_viewport_container: ViewportContainer
+var room_editor_controls_display: Spatial
+var room_editor_controls_display_camera: Camera
+var room_editor_controls_display_cursor: Spatial
+var viewport_toolbar: Control
 
 var background_tree: Dictionary = {
 	"tree": null,
@@ -32,9 +36,12 @@ var background_tree: Dictionary = {
 
 var room_definition: Dictionary
 
+var current_tool: String = "select"
+var transform_tool_names = ["select", "move", "rotate", "scale"]
 var is_any_menu_popup_visible: bool = false
 var is_mouse_in_3d_viewport_range: bool = false
 var is_3d_viewport_focused: bool = false
+var is_3d_editor_control_active: bool = false
 
 #############
 # LIFECYCLE #
@@ -60,6 +67,10 @@ func _ready():
 	room_3d_display_camera = room_3d_display.find_node("Camera", true, true)
 	room_3d_focus_container = find_node("Room3dFocusContainer", true, true)
 	room_3d_viewport_container = find_node("Room3dViewportContainer", true, true)
+	room_editor_controls_display = find_node("RoomEditorControlsDisplay", true, true)
+	room_editor_controls_display_camera = room_editor_controls_display.find_node("Camera", true, true)
+	room_editor_controls_display_cursor = room_editor_controls_display.find_node("ObjectTransformCursor", true, true)
+	viewport_toolbar = find_node("RoomEditViewportToolbar", true, true)
 	
 	editor_container.hide()
 	loading_status_container.show()
@@ -77,8 +88,12 @@ func _ready():
 	room_3d_display.connect("loading_start", self, "on_room_3d_display_loading_start")
 	room_3d_display.connect("loading_end", self, "on_room_3d_display_loading_end")
 	room_3d_display.connect("selection_changed", self, "on_room_3d_display_selection_changed")
+	room_3d_display_camera.connect("transform_changed", self, "on_room_3d_display_camera_transform_changed")
 	room_3d_focus_container.connect("focus_entered", self, "on_room_3d_focus_container_focus")
 	room_3d_focus_container.connect("focus_exited", self, "on_room_3d_focus_container_blur")
+	room_editor_controls_display.connect("control_active", self, "on_room_editor_controls_display_control_active")
+	room_editor_controls_display.connect("control_inactive", self, "on_room_editor_controls_display_control_inactive")
+	viewport_toolbar.connect("tool_changed", self, "on_tool_changed")
 	
 	start_parse_pak_thread()
 
@@ -200,6 +215,9 @@ func on_menu_popup_package_pressed(id: int):
 	elif id == 3:
 		 get_tree().change_scene("res://Scenes/SelectPackage.tscn")
 
+func on_room_3d_display_camera_transform_changed(transform):
+	room_editor_controls_display_camera.transform = transform
+
 func on_room_3d_display_loading_start():
 	loading_3d_scene_notification.show()
 
@@ -235,11 +253,20 @@ func on_room_3d_focus_container_blur():
 	is_3d_viewport_focused = false
 	update_3d_viewport_input_tracking()
 
-func tree_uncollapse_from_item(item: TreeItem):
-	item.set_collapsed(false)
-	var parent = item.get_parent()
-	if parent != null:
-		tree_uncollapse_from_item(parent)
+func on_room_editor_controls_display_control_active():
+	is_3d_editor_control_active = true
+	
+func on_room_editor_controls_display_control_inactive():
+	is_3d_editor_control_active = false
+
+func on_tool_changed(new_tool: String):
+	current_tool = new_tool
+	if transform_tool_names.has(current_tool):
+		room_editor_controls_display_cursor.show()
+		room_editor_controls_display_cursor.set_mode(current_tool)
+	else:
+		room_editor_controls_display_cursor.hide()
+
 
 ###########
 # METHODS #
@@ -248,10 +275,12 @@ func tree_uncollapse_from_item(item: TreeItem):
 func update_3d_viewport_input_tracking():
 	var can_capture_mouse = is_mouse_in_3d_viewport_range and not is_any_menu_popup_visible
 	var can_capture_keyboard = is_3d_viewport_focused and not is_any_menu_popup_visible
-	room_3d_display.can_capture_mouse = can_capture_mouse
+	room_3d_display.can_capture_mouse = can_capture_mouse and not is_3d_editor_control_active
 	room_3d_display.can_capture_keyboard = can_capture_keyboard
+	room_3d_display.can_select = not is_3d_editor_control_active
 	room_3d_display_camera.can_capture_mouse = can_capture_mouse
 	room_3d_display_camera.can_capture_keyboard = can_capture_keyboard
+	room_editor_controls_display.can_capture_mouse = can_capture_mouse
 
 func setup_after_load():
 	setup_3d_view()
@@ -277,4 +306,9 @@ func build_object_outline(tree: Tree, parent_item: TreeItem, tree_id_map: Dictio
 		node_id_map[definition["export_index"]] = child_node
 		if not child_node.is_tree_leaf:
 			build_object_outline(tree, tree_item, tree_id_map, node_id_map, child_node)
-		
+
+func tree_uncollapse_from_item(item: TreeItem):
+	item.set_collapsed(false)
+	var parent = item.get_parent()
+	if parent != null:
+		tree_uncollapse_from_item(parent)

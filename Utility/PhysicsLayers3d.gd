@@ -13,5 +13,5 @@ static func read_layers():
 		)
 		if not layer_name:
 			layer_name = str("Layer ", i)
-		layers[layer_name] = pow(2, i - 1)
+		layers[layer_name] = int(pow(2, i - 1))
 		bits[pow(2, i - 1)] = layer_name

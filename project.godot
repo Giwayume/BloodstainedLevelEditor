@@ -23,11 +23,17 @@ _global_script_classes=[ {
 "class": "PhysicsLayers3d",
 "language": "GDScript",
 "path": "res://Utility/PhysicsLayers3d.gd"
+}, {
+"base": "Reference",
+"class": "UE4Convert",
+"language": "GDScript",
+"path": "res://Utility/UE4Convert.gd"
 } ]
 _global_script_class_icons={
 "EditorConfig": "",
 "MeshRayCast": "",
-"PhysicsLayers3d": ""
+"PhysicsLayers3d": "",
+"UE4Convert": ""
 }
 
 [application]
@@ -65,6 +71,7 @@ theme/custom="res://EditorTheme/MainTheme.tres"
 3d_render/layer_1="default"
 3d_physics/layer_1="default"
 3d_physics/layer_2="editor_select"
+3d_physics/layer_3="editor_control_select"
 
 [physics]
 

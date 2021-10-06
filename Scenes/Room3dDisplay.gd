@@ -41,6 +41,7 @@ var cached_models: Dictionary
 # Updated by RoomEdit.gd
 var can_capture_mouse: bool = false
 var can_capture_keyboard: bool = false
+var can_select: bool = true
 var room_definition: Dictionary
 
 var model_load_waitlist: Array = []
@@ -69,7 +70,7 @@ func _input(event):
 			BUTTON_LEFT:
 				is_mouse_button_left_down = event.pressed
 				if event.pressed and not is_mouse_button_right_down:
-					select_object_at_mouse(is_shift_modifier_pressed)
+					call_deferred("select_object_at_mouse", is_shift_modifier_pressed)
 			BUTTON_RIGHT:
 				is_mouse_button_right_down = event.pressed
 
@@ -205,6 +206,8 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 ####################
 
 func select_object_at_mouse(is_add: bool = false):
+	if not can_select:
+		return
 	if not is_add:
 		for selected_node in selected_nodes:
 			selected_node.deselect()
@@ -225,13 +228,15 @@ func select_object_at_mouse(is_add: bool = false):
 	var closest_point = Vector3()
 	var closest_intersect_distance = INF
 	for intersection in intersections:
-		var mesh = intersection.get_parent().loaded_model_mesh_instance
-		var cast_result = MeshRayCast.intersect_ray(mesh, ray_from, ray_to)
-		if cast_result.closest != null:
-			if cast_result.closest_distance < closest_intersect_distance:
-				closest_intersect_distance = cast_result.closest_distance
-				closest_point = cast_result.closest
-				closest_intersection = intersection
+		var collider_parent = intersection.get_parent()
+		if "loaded_model_mesh_instance" in collider_parent:
+			var mesh = collider_parent.loaded_model_mesh_instance
+			var cast_result = MeshRayCast.intersect_ray(mesh, ray_from, ray_to)
+			if cast_result.closest != null:
+				if cast_result.closest_distance < closest_intersect_distance:
+					closest_intersect_distance = cast_result.closest_distance
+					closest_point = cast_result.closest
+					closest_intersection = intersection
 	if closest_intersection != null:
 		var node_to_select = closest_intersection.get_parent()
 		if "use_parent_as_proxy" in node_to_select and node_to_select["use_parent_as_proxy"]:

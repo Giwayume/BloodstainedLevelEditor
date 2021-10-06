@@ -1,5 +1,7 @@
 extends Camera
 
+signal transform_changed
+
 export(float, 0.0, 1.0) var sensitivity = 0.25
 
 # Updated by RoomEdit.gd
@@ -67,6 +69,7 @@ func _input(event):
 func _process(delta):
 	_update_mouselook()
 	_update_movement(delta)
+	emit_signal("transform_changed", transform)
 
 # Updates camera movement
 func _update_movement(delta):

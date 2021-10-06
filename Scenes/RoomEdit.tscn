@@ -1,8 +1,11 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=9 format=2]
 
 [ext_resource path="res://Scenes/RoomEdit.gd" type="Script" id=1]
 [ext_resource path="res://Scenes/Room3dDisplay.tscn" type="PackedScene" id=2]
 [ext_resource path="res://EditorTheme/ViewportUiContainerNormal.tres" type="StyleBox" id=3]
+[ext_resource path="res://SceneComponents/RoomEditViewportToolbar.tscn" type="PackedScene" id=4]
+[ext_resource path="res://EditorTheme/PanelContainerForeground.tres" type="StyleBox" id=5]
+[ext_resource path="res://Scenes/RoomEditorControlsDisplay.tscn" type="PackedScene" id=6]
 
 [sub_resource type="StyleBoxEmpty" id=1]
 content_margin_left = 4.0
@@ -10,7 +13,7 @@ content_margin_right = 4.0
 content_margin_top = 8.0
 content_margin_bottom = 8.0
 
-[sub_resource type="StyleBoxFlat" id=3]
+[sub_resource type="StyleBoxFlat" id=2]
 content_margin_left = 4.0
 content_margin_right = 4.0
 content_margin_top = 4.0
@@ -89,43 +92,74 @@ size_flags_horizontal = 3
 custom_constants/margin_left = 8
 custom_constants/margin_bottom = 8
 
-[node name="Room3dFocusContainer" type="PanelContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer"]
 margin_left = 8.0
 margin_right = 771.0
 margin_bottom = 554.0
+custom_constants/separation = 0
+
+[node name="ViewportToolsContainer" type="PanelContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/VBoxContainer"]
+margin_right = 763.0
+margin_bottom = 34.0
+custom_styles/panel = ExtResource( 5 )
+
+[node name="RoomEditViewportToolbar" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/VBoxContainer/ViewportToolsContainer" instance=ExtResource( 4 )]
+
+[node name="Room3dFocusContainer" type="PanelContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/VBoxContainer"]
+margin_top = 34.0
+margin_right = 763.0
+margin_bottom = 554.0
 focus_mode = 2
+size_flags_vertical = 3
 custom_styles/panel = ExtResource( 3 )
 
-[node name="Room3dViewportContainer" type="ViewportContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/Room3dFocusContainer"]
+[node name="Room3dViewportContainer" type="ViewportContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/VBoxContainer/Room3dFocusContainer"]
 margin_left = 1.0
 margin_top = 1.0
 margin_right = 762.0
-margin_bottom = 553.0
+margin_bottom = 519.0
 size_flags_horizontal = 3
 stretch = true
 
-[node name="Viewport" type="Viewport" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/Room3dFocusContainer/Room3dViewportContainer"]
-size = Vector2( 761, 552 )
+[node name="Viewport" type="Viewport" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/VBoxContainer/Room3dFocusContainer/Room3dViewportContainer"]
+size = Vector2( 761, 518 )
 handle_input_locally = false
 msaa = 2
 render_target_update_mode = 3
 
-[node name="Room3dDisplay" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/Room3dFocusContainer/Room3dViewportContainer/Viewport" instance=ExtResource( 2 )]
+[node name="Room3dDisplay" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/VBoxContainer/Room3dFocusContainer/Room3dViewportContainer/Viewport" instance=ExtResource( 2 )]
 
-[node name="Loading3dSceneNotification" type="CenterContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/Room3dFocusContainer"]
+[node name="EditorControlsOverlayViewportContainer" type="ViewportContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/VBoxContainer/Room3dFocusContainer"]
 margin_left = 1.0
 margin_top = 1.0
 margin_right = 762.0
-margin_bottom = 553.0
+margin_bottom = 519.0
+stretch = true
 
-[node name="PanelContainer" type="PanelContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/Room3dFocusContainer/Loading3dSceneNotification"]
+[node name="Viewport" type="Viewport" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/VBoxContainer/Room3dFocusContainer/EditorControlsOverlayViewportContainer"]
+size = Vector2( 761, 518 )
+own_world = true
+transparent_bg = true
+handle_input_locally = false
+msaa = 2
+render_target_update_mode = 3
+
+[node name="RoomEditorControlsDisplay" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/VBoxContainer/Room3dFocusContainer/EditorControlsOverlayViewportContainer/Viewport" instance=ExtResource( 6 )]
+
+[node name="Loading3dSceneNotification" type="CenterContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/VBoxContainer/Room3dFocusContainer"]
+margin_left = 1.0
+margin_top = 1.0
+margin_right = 762.0
+margin_bottom = 519.0
+
+[node name="PanelContainer" type="PanelContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/VBoxContainer/Room3dFocusContainer/Loading3dSceneNotification"]
 margin_left = 311.0
-margin_top = 261.0
+margin_top = 244.0
 margin_right = 450.0
-margin_bottom = 291.0
-custom_styles/panel = SubResource( 3 )
+margin_bottom = 274.0
+custom_styles/panel = SubResource( 2 )
 
-[node name="Label" type="Label" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/Room3dFocusContainer/Loading3dSceneNotification/PanelContainer"]
+[node name="Label" type="Label" parent="EditorContainer/VBoxContainer/HSplitContainer/ViewportMarginContainer/VBoxContainer/Room3dFocusContainer/Loading3dSceneNotification/PanelContainer"]
 margin_left = 4.0
 margin_top = 4.0
 margin_right = 135.0
