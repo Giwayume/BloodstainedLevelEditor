@@ -142,11 +142,9 @@ public class UMapAsDictionaryTree {
     }
 
     public static void ModifyAssetFromEditsJson(UAsset uAsset, JObject editsJson) {
-        GD.Print("here");
         JObject existingExports = (JObject)editsJson["existing_exports"];
         foreach (var editExportEntry in existingExports) {
             int exportIndex = int.Parse(editExportEntry.Key);
-            GD.Print(exportIndex);
             Export baseExport = uAsset.Exports[exportIndex];
             if (baseExport is NormalExport export) {
                 JObject editExport = (JObject)editExportEntry.Value;

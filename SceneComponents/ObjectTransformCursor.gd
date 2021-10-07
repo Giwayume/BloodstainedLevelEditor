@@ -1,5 +1,8 @@
 extends Spatial
 
+signal scale_preview
+signal scale_cancel
+signal scale
 signal translate_preview
 signal translate_cancel
 signal translate
@@ -15,6 +18,7 @@ var camera: Camera
 var nodes: Dictionary
 var mode: String = "move"
 var drag_start = null
+var scale_start = null
 var translate_start = null
 
 func _ready():
@@ -111,6 +115,7 @@ func handle_mouse_down_collision(event, collider, ray):
 		if type == "move_scale":
 			drag_start = get_axis_ray_collision(axis, ray)
 			translate_start = translation
+			scale_start = scale
 
 func handle_mouse_move_collision(event, collider, ray):
 	handle_mouse_move_release_collision(event, collider, ray, "move")
@@ -120,27 +125,43 @@ func handle_mouse_up_collision(event, collider, ray):
 		handle_mouse_move_release_collision(event, collider, ray, "up")
 		drag_start = null
 		translate_start = null
+		scale_start = null
 
 func handle_mouse_move_release_collision(event, collider, ray, mouse_type):
 	if drag_start:
-		var signal_name = "translate_preview"
-		if mouse_type == "up":
-			signal_name = "translate"
 		var collider_info = get_collider_info(collider)
 		var axis = collider_info.axis
 		var type = collider_info.type
 		if type == "move_scale":
+			var signal_name = ""
+			if mode == "move":
+				signal_name = "translate_preview"
+				if mouse_type == "up":
+					signal_name = "translate"
+			elif mode == "scale":
+				signal_name = "scale_preview"
+				if mouse_type == "up":
+					signal_name = "scale"
 			var drag_now = get_axis_ray_collision(axis, ray)
 			if drag_now != null:
 				if axis == "x":
-					translation.x = translate_start.x + (drag_now.x - drag_start.x)
-					emit_signal(signal_name, Vector3(drag_now.x - drag_start.x, 0, 0))
+					if mode == "scale":
+						emit_signal(signal_name, Vector3((drag_now.x - translation.x) / (drag_start.x - translation.x), 1, 1))
+					else:
+						translation.x = translate_start.x + (drag_now.x - drag_start.x)
+						emit_signal(signal_name, Vector3(drag_now.x - drag_start.x, 0, 0))
 				if axis == "y":
-					translation.z = translate_start.z + (drag_now.z - drag_start.z)
-					emit_signal(signal_name, Vector3(0, 0, drag_now.z - drag_start.z))
+					if mode == "scale":
+						emit_signal(signal_name, Vector3(1, 1, (drag_now.z - translation.z) / (drag_start.z - translation.z)))
+					else:
+						translation.z = translate_start.z + (drag_now.z - drag_start.z)
+						emit_signal(signal_name, Vector3(0, 0, drag_now.z - drag_start.z))
 				if axis == "z":
-					translation.y = translate_start.y + (drag_now.y - drag_start.y)
-					emit_signal(signal_name, Vector3(0, drag_now.y - drag_start.y, 0))
+					if mode == "scale":
+						emit_signal(signal_name, Vector3(1, (drag_now.y - translation.y) / (drag_start.y - translation.y), 1))
+					else:
+						translation.y = translate_start.y + (drag_now.y - drag_start.y)
+						emit_signal(signal_name, Vector3(0, drag_now.y - drag_start.y, 0))
 
 func handle_mouse_enter_collision(event, collider, _ray):
 	var collider_info = get_collider_info(collider)

@@ -201,8 +201,9 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 	node.set_script(script_def.script)
 	if definition.has("export_index"):
 		var export_index = definition["export_index"]
-		for prop_name in definition:
-			use_edited_prop_if_exists(definition, export_index, prop_name)
+		use_edited_prop_if_exists(definition, export_index, "translation")
+		use_edited_prop_if_exists(definition, export_index, "rotation_degrees")
+		use_edited_prop_if_exists(definition, export_index, "scale")
 	node.definition = definition
 	node.room_3d_display = self
 	node.tree_name = current_placing_tree_name
