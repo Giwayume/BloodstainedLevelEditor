@@ -1,4 +1,6 @@
 using Godot;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -139,6 +141,75 @@ public class UMapAsDictionaryTree {
         return treeNode;
     }
 
+    public static void ModifyAssetFromEditsJson(UAsset uAsset, JObject editsJson) {
+        GD.Print("here");
+        JObject existingExports = (JObject)editsJson["existing_exports"];
+        foreach (var editExportEntry in existingExports) {
+            int exportIndex = int.Parse(editExportEntry.Key);
+            GD.Print(exportIndex);
+            Export baseExport = uAsset.Exports[exportIndex];
+            if (baseExport is NormalExport export) {
+                JObject editExport = (JObject)editExportEntry.Value;
+                foreach (var editExportPropEntry in editExport) {
+                    string propName = editExportPropEntry.Key;
+                    JToken propValue = editExportPropEntry.Value;
+                    if (propName == "translation") {
+                        JObject translationObject = (JObject)propValue;
+                        uAsset.AddNameReference(new FString("RelativeLocation"));
+                        uAsset.AddNameReference(new FString("Vector"));
+                        VectorPropertyData unrealLocation = ConvertLocationFromGodotToUnreal(new Vector3(
+                            translationObject.Value<float>("x"),
+                            translationObject.Value<float>("y"),
+                            translationObject.Value<float>("z")
+                        ));
+                        StructPropertyData unrealLocationStruct = new StructPropertyData(new FName("RelativeLocation"), new FName("Vector"));
+                        unrealLocationStruct.Value.Add(unrealLocation);
+                        SetPropertyDataByName<StructPropertyData>(export.Data, new FName("RelativeLocation"), unrealLocationStruct);
+                    }
+                    else if (propName == "rotation_degrees") {
+                        JObject rotationObject = (JObject)propValue;
+                        uAsset.AddNameReference(new FString("RelativeRotation"));
+                        uAsset.AddNameReference(new FString("Rotator"));
+                        RotatorPropertyData unrealRotation = ConvertRotationFromGodotToUnreal(new Vector3(
+                            rotationObject.Value<float>("x"),
+                            rotationObject.Value<float>("y"),
+                            rotationObject.Value<float>("z")
+                        ));
+                        StructPropertyData unrealRotationStruct = new StructPropertyData(new FName("RelativeRotation"), new FName("Rotator"));
+                        unrealRotationStruct.Value.Add(unrealRotation);
+                        SetPropertyDataByName<StructPropertyData>(export.Data, new FName("RelativeRotation"), unrealRotationStruct);
+                    }
+                    else if (propName == "scale") {
+                        JObject scaleObject = (JObject)propValue;
+                        uAsset.AddNameReference(new FString("RelativeScale3D"));
+                        uAsset.AddNameReference(new FString("Vector"));
+                        VectorPropertyData unrealScale = ConvertScaleFromGodotToUnreal(new Vector3(
+                            scaleObject.Value<float>("x"),
+                            scaleObject.Value<float>("y"),
+                            scaleObject.Value<float>("z")
+                        ));
+                        StructPropertyData unrealScaleStruct = new StructPropertyData(new FName("RelativeScale3D"), new FName("Vector"));
+                        unrealScaleStruct.Value.Add(unrealScale);
+                        SetPropertyDataByName<StructPropertyData>(export.Data, new FName("RelativeScale3D"), unrealScaleStruct);
+                    }
+                }
+            }
+        }
+
+    }
+
+    static void SetPropertyDataByName<T>(List<PropertyData> propertyDataList, FName name, T value) where T: PropertyData {
+        int index = 0;
+        foreach (PropertyData propertyData in propertyDataList) {
+            if (propertyData.Name.ToString() == name.ToString()) {
+                propertyDataList[index] = (PropertyData)value;
+                return;
+            }
+            index++;
+        }
+        propertyDataList.Add((PropertyData)value);
+    }
+
     static Vector3 ConvertLocationFromUnrealToGodot(float[] unrealLocation) {
         return new Vector3(
             unrealLocation[0] * 0.01f,
@@ -161,6 +232,30 @@ public class UMapAsDictionaryTree {
             unrealScale[2],
             unrealScale[1]
         );
+    }
+
+    static VectorPropertyData ConvertLocationFromGodotToUnreal(Vector3 godotLocation) {
+        VectorPropertyData unrealLocation = new VectorPropertyData(new FName("RelativeLocation"));
+        unrealLocation.X = godotLocation.x * 100f;
+        unrealLocation.Y = godotLocation.z * 100f;
+        unrealLocation.Z = godotLocation.y * 100f;
+        return unrealLocation;
+    }
+
+    static RotatorPropertyData ConvertRotationFromGodotToUnreal(Vector3 godotRotation) {
+        RotatorPropertyData unrealRotation = new RotatorPropertyData(new FName("RelativeRotation"));
+        unrealRotation.Pitch = godotRotation.z;
+        unrealRotation.Yaw = -godotRotation.y;
+        unrealRotation.Roll = godotRotation.x;
+        return unrealRotation;
+    }
+
+    static VectorPropertyData ConvertScaleFromGodotToUnreal(Vector3 godotScale) {
+        VectorPropertyData unrealScale = new VectorPropertyData(new FName("RelativeScale3D"));
+        unrealScale.X = godotScale.x;
+        unrealScale.Y = godotScale.z;
+        unrealScale.Z = godotScale.y;
+        return unrealScale;
     }
 
 }

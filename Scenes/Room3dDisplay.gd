@@ -27,6 +27,7 @@ var custom_component_scripts = {
 	}
 }
 
+var editor: Node
 var uasset_parser: Node
 
 var extract_3d_model_thread: Thread = null
@@ -44,6 +45,7 @@ var can_capture_keyboard: bool = false
 var can_select: bool = true
 var room_definition: Dictionary
 
+var current_placing_tree_name: String = ""
 var model_load_waitlist: Array = []
 var current_waitlist_item: Dictionary
 var selected_nodes: Array
@@ -57,6 +59,7 @@ var is_shift_modifier_pressed: bool = false
 #############
 
 func _ready():
+	editor = get_node("/root/Editor")
 	uasset_parser = get_node("/root/UAssetParser")
 	gltf_loader = DynamicGLTFLoader.new()
 	
@@ -78,9 +81,10 @@ func _input(event):
 		if event.scancode == KEY_SHIFT:
 			is_shift_modifier_pressed = event.pressed
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
+func _exit_tree():
+	model_load_waitlist = []
+	if extract_3d_model_thread != null:
+		extract_3d_model_thread.wait_to_finish()
 
 ###########
 # THREADS #
@@ -113,6 +117,7 @@ func extract_3d_model_thread_function(_noop):
 func end_extract_3d_model_thread():
 	if extract_3d_model_thread != null:
 		extract_3d_model_thread.wait_to_finish()
+		extract_3d_model_thread = null
 	
 	# Import gltf model assign materials
 	var package_path = current_waitlist_item["definition"]["static_mesh_asset_path"]
@@ -159,6 +164,7 @@ func end_extract_3d_model_thread():
 func set_room_definition(new_room_definition: Dictionary):
 	room_definition = new_room_definition
 	if room_definition.has("bg"):
+		current_placing_tree_name = "bg"
 		place_tree_nodes_recursive(bg_root, room_definition["bg"])
 
 #####################
@@ -193,13 +199,23 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 		script_def = custom_component_scripts[definition["type"]]
 	is_auto_placement = script_def.auto_placement
 	node.set_script(script_def.script)
+	if definition.has("export_index"):
+		var export_index = definition["export_index"]
+		for prop_name in definition:
+			use_edited_prop_if_exists(definition, export_index, prop_name)
 	node.definition = definition
 	node.room_3d_display = self
+	node.tree_name = current_placing_tree_name
 	parent.add_child(node)
 	node.name = definition["type"] + "__" + definition["name"]
 	if is_auto_placement:
 		for child_definition in definition["children"]:
 			place_tree_nodes_recursive(node, child_definition)
+
+func use_edited_prop_if_exists(definition: Dictionary, export_index: int, prop_name: String):
+	var edited_prop = editor.get_room_edit_export_prop(current_placing_tree_name, export_index, prop_name)
+	if edited_prop != null:
+		definition[prop_name] = edited_prop
 
 ####################
 # OBJECT SELECTION #
@@ -251,4 +267,7 @@ func select_object_at_mouse(is_add: bool = false):
 		else:
 			node_to_select.select()
 			selected_nodes = [node_to_select]
+	else:
+		if not is_add:
+			selected_nodes = []
 	emit_signal("selection_changed", selected_nodes)

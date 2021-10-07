@@ -1,4 +1,6 @@
 using Godot;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -441,13 +443,30 @@ public class UAssetParser : Control {
         string gameDirectory = (string)GetNode("/root/Editor").Call("read_config_prop", "game_directory");
         string selectedPackageName = (string)GetNode("/root/Editor").Get("selected_package");
         string unrealPakPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/UnrealPak/UnrealPak.exe");
+        string pakExtractFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
         string filelistPath = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/PackageFileList.txt");
         string modifiedAssetsFolder = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/ModifiedAssets");
+        string editsFolder = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/Edits").Replace("\\", "/");
         string outputPakFilePath = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/ModifiedAssets.pak");
         string gamePakLinkPath = gameDirectory + "/BloodstainedRotN/Content/Paks/~BloodstainedLevelEditor/" + selectedPackageName + ".pak";
 
-        System.IO.File.WriteAllText(filelistPath, "\"" + modifiedAssetsFolder.Replace("/", "\\") + "\\*.*\" \"..\\..\\..\\*.*\"");
+        // Modify .uasset files based on room edit .json files
+        foreach (string file in FileExt.GetFilesRecursive(editsFolder)) {
+            string filePath = file.Replace("\\", "/");
+            string assetBasePath = filePath.Replace(editsFolder + "/", "").Replace(".json", "");
+            using (StreamReader reader = System.IO.File.OpenText(filePath)) {
+                JObject editsJson = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
+                if (editsJson.ContainsKey("bg") && AssetPathToPakFilePathMap.ContainsKey(assetBasePath + "_BG.umap")) {
+                    ExtractAssetToFolder(AssetPathToPakFilePathMap[assetBasePath + "_BG.umap"], assetBasePath + "_BG.umap", modifiedAssetsFolder);
+                    UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + "_BG.umap", UE4Version.VER_UE4_18);
+                    UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson["bg"]);
+                    uAsset.Write(modifiedAssetsFolder + "/" + assetBasePath + "_BG.umap");
+                }
+            }
+        }
 
+        // Package uassets
+        System.IO.File.WriteAllText(filelistPath, "\"" + modifiedAssetsFolder.Replace("/", "\\") + "\\*.*\" \"..\\..\\..\\*.*\"");
         using (Process pack = new Process()) {
             pack.StartInfo.FileName = unrealPakPath;
             pack.StartInfo.Arguments = " \"" + outputPakFilePath.Replace("/", "\\") + "\" \"-Create=" + filelistPath.Replace("/", "\\") + "\"";

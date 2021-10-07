@@ -23,11 +23,11 @@ func _input(event):
 		handle_mouse_move_collision(event)
 	
 	# Object selection
-	if can_capture_mouse and event is InputEventMouseButton:
+	if event is InputEventMouseButton:
 		match event.button_index:
 			BUTTON_LEFT:
 				is_mouse_button_left_down = event.pressed
-				if not is_mouse_button_right_down and event.pressed:
+				if can_capture_mouse and not is_mouse_button_right_down and event.pressed:
 					handle_mouse_down_collision(event)
 				if not event.pressed:
 					handle_mouse_up_collision(event)
@@ -59,7 +59,7 @@ func handle_mouse_down_collision(event):
 		emit_signal("control_active")
 
 func handle_mouse_move_collision(event):
-	var ray_length = 100
+	var ray_length = 100000000000
 	var mouse_pos = get_viewport().get_mouse_position()
 	var ray_from = camera.project_ray_origin(mouse_pos)
 	var ray_to = ray_from + camera.project_ray_normal(mouse_pos) * ray_length
@@ -90,7 +90,7 @@ func handle_mouse_move_collision(event):
 				collider_parent.handle_mouse_enter_collision(event, mouse_hover_collider, ray)
 
 func handle_mouse_up_collision(event):
-	var ray_length = 100
+	var ray_length = 100000000000
 	var mouse_pos = get_viewport().get_mouse_position()
 	var ray_from = camera.project_ray_origin(mouse_pos)
 	var ray_to = ray_from + camera.project_ray_normal(mouse_pos) * ray_length

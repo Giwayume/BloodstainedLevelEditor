@@ -16,8 +16,7 @@ var editor_container: Control
 var loading_3d_scene_notification: Control
 var loading_status_container: Control
 var loading_status_label: Label
-var menu_button_package: MenuButton
-var menu_button_edit: MenuButton
+var menu_bar: Control
 var room_3d_display: Spatial
 var room_3d_display_camera: Camera
 var room_3d_focus_container: PanelContainer
@@ -36,12 +35,13 @@ var background_tree: Dictionary = {
 
 var room_definition: Dictionary
 
-var current_tool: String = "select"
+var current_tool: String = "move"
 var transform_tool_names = ["select", "move", "rotate", "scale"]
 var is_any_menu_popup_visible: bool = false
 var is_mouse_in_3d_viewport_range: bool = false
 var is_3d_viewport_focused: bool = false
 var is_3d_editor_control_active: bool = false
+var selected_node_initial_transforms: Array = []
 
 #############
 # LIFECYCLE #
@@ -61,8 +61,7 @@ func _ready():
 	loading_3d_scene_notification = find_node("Loading3dSceneNotification", true, true)
 	loading_status_container = find_node("LoadingStatusContainer", true, true)
 	loading_status_label = find_node("LoadingStatusLabel", true, true)
-	menu_button_package = find_node("PackageMenuButton", true, true)
-	menu_button_edit = find_node("EditMenuButton", true, true)
+	menu_bar = find_node("RoomEditMenuBar", true, true)
 	room_3d_display = find_node("Room3dDisplay", true, true)
 	room_3d_display_camera = room_3d_display.find_node("Camera", true, true)
 	room_3d_focus_container = find_node("Room3dFocusContainer", true, true)
@@ -80,11 +79,9 @@ func _ready():
 	background_tree.root_item.set_text(0, "World")
 	background_tree.root_item.disable_folding = true
 	
-	menu_button_package.get_popup().connect("id_pressed", self, "on_menu_popup_package_pressed")
-	menu_button_package.get_popup().connect("visibility_changed", self, "on_any_menu_popup_visibility_changed")
-	menu_button_edit.get_popup().connect("visibility_changed", self, "on_any_menu_popup_visibility_changed")
-	
 	background_tree.tree.connect("multi_selected", self, "on_background_tree_multi_selected")
+	editor.connect("history_changed", self, "on_history_changed")
+	menu_bar.connect("popup_visibility_changed", self, "on_menu_bar_popup_visibility_changed")
 	room_3d_display.connect("loading_start", self, "on_room_3d_display_loading_start")
 	room_3d_display.connect("loading_end", self, "on_room_3d_display_loading_end")
 	room_3d_display.connect("selection_changed", self, "on_room_3d_display_selection_changed")
@@ -93,6 +90,9 @@ func _ready():
 	room_3d_focus_container.connect("focus_exited", self, "on_room_3d_focus_container_blur")
 	room_editor_controls_display.connect("control_active", self, "on_room_editor_controls_display_control_active")
 	room_editor_controls_display.connect("control_inactive", self, "on_room_editor_controls_display_control_inactive")
+	room_editor_controls_display_cursor.connect("translate_cancel", self, "on_translate_cancel_selection")
+	room_editor_controls_display_cursor.connect("translate_preview", self, "on_translate_preview_selection")
+	room_editor_controls_display_cursor.connect("translate", self, "on_translate_selection")
 	viewport_toolbar.connect("tool_changed", self, "on_tool_changed")
 	
 	start_parse_pak_thread()
@@ -114,6 +114,10 @@ func _input(event):
 	if event is InputEventMouseButton:
 		if is_mouse_in_3d_viewport_range and event.pressed:
 			room_3d_focus_container.call_deferred("grab_focus")
+
+func _exit_tree():
+	editor.save_room_edits()
+	editor.room_edits = null
 
 ###########
 # THREADS #
@@ -191,10 +195,6 @@ func threads_finished():
 # CALLBACKS #
 #############
 
-func on_any_menu_popup_visibility_changed():
-	is_any_menu_popup_visible = menu_button_package.get_popup().visible or menu_button_edit.get_popup().visible
-
-
 func on_background_tree_multi_selected(item: TreeItem, column: int, selected: bool):
 	var current_tree: Dictionary = background_tree
 	var selected_nodes = room_3d_display.selected_nodes
@@ -206,14 +206,14 @@ func on_background_tree_multi_selected(item: TreeItem, column: int, selected: bo
 	else:
 		node.deselect()
 		room_3d_display.selected_nodes.erase(node)
+	update_3d_cursor_position()
 
-func on_menu_popup_package_pressed(id: int):
-	if id == 0:
-		editor.package_and_install()
-	elif id == 1:
-		get_tree().change_scene("res://Scenes/MapEdit.tscn")
-	elif id == 3:
-		 get_tree().change_scene("res://Scenes/SelectPackage.tscn")
+func on_history_changed(action: HistoryAction):
+	if action.get_ids().has(HistoryAction.ID.SPATIAL_TRANSFORM):
+		update_3d_cursor_position()
+
+func on_menu_bar_popup_visibility_changed(is_visible):
+	is_any_menu_popup_visible = is_visible
 
 func on_room_3d_display_camera_transform_changed(transform):
 	room_editor_controls_display_camera.transform = transform
@@ -244,6 +244,7 @@ func on_room_3d_display_selection_changed(selected_nodes):
 		tree_uncollapse_from_item(current_tree.tree_id_map[export_index])
 		current_tree.tree_id_map[export_index].select(0)
 	current_tree.tree.ensure_cursor_is_visible()
+	update_3d_cursor_position()
 
 func on_room_3d_focus_container_focus():
 	room_3d_focus_container.add_stylebox_override("panel", viewport_ui_container_focus_style)
@@ -267,6 +268,53 @@ func on_tool_changed(new_tool: String):
 	else:
 		room_editor_controls_display_cursor.hide()
 
+func on_translate_cancel_selection():
+	var index = 0
+	for node in room_3d_display.selected_nodes:
+		if node.selection_transform_node:
+			node.selection_transform_node.global_transform = selected_node_initial_transforms[index]
+		index += 1
+	selected_node_initial_transforms = []
+
+func on_translate_preview_selection(offset: Vector3):
+	var offset_transform = Transform()
+	offset_transform = offset_transform.translated(offset)
+	if len(selected_node_initial_transforms) != len(room_3d_display.selected_nodes):
+		selected_node_initial_transforms = []
+		for node in room_3d_display.selected_nodes:
+			if node.selection_transform_node:
+				selected_node_initial_transforms.push_back(node.selection_transform_node.get_global_transform())
+			else:
+				selected_node_initial_transforms.push_back(Transform())
+	var index = 0
+	for node in room_3d_display.selected_nodes:
+		if node.selection_transform_node:
+			node.selection_transform_node.global_transform = offset_transform * selected_node_initial_transforms[index]
+		index += 1
+
+func on_translate_selection(offset: Vector3):
+	var offset_transform = Transform()
+	offset_transform = offset_transform.translated(offset)
+	if len(selected_node_initial_transforms) == len(room_3d_display.selected_nodes):
+		var actions = []
+		var index = 0
+		for node in room_3d_display.selected_nodes:
+			if node.selection_transform_node:
+				actions.push_back(
+					SpatialTransformAction.new(
+						node.selection_transform_node,
+						selected_node_initial_transforms[index],
+						offset_transform * selected_node_initial_transforms[index]
+					)
+				)
+			index += 1
+		editor.do_action(
+			HistoryGroupAction.new(
+				"Spatial Transforms",
+				actions
+			)
+		)
+		selected_node_initial_transforms = []
 
 ###########
 # METHODS #
@@ -282,7 +330,22 @@ func update_3d_viewport_input_tracking():
 	room_3d_display_camera.can_capture_keyboard = can_capture_keyboard
 	room_editor_controls_display.can_capture_mouse = can_capture_mouse
 
+func update_3d_cursor_position():
+	if transform_tool_names.has(current_tool):
+		var selection_count = len(room_3d_display.selected_nodes)
+		if selection_count > 0:
+			room_editor_controls_display_cursor.show()
+			var average_position: Vector3 = Vector3()
+			for node in room_3d_display.selected_nodes:
+				if node.selection_transform_node:
+					average_position += node.selection_transform_node.get_global_transform().origin
+			average_position = average_position / selection_count
+			room_editor_controls_display_cursor.translation = average_position
+		else:
+			room_editor_controls_display_cursor.hide()
+
 func setup_after_load():
+	editor.load_room_edits()
 	setup_3d_view()
 	background_tree.tree_id_map.clear()
 	background_tree.node_id_map.clear()

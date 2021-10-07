@@ -1,9 +1,11 @@
 extends Spatial
 
 var room_3d_display: Spatial
+var tree_name: String
 var definition: Dictionary
 var is_tree_leaf: bool = true
 var use_parent_as_proxy: bool = false
+var selection_transform_node: Spatial = null
 
 var selection_box_material = preload("res://Materials/EditorSelectionBox.tres")
 var selection_mesh_material = preload("res://Materials/EditorSelectionMesh.tres")
@@ -14,6 +16,7 @@ var loaded_model_mesh: Mesh
 var model_just_selected_timeout = 0
 
 func _ready():
+	selection_transform_node = self
 	if definition.has("translation"):
 		translation = definition["translation"]
 	if definition.has("rotation_degrees"):

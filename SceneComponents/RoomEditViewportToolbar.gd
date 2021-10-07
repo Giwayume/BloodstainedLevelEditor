@@ -27,7 +27,7 @@ func _ready():
 	tool_button_scale.connect("pressed", self, "on_tool_button_scale_toggled")
 	tool_button_select.connect("pressed", self, "on_tool_button_select_toggled")
 	
-	on_tool_button_select_toggled(true)
+	on_tool_button_move_toggled(true)
 
 func untoggle_all_tools():
 	on_tool_button_move_toggled(false)

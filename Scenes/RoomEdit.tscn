@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=10 format=2]
 
 [ext_resource path="res://Scenes/RoomEdit.gd" type="Script" id=1]
 [ext_resource path="res://Scenes/Room3dDisplay.tscn" type="PackedScene" id=2]
@@ -6,6 +6,7 @@
 [ext_resource path="res://SceneComponents/RoomEditViewportToolbar.tscn" type="PackedScene" id=4]
 [ext_resource path="res://EditorTheme/PanelContainerForeground.tres" type="StyleBox" id=5]
 [ext_resource path="res://Scenes/RoomEditorControlsDisplay.tscn" type="PackedScene" id=6]
+[ext_resource path="res://SceneComponents/RoomEditMenuBar.tscn" type="PackedScene" id=7]
 
 [sub_resource type="StyleBoxEmpty" id=1]
 content_margin_left = 4.0
@@ -56,28 +57,7 @@ margin_right = 1024.0
 margin_bottom = 38.0
 custom_styles/panel = SubResource( 1 )
 
-[node name="HBoxContainer" type="HBoxContainer" parent="EditorContainer/VBoxContainer/MenuBarContainer"]
-margin_left = 4.0
-margin_top = 8.0
-margin_right = 1020.0
-margin_bottom = 30.0
-
-[node name="PackageMenuButton" type="MenuButton" parent="EditorContainer/VBoxContainer/MenuBarContainer/HBoxContainer"]
-margin_right = 63.0
-margin_bottom = 22.0
-focus_mode = 2
-text = "Package"
-items = [ "Test In-Game", null, 0, false, false, 0, 0, null, "", false, "View Map", null, 0, false, false, 1, 0, null, "", false, "", null, 0, false, false, 2, 0, null, "", true, "Exit", null, 0, false, false, 3, 0, null, "", false ]
-switch_on_hover = true
-
-[node name="EditMenuButton" type="MenuButton" parent="EditorContainer/VBoxContainer/MenuBarContainer/HBoxContainer"]
-margin_left = 67.0
-margin_right = 103.0
-margin_bottom = 22.0
-focus_mode = 2
-text = "Edit"
-items = [ "Undo", null, 0, false, false, 0, 0, null, "", false, "Redo", null, 0, false, false, 1, 0, null, "", false ]
-switch_on_hover = true
+[node name="RoomEditMenuBar" parent="EditorContainer/VBoxContainer/MenuBarContainer" instance=ExtResource( 7 )]
 
 [node name="HSplitContainer" type="HSplitContainer" parent="EditorContainer/VBoxContainer"]
 margin_top = 38.0

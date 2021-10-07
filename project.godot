@@ -10,9 +10,24 @@ config_version=4
 
 _global_script_classes=[ {
 "base": "Reference",
+"class": "ArrayExt",
+"language": "GDScript",
+"path": "res://Utility/ArrayExt.gd"
+}, {
+"base": "Reference",
 "class": "EditorConfig",
 "language": "GDScript",
 "path": "res://Utility/EditorConfig.gd"
+}, {
+"base": "Reference",
+"class": "HistoryAction",
+"language": "GDScript",
+"path": "res://History/HistoryAction.gd"
+}, {
+"base": "HistoryAction",
+"class": "HistoryGroupAction",
+"language": "GDScript",
+"path": "res://History/HistoryGroupAction.gd"
 }, {
 "base": "Reference",
 "class": "MeshRayCast",
@@ -24,15 +39,24 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://Utility/PhysicsLayers3d.gd"
 }, {
+"base": "HistoryAction",
+"class": "SpatialTransformAction",
+"language": "GDScript",
+"path": "res://History/SpatialTransformAction.gd"
+}, {
 "base": "Reference",
 "class": "UE4Convert",
 "language": "GDScript",
 "path": "res://Utility/UE4Convert.gd"
 } ]
 _global_script_class_icons={
+"ArrayExt": "",
 "EditorConfig": "",
+"HistoryAction": "",
+"HistoryGroupAction": "",
 "MeshRayCast": "",
 "PhysicsLayers3d": "",
+"SpatialTransformAction": "",
 "UE4Convert": ""
 }
 
