@@ -23,6 +23,8 @@ Target functionality:
 - [ ] Add/Remove collision boxes in any room
 - [ ] Disable cutscenes
 - [ ] Add/Remove NPCs from any room
+- [ ] Simulate game camera perspective
 - [ ] Edit map room placement, reorganize rooms anywhere
 - [ ] Edit room "doors"
 - [ ] Add new rooms to the game
+- [ ] Visualizers for room doors, room bounds, game grid, playing field (where player walks)

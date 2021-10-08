@@ -1,0 +1,306 @@
+[gd_scene load_steps=8 format=2]
+
+[ext_resource path="res://SceneComponents/Inspector/TransformPanel.gd" type="Script" id=1]
+[ext_resource path="res://Icons/Editor/GUITreeArrowRight.svg" type="Texture" id=2]
+[ext_resource path="res://EditorTheme/ExpandableSectionButtonHeader.tres" type="Theme" id=3]
+[ext_resource path="res://EditorTheme/LabelExpandTreeSectionTitle.tres" type="StyleBox" id=4]
+[ext_resource path="res://EditorTheme/LabelInlineWithInput.tres" type="StyleBox" id=5]
+[ext_resource path="res://Icons/Editor/Reload.svg" type="Texture" id=7]
+
+[sub_resource type="StyleBoxEmpty" id=1]
+content_margin_left = 4.0
+content_margin_right = 4.0
+
+[node name="TransformPanel" type="VBoxContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 9
+custom_constants/separation = 0
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ExpandButton" type="Button" parent="."]
+margin_right = 1024.0
+margin_bottom = 22.0
+theme = ExtResource( 3 )
+toggle_mode = true
+text = "Transform"
+icon = ExtResource( 2 )
+align = 0
+
+[node name="ExpandSection" type="PanelContainer" parent="."]
+margin_top = 22.0
+margin_right = 1024.0
+margin_bottom = 172.0
+custom_styles/panel = SubResource( 1 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ExpandSection"]
+margin_left = 4.0
+margin_right = 1020.0
+margin_bottom = 150.0
+custom_constants/separation = 0
+
+[node name="TranslationLabelGroup" type="HBoxContainer" parent="ExpandSection/VBoxContainer"]
+margin_right = 1016.0
+margin_bottom = 24.0
+
+[node name="TranslationLabel" type="Label" parent="ExpandSection/VBoxContainer/TranslationLabelGroup"]
+margin_right = 984.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+custom_styles/normal = ExtResource( 4 )
+text = "Translation"
+autowrap = true
+
+[node name="ResetTranslationButton" type="ToolButton" parent="ExpandSection/VBoxContainer/TranslationLabelGroup"]
+margin_left = 988.0
+margin_right = 1016.0
+margin_bottom = 24.0
+icon = ExtResource( 7 )
+
+[node name="TranslationInputs" type="HBoxContainer" parent="ExpandSection/VBoxContainer"]
+margin_top = 24.0
+margin_right = 1016.0
+margin_bottom = 50.0
+custom_constants/separation = 0
+
+[node name="XLabel" type="Label" parent="ExpandSection/VBoxContainer/TranslationInputs"]
+margin_right = 19.0
+margin_bottom = 26.0
+custom_styles/normal = ExtResource( 5 )
+custom_colors/font_color = Color( 0.505882, 0.380392, 0.345098, 1 )
+text = "x"
+
+[node name="TranslationXScrollContainer" type="Control" parent="ExpandSection/VBoxContainer/TranslationInputs"]
+margin_left = 19.0
+margin_right = 338.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+
+[node name="TranslationXEdit" type="TextEdit" parent="ExpandSection/VBoxContainer/TranslationInputs/TranslationXScrollContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 11
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="YLabel" type="Label" parent="ExpandSection/VBoxContainer/TranslationInputs"]
+margin_left = 338.0
+margin_right = 357.0
+margin_bottom = 26.0
+custom_styles/normal = ExtResource( 5 )
+custom_colors/font_color = Color( 0.305882, 0.490196, 0.388235, 1 )
+text = "y"
+
+[node name="TranslationYScrollContainer" type="Control" parent="ExpandSection/VBoxContainer/TranslationInputs"]
+margin_left = 357.0
+margin_right = 677.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+
+[node name="TranslationYEdit" type="TextEdit" parent="ExpandSection/VBoxContainer/TranslationInputs/TranslationYScrollContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 11
+
+[node name="ZLabel" type="Label" parent="ExpandSection/VBoxContainer/TranslationInputs"]
+margin_left = 677.0
+margin_right = 696.0
+margin_bottom = 26.0
+custom_styles/normal = ExtResource( 5 )
+custom_colors/font_color = Color( 0.372549, 0.32549, 0.533333, 1 )
+text = "z"
+
+[node name="TranslationZScrollContainer" type="Control" parent="ExpandSection/VBoxContainer/TranslationInputs"]
+margin_left = 696.0
+margin_right = 1016.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+
+[node name="TranslationZEdit" type="TextEdit" parent="ExpandSection/VBoxContainer/TranslationInputs/TranslationZScrollContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 11
+
+[node name="RotationLabelGroup" type="HBoxContainer" parent="ExpandSection/VBoxContainer"]
+margin_top = 50.0
+margin_right = 1016.0
+margin_bottom = 74.0
+
+[node name="RotationLabel" type="Label" parent="ExpandSection/VBoxContainer/RotationLabelGroup"]
+margin_right = 984.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+custom_styles/normal = ExtResource( 4 )
+text = "Rotation Degrees"
+autowrap = true
+
+[node name="ResetRotationButton" type="ToolButton" parent="ExpandSection/VBoxContainer/RotationLabelGroup"]
+margin_left = 988.0
+margin_right = 1016.0
+margin_bottom = 24.0
+icon = ExtResource( 7 )
+
+[node name="RotationInputs" type="HBoxContainer" parent="ExpandSection/VBoxContainer"]
+margin_top = 74.0
+margin_right = 1016.0
+margin_bottom = 100.0
+custom_constants/separation = 0
+
+[node name="XLabel" type="Label" parent="ExpandSection/VBoxContainer/RotationInputs"]
+margin_right = 19.0
+margin_bottom = 26.0
+custom_styles/normal = ExtResource( 5 )
+custom_colors/font_color = Color( 0.505882, 0.380392, 0.345098, 1 )
+text = "x"
+
+[node name="RotationXScrollContainer" type="Control" parent="ExpandSection/VBoxContainer/RotationInputs"]
+margin_left = 19.0
+margin_right = 338.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+
+[node name="RotationXEdit" type="TextEdit" parent="ExpandSection/VBoxContainer/RotationInputs/RotationXScrollContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 11
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="YLabel" type="Label" parent="ExpandSection/VBoxContainer/RotationInputs"]
+margin_left = 338.0
+margin_right = 357.0
+margin_bottom = 26.0
+custom_styles/normal = ExtResource( 5 )
+custom_colors/font_color = Color( 0.305882, 0.490196, 0.388235, 1 )
+text = "y"
+
+[node name="RotationYScrollContainer" type="Control" parent="ExpandSection/VBoxContainer/RotationInputs"]
+margin_left = 357.0
+margin_right = 677.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+
+[node name="RotationYEdit" type="TextEdit" parent="ExpandSection/VBoxContainer/RotationInputs/RotationYScrollContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 11
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ZLabel" type="Label" parent="ExpandSection/VBoxContainer/RotationInputs"]
+margin_left = 677.0
+margin_right = 696.0
+margin_bottom = 26.0
+custom_styles/normal = ExtResource( 5 )
+custom_colors/font_color = Color( 0.372549, 0.32549, 0.533333, 1 )
+text = "z"
+
+[node name="RotationZScrollContainer" type="Control" parent="ExpandSection/VBoxContainer/RotationInputs"]
+margin_left = 696.0
+margin_right = 1016.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+
+[node name="RotationZEdit" type="TextEdit" parent="ExpandSection/VBoxContainer/RotationInputs/RotationZScrollContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 11
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ScaleLabelGroup" type="HBoxContainer" parent="ExpandSection/VBoxContainer"]
+margin_top = 100.0
+margin_right = 1016.0
+margin_bottom = 124.0
+
+[node name="ScaleLabel" type="Label" parent="ExpandSection/VBoxContainer/ScaleLabelGroup"]
+margin_right = 984.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+custom_styles/normal = ExtResource( 4 )
+text = "Scale"
+autowrap = true
+
+[node name="ResetScaleButton" type="ToolButton" parent="ExpandSection/VBoxContainer/ScaleLabelGroup"]
+margin_left = 988.0
+margin_right = 1016.0
+margin_bottom = 24.0
+icon = ExtResource( 7 )
+
+[node name="ScaleInputs" type="HBoxContainer" parent="ExpandSection/VBoxContainer"]
+margin_top = 124.0
+margin_right = 1016.0
+margin_bottom = 150.0
+custom_constants/separation = 0
+
+[node name="XLabel" type="Label" parent="ExpandSection/VBoxContainer/ScaleInputs"]
+margin_right = 19.0
+margin_bottom = 26.0
+custom_styles/normal = ExtResource( 5 )
+custom_colors/font_color = Color( 0.505882, 0.380392, 0.345098, 1 )
+text = "x"
+
+[node name="ScaleXScrollContainer" type="Control" parent="ExpandSection/VBoxContainer/ScaleInputs"]
+margin_left = 19.0
+margin_right = 338.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+
+[node name="ScaleXEdit" type="TextEdit" parent="ExpandSection/VBoxContainer/ScaleInputs/ScaleXScrollContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 11
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="YLabel" type="Label" parent="ExpandSection/VBoxContainer/ScaleInputs"]
+margin_left = 338.0
+margin_right = 357.0
+margin_bottom = 26.0
+custom_styles/normal = ExtResource( 5 )
+custom_colors/font_color = Color( 0.305882, 0.490196, 0.388235, 1 )
+text = "y"
+
+[node name="ScaleYScrollContainer" type="Control" parent="ExpandSection/VBoxContainer/ScaleInputs"]
+margin_left = 357.0
+margin_right = 677.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+
+[node name="ScaleYEdit" type="TextEdit" parent="ExpandSection/VBoxContainer/ScaleInputs/ScaleYScrollContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 11
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ZLabel" type="Label" parent="ExpandSection/VBoxContainer/ScaleInputs"]
+margin_left = 677.0
+margin_right = 696.0
+margin_bottom = 26.0
+custom_styles/normal = ExtResource( 5 )
+custom_colors/font_color = Color( 0.372549, 0.32549, 0.533333, 1 )
+text = "z"
+
+[node name="ScaleZScrollContainer" type="Control" parent="ExpandSection/VBoxContainer/ScaleInputs"]
+margin_left = 696.0
+margin_right = 1016.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+
+[node name="ScaleZEdit" type="TextEdit" parent="ExpandSection/VBoxContainer/ScaleInputs/ScaleZScrollContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 11
+__meta__ = {
+"_edit_use_anchors_": false
+}

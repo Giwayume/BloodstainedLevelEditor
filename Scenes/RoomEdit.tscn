@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=2]
+[gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://Scenes/RoomEdit.gd" type="Script" id=1]
 [ext_resource path="res://Scenes/Room3dDisplay.tscn" type="PackedScene" id=2]
@@ -7,6 +7,7 @@
 [ext_resource path="res://EditorTheme/PanelContainerForeground.tres" type="StyleBox" id=5]
 [ext_resource path="res://Scenes/RoomEditorControlsDisplay.tscn" type="PackedScene" id=6]
 [ext_resource path="res://SceneComponents/RoomEditMenuBar.tscn" type="PackedScene" id=7]
+[ext_resource path="res://SceneComponents/Inspector/TransformPanel.tscn" type="PackedScene" id=8]
 
 [sub_resource type="StyleBoxEmpty" id=1]
 content_margin_left = 4.0
@@ -244,6 +245,27 @@ margin_left = 5.0
 margin_top = 29.0
 margin_right = -5.0
 margin_bottom = -5.0
+
+[node name="ScrollContainer" type="ScrollContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Inspector"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="PanelContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Inspector/ScrollContainer"]
+margin_right = 227.0
+margin_bottom = 172.0
+size_flags_horizontal = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="TransformPanel" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Inspector/ScrollContainer/PanelContainer" instance=ExtResource( 8 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_right = 227.0
+margin_bottom = 172.0
 
 [node name="Assets" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer"]
 visible = false
