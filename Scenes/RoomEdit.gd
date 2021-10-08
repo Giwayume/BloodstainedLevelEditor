@@ -90,10 +90,13 @@ func _ready():
 	room_3d_focus_container.connect("focus_exited", self, "on_room_3d_focus_container_blur")
 	room_editor_controls_display.connect("control_active", self, "on_room_editor_controls_display_control_active")
 	room_editor_controls_display.connect("control_inactive", self, "on_room_editor_controls_display_control_inactive")
-	room_editor_controls_display_cursor.connect("scale_cancel", self, "on_scale_cancel_selection")
+	room_editor_controls_display_cursor.connect("rotate_cancel", self, "on_transform_cancel_selection")
+	room_editor_controls_display_cursor.connect("rotate_preview", self, "on_rotate_preview_selection")
+	room_editor_controls_display_cursor.connect("rotate", self, "on_rotate_selection")
+	room_editor_controls_display_cursor.connect("scale_cancel", self, "on_transform_cancel_selection")
 	room_editor_controls_display_cursor.connect("scale_preview", self, "on_scale_preview_selection")
 	room_editor_controls_display_cursor.connect("scale", self, "on_scale_selection")
-	room_editor_controls_display_cursor.connect("translate_cancel", self, "on_translate_cancel_selection")
+	room_editor_controls_display_cursor.connect("translate_cancel", self, "on_transform_cancel_selection")
 	room_editor_controls_display_cursor.connect("translate_preview", self, "on_translate_preview_selection")
 	room_editor_controls_display_cursor.connect("translate", self, "on_translate_selection")
 	viewport_toolbar.connect("tool_changed", self, "on_tool_changed")
@@ -121,6 +124,7 @@ func _input(event):
 func _exit_tree():
 	editor.save_room_edits()
 	editor.room_edits = null
+	editor.clear_action_history()
 
 ###########
 # THREADS #
@@ -273,6 +277,54 @@ func on_tool_changed(new_tool: String):
 	else:
 		room_editor_controls_display_cursor.hide()
 
+func on_rotate_preview_selection(axis: Vector3, phi: float):
+	var rotate_transform = Transform()
+	rotate_transform = rotate_transform.rotated(axis, phi)
+	var translate_transform = Transform()
+	translate_transform = translate_transform.translated(room_editor_controls_display_cursor.translation)
+	var translate_back_transform = Transform()
+	translate_back_transform = translate_back_transform.translated(-room_editor_controls_display_cursor.translation)
+	if len(selected_node_initial_transforms) != len(room_3d_display.selected_nodes):
+		selected_node_initial_transforms = []
+		for node in room_3d_display.selected_nodes:
+			if node.selection_transform_node:
+				selected_node_initial_transforms.push_back(node.selection_transform_node.get_global_transform())
+			else:
+				selected_node_initial_transforms.push_back(Transform())
+	var index: int = 0
+	for node in room_3d_display.selected_nodes:
+		if node.selection_transform_node:
+			node.selection_transform_node.global_transform = translate_transform * rotate_transform * translate_back_transform * selected_node_initial_transforms[index]
+		index += 1
+
+func on_rotate_selection(axis: Vector3, phi: float):
+	var rotate_transform = Transform()
+	rotate_transform = rotate_transform.rotated(axis, phi)
+	var translate_transform = Transform()
+	translate_transform = translate_transform.translated(room_editor_controls_display_cursor.translation)
+	var translate_back_transform = Transform()
+	translate_back_transform = translate_back_transform.translated(-room_editor_controls_display_cursor.translation)
+	if len(selected_node_initial_transforms) == len(room_3d_display.selected_nodes):
+		var actions: Array = []
+		var index: int = 0
+		for node in room_3d_display.selected_nodes:
+			if node.selection_transform_node:
+				actions.push_back(
+					SpatialTransformAction.new(
+						node.selection_transform_node,
+						selected_node_initial_transforms[index],
+						translate_transform * rotate_transform * translate_back_transform * selected_node_initial_transforms[index]
+					)
+				)
+			index += 1
+		editor.do_action(
+			HistoryGroupAction.new(
+				"Spatial Transforms",
+				actions
+			)
+		)
+		selected_node_initial_transforms = []
+
 func on_scale_preview_selection(scale: Vector3):
 	var scale_transform = Transform()
 	scale_transform = scale_transform.scaled(scale)
@@ -292,14 +344,6 @@ func on_scale_preview_selection(scale: Vector3):
 		if node.selection_transform_node:
 			node.selection_transform_node.global_transform = translate_transform * scale_transform * translate_back_transform * selected_node_initial_transforms[index]
 		index += 1
-
-func on_scale_cancel_selection():
-	var index: int = 0
-	for node in room_3d_display.selected_nodes:
-		if node.selection_transform_node:
-			node.selection_transform_node.global_transform = selected_node_initial_transforms[index]
-		index += 1
-	selected_node_initial_transforms = []
 
 func on_scale_selection(scale: Vector3):
 	var scale_transform = Transform()
@@ -329,6 +373,14 @@ func on_scale_selection(scale: Vector3):
 		)
 		selected_node_initial_transforms = []
 
+func on_transform_cancel_selection():
+	var index: int = 0
+	for node in room_3d_display.selected_nodes:
+		if node.selection_transform_node:
+			node.selection_transform_node.global_transform = selected_node_initial_transforms[index]
+		index += 1
+	selected_node_initial_transforms = []
+
 func on_translate_preview_selection(offset: Vector3):
 	var offset_transform = Transform()
 	offset_transform = offset_transform.translated(offset)
@@ -344,14 +396,6 @@ func on_translate_preview_selection(offset: Vector3):
 		if node.selection_transform_node:
 			node.selection_transform_node.global_transform = offset_transform * selected_node_initial_transforms[index]
 		index += 1
-
-func on_translate_cancel_selection():
-	var index: int = 0
-	for node in room_3d_display.selected_nodes:
-		if node.selection_transform_node:
-			node.selection_transform_node.global_transform = selected_node_initial_transforms[index]
-		index += 1
-	selected_node_initial_transforms = []
 
 func on_translate_selection(offset: Vector3):
 	var offset_transform = Transform()

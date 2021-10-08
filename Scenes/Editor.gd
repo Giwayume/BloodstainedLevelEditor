@@ -69,6 +69,10 @@ func undo_action():
 		history[history_index].undo()
 		emit_signal("history_changed", history[history_index])
 
+func clear_action_history():
+	history = []
+	history_index = 0
+
 #############
 # ROOM EDIT #
 #############
