@@ -34,6 +34,7 @@ var camera: Camera
 var nodes: Dictionary
 var mode: String = "move"
 var drag_start = null
+var drag_last = null
 var scale_start = null
 var translate_start = null
 var rotate_start = null
@@ -96,6 +97,7 @@ func _input(event):
 					nodes["y"].rotate_line.hide()
 					nodes["z"].rotate_line.hide()
 				drag_start = null
+				drag_last = null
 				translate_start = null
 				scale_start = null
 				rotate_start = null
@@ -169,13 +171,17 @@ func handle_mouse_down_collision(event, collider, ray):
 		var type = collider_info.type
 		if type == "move_scale":
 			drag_start = ray_axis_intersection_along_axis(axis, ray)
-			translate_start = translation
-			scale_start = scale
+			if drag_start != null:
+				drag_last = null
+				translate_start = translation
+				scale_start = scale
 		elif type == "rotate":
 			drag_start = ray_axis_intersection(ray.from, ray.to, unreal_to_godot_axis(axis))
-			rotate_start = point_axis_rotation(drag_start, unreal_to_godot_axis(axis))
-			nodes[axis].rotate_line.show()
-			rotate_axis_indicator_line(drag_start, unreal_to_godot_axis(axis))
+			if drag_start != null:
+				drag_last = null
+				rotate_start = point_axis_rotation(drag_start, unreal_to_godot_axis(axis))
+				nodes[axis].rotate_line.show()
+				rotate_axis_indicator_line(drag_start, unreal_to_godot_axis(axis))
 
 func handle_mouse_move_collision(event, collider, ray):
 	handle_mouse_move_release_collision(event, collider, ray, "move")
@@ -184,6 +190,7 @@ func handle_mouse_up_collision(event, collider, ray):
 	if event.button_index == BUTTON_LEFT:
 		handle_mouse_move_release_collision(event, collider, ray, "up")
 		drag_start = null
+		drag_last = null
 		translate_start = null
 		scale_start = null
 		rotate_start = null
@@ -208,6 +215,7 @@ func handle_mouse_move_release_collision(event, collider, ray, mouse_type):
 					signal_name = "scale"
 			var drag_now = ray_axis_intersection_along_axis(axis, ray)
 			if drag_now != null:
+				drag_last = drag_now
 				if axis == "x":
 					if mode == "scale":
 						emit_signal(signal_name, Vector3((drag_now.x - translation.x) / (drag_start.x - translation.x), 1, 1))
@@ -226,21 +234,31 @@ func handle_mouse_move_release_collision(event, collider, ray, mouse_type):
 					else:
 						translation.y = translate_start.y + (drag_now.y - drag_start.y)
 						emit_signal(signal_name, Vector3(0, drag_now.y - drag_start.y, 0))
+			if mouse_type == "up" and drag_now == null:
+				signal_name = "translate_cancel"
+				if mode == "scale":
+					signal_name = "scale_cancel"
+				emit_signal(signal_name)
 		elif type == "rotate":
 			var drag_now = ray_axis_intersection(ray.from, ray.to, unreal_to_godot_axis(axis))
-			var rotate_now = point_axis_rotation(drag_now, unreal_to_godot_axis(axis))
 			signal_name = "rotate_preview"
 			if mouse_type == "up":
 				signal_name = "rotate"
-			var rotate_axis = Vector3()
-			if axis == "x":
-				rotate_axis = Vector3(1, 0, 0)
-			if axis == "y":
-				rotate_axis = Vector3(0, 0, 1)
-			if axis == "z":
-				rotate_axis = Vector3(0, 1, 0)
-			emit_signal(signal_name, rotate_axis, rotate_now - rotate_start)
-			rotate_axis_indicator_line(drag_now, unreal_to_godot_axis(axis))
+			if drag_now != null:
+				drag_last = drag_now
+			if drag_last != null:
+				var rotate_now = point_axis_rotation(drag_last, unreal_to_godot_axis(axis))
+				var rotate_axis = Vector3()
+				if axis == "x":
+					rotate_axis = Vector3(1, 0, 0)
+				if axis == "y":
+					rotate_axis = Vector3(0, 0, 1)
+				if axis == "z":
+					rotate_axis = Vector3(0, 1, 0)
+				emit_signal(signal_name, rotate_axis, rotate_now - rotate_start)
+				rotate_axis_indicator_line(drag_last, unreal_to_godot_axis(axis))
+			if mouse_type == "up" and drag_last == null:
+				emit_signal("rotate_cancel")
 
 func handle_mouse_enter_collision(event, collider, _ray):
 	var collider_info = get_collider_info(collider)
@@ -304,6 +322,8 @@ func ray_axis_intersection(ray_from: Vector3, ray_to: Vector3, axis: String):
 	if direction[axis] == 0:
 		return null
 	var distance = (translation[axis] - ray_from[axis]) / direction[axis]
+	if distance < 0:
+		return null
 	return ray_from + direction * distance
 
 # Axis in Godot coordinates

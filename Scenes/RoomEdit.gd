@@ -381,6 +381,7 @@ func on_transform_cancel_selection():
 			node.selection_transform_node.global_transform = selected_node_initial_transforms[index]
 		index += 1
 	selected_node_initial_transforms = []
+	update_3d_cursor_position()
 
 func on_translate_preview_selection(offset: Vector3):
 	var offset_transform = Transform()

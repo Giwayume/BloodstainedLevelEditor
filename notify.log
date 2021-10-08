@@ -120,3 +120,38 @@ TryExecuteInThread: ExportTexture <- Thread: 14176
 ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
 CTextureData::Decompress: fmt=PF_BC5(24) <- TryExecuteInThread: ExportTexture <- QueueTask::Exec <- ThreadPool::WaitForCompletion <- ExportPackages <- Main: umodel_build=1571
 
+
+******** BloodstainedRotN/Content/Core/Environment/Common/Material/MI/Rock/MI_COM_Rock07.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7190
+CTextureData::Decompress: fmt=PF_DXT1(5) <- TryExecuteInThread: ExportTexture <- Thread: 17548
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT17_RVA/MI/MI_RVA_LavaTree.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7190
+CTextureData::Decompress: fmt=PF_BC5(24) <- TryExecuteInThread: ExportTexture <- Thread: 1272
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT13_ARC/MI/MI_ARC_Rope00.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7190
+CTextureData::Decompress: fmt=PF_BC5(24) <- TryExecuteInThread: ExportTexture <- Thread: 5564
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT13_ARC/MI/MI_ARC_MudWall02.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7190
+CTextureData::Decompress: fmt=PF_DXT1(5) <- TryExecuteInThread: ExportTexture <- Thread: 9536
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT13_ARC/MI/MI_ARC_MudWall02.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7190
+CTextureData::Decompress: fmt=PF_BC5(24) <- TryExecuteInThread: ExportTexture <- Thread: 15944
+
+
