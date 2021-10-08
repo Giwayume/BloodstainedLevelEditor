@@ -45,6 +45,7 @@ var can_capture_keyboard: bool = false
 var can_select: bool = true
 var room_definition: Dictionary
 
+var already_placed_exports: Dictionary = {}
 var current_placing_tree_name: String = ""
 var model_load_waitlist: Array = []
 var current_waitlist_item: Dictionary
@@ -125,29 +126,29 @@ func end_extract_3d_model_thread():
 		var model_cache_path = ProjectSettings.globalize_path(@"user://ModelCache")
 		var model_full_path = model_cache_path + "/" + package_path.replace(".uasset", ".gltf")
 		var loaded_model = gltf_loader.import_scene(model_full_path, 1, 1);
-		if uasset_parser.CachedModelResourcesByAssetPath.has(package_path):
-			var model_resources = uasset_parser.CachedModelResourcesByAssetPath[package_path]
-			for child_node in loaded_model.get_children():
-				if child_node is MeshInstance:
-					var cached_material_info = uasset_parser.CachedModelResourcesByAssetPath
-					if cached_material_info.has(package_path):
-						for i in child_node.get_surface_material_count():
-							if i < len(cached_material_info[package_path]):
-								var material_slot_info = cached_material_info[package_path][i]
-								var spatial_material = SpatialMaterial.new()
-								if material_slot_info["texture"].has("albedo"):
-									spatial_material.albedo_texture = load_texture(material_slot_info["texture"]["albedo"])
-								if material_slot_info["texture"].has("normal"):
-									spatial_material.normal_texture = load_texture(material_slot_info["texture"]["normal"])
-								if material_slot_info["texture"].has("roughness"):
-									spatial_material.roughness_texture = load_texture(material_slot_info["texture"]["roughness"])
-								if material_slot_info["texture"].has("metallic"):
-									spatial_material.metallic_texture = load_texture(material_slot_info["texture"]["metallic"])
-								if material_slot_info["texture"].has("ao"):
-									spatial_material.ao_texture = load_texture(material_slot_info["texture"]["ao"])
-								child_node.set_surface_material(i, spatial_material)
 		cached_models[package_path] = loaded_model
 		if loaded_model != null:
+			if uasset_parser.CachedModelResourcesByAssetPath.has(package_path):
+				var model_resources = uasset_parser.CachedModelResourcesByAssetPath[package_path]
+				for child_node in loaded_model.get_children():
+					if child_node is MeshInstance:
+						var cached_material_info = uasset_parser.CachedModelResourcesByAssetPath
+						if cached_material_info.has(package_path):
+							for i in child_node.get_surface_material_count():
+								if i < len(cached_material_info[package_path]):
+									var material_slot_info = cached_material_info[package_path][i]
+									var spatial_material = SpatialMaterial.new()
+									if material_slot_info["texture"].has("albedo"):
+										spatial_material.albedo_texture = load_texture(material_slot_info["texture"]["albedo"])
+									if material_slot_info["texture"].has("normal"):
+										spatial_material.normal_texture = load_texture(material_slot_info["texture"]["normal"])
+									if material_slot_info["texture"].has("roughness"):
+										spatial_material.roughness_texture = load_texture(material_slot_info["texture"]["roughness"])
+									if material_slot_info["texture"].has("metallic"):
+										spatial_material.metallic_texture = load_texture(material_slot_info["texture"]["metallic"])
+									if material_slot_info["texture"].has("ao"):
+										spatial_material.ao_texture = load_texture(material_slot_info["texture"]["ao"])
+									child_node.set_surface_material(i, spatial_material)
 			current_waitlist_item["callback_instance"].call_deferred(current_waitlist_item["callback_method"], loaded_model.duplicate(0))
 	
 	if len(model_load_waitlist) > 0:
@@ -162,8 +163,10 @@ func end_extract_3d_model_thread():
 #################
 
 func set_room_definition(new_room_definition: Dictionary):
+	already_placed_exports = {}
 	room_definition = new_room_definition
 	if room_definition.has("bg"):
+		already_placed_exports["bg"] = []
 		current_placing_tree_name = "bg"
 		place_tree_nodes_recursive(bg_root, room_definition["bg"])
 
@@ -201,6 +204,11 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 	node.set_script(script_def.script)
 	if definition.has("export_index"):
 		var export_index = definition["export_index"]
+		if already_placed_exports[current_placing_tree_name].has(export_index):
+			print_debug("Infinite recursion at export ", export_index)
+			return
+		else:
+			already_placed_exports[current_placing_tree_name].push_back(export_index)
 		use_edited_prop_if_exists(definition, export_index, "translation")
 		use_edited_prop_if_exists(definition, export_index, "rotation_degrees")
 		use_edited_prop_if_exists(definition, export_index, "scale")

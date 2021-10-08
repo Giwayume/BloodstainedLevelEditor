@@ -106,67 +106,71 @@ public class UAssetParser : Control {
     }
 
     public void ReadAssetListFromPakFiles() {
-        // Find all files in the game's "Paks" directory
-        string gameDirectory = (string)GetNode("/root/Editor").Call("read_config_prop", "game_directory");
-        string gamePakFilePath = gameDirectory + "/BloodstainedRotN/Content/Paks";
-        string u4pakPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/U4pak/u4pak.exe");
-        string[] filesInPakDirectory = System.IO.Directory.GetFiles(gamePakFilePath);
-        _assetPathToPakFilePathMap = new Godot.Collections.Dictionary<string, string>();
+        try {
+            // Find all files in the game's "Paks" directory
+            string gameDirectory = (string)GetNode("/root/Editor").Call("read_config_prop", "game_directory");
+            string gamePakFilePath = gameDirectory + "/BloodstainedRotN/Content/Paks";
+            string u4pakPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/U4pak/u4pak.exe");
+            string[] filesInPakDirectory = System.IO.Directory.GetFiles(gamePakFilePath);
+            _assetPathToPakFilePathMap = new Godot.Collections.Dictionary<string, string>();
 
-        // Loop through each file, check if it is a .pak file
-        foreach (string filePath in filesInPakDirectory) {
-            string fileName = Regex.Split(filePath, @"[\\/]").Last();
-            if (fileName.StartsWith("pakchunk")) {
-                using (Process pathList = new Process()) {
-                    pathList.StartInfo.FileName = u4pakPath;
-                    pathList.StartInfo.Arguments = @" list -n " + "\"" + filePath + "\"";
-                    pathList.StartInfo.UseShellExecute = false;
-                    pathList.StartInfo.RedirectStandardOutput = true;
-                    pathList.Start();
-                    string output = pathList.StandardOutput.ReadToEnd();
-                    pathList.WaitForExit();
-                    string[] packagePaths = output.Split("\n");
+            // Loop through each file, check if it is a .pak file
+            foreach (string filePath in filesInPakDirectory) {
+                string fileName = Regex.Split(filePath, @"[\\/]").Last();
+                if (fileName.StartsWith("pakchunk")) {
+                    using (Process pathList = new Process()) {
+                        pathList.StartInfo.FileName = u4pakPath;
+                        pathList.StartInfo.Arguments = @" list -n " + "\"" + filePath + "\"";
+                        pathList.StartInfo.UseShellExecute = false;
+                        pathList.StartInfo.RedirectStandardOutput = true;
+                        pathList.Start();
+                        string output = pathList.StandardOutput.ReadToEnd();
+                        pathList.WaitForExit();
+                        string[] packagePaths = output.Split("\n");
 
-                    // For each package path found in the .pak file, store in a dictionary in memory that specifies which .pak file it was found in
-                    foreach (string packagePath in packagePaths) {
-                        _assetPathToPakFilePathMap[packagePath] = filePath;
+                        // For each package path found in the .pak file, store in a dictionary in memory that specifies which .pak file it was found in
+                        foreach (string packagePath in packagePaths) {
+                            _assetPathToPakFilePathMap[packagePath] = filePath;
 
-                        // Add any room/level assets we find to a separate list for easy reading
-                        if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Environment/[^/]*?/Level/m[0-9]{2}[A-Z]{3}_[0-9]{3}").Success) {
-                            string packageName = packagePath.Split("/").Last();
-                            string levelName = packageName.Substring(0, 10);
-                            Godot.Collections.Dictionary<string, string> roomPackageDef = default(Godot.Collections.Dictionary<string, string>);
-                            if (_levelNameToAssetPathMap.ContainsKey(levelName)) {
-                                roomPackageDef = _levelNameToAssetPathMap[levelName];
-                            } else {
-                                roomPackageDef = new Godot.Collections.Dictionary<string, string>();
-                                _levelNameToAssetPathMap[levelName] = roomPackageDef;
-                            }
-                            if (packageName.EndsWith("_BG.umap")) {
-                                roomPackageDef["bg"] = packagePath;
-                            } else if (packageName.EndsWith("_BG_BuiltData.umap")) {
-                                roomPackageDef["bg_built_data"] = packagePath;
-                            } else if (packageName.EndsWith("_Enemy.umap")) {
-                                roomPackageDef["enemy"] = packagePath;
-                            } else if (packageName.EndsWith("_Enemy_Normal.umap")) {
-                                roomPackageDef["enemy_normal"] = packagePath;
-                            } else if (packageName.EndsWith("_Enemy_Hard.umap")) {
-                                roomPackageDef["enemy_hard"] = packagePath;
-                            } else if (packageName.EndsWith("_Gimmick.umap")) {
-                                roomPackageDef["gimmick"] = packagePath;
-                            } else if (packageName.EndsWith("_Gimmick_BuiltData.umap")) {
-                                roomPackageDef["gimmick_built_data"] = packagePath;
-                            } else if (packageName.EndsWith("_Event.umap")) {
-                                roomPackageDef["event"] = packagePath;
-                            } else if (packageName.EndsWith("_Setting.umap")) {
-                                roomPackageDef["setting"] = packagePath;
-                            } else if (packageName.EndsWith("_RV.umap")) {
-                                roomPackageDef["rv"] = packagePath;
+                            // Add any room/level assets we find to a separate list for easy reading
+                            if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Environment/[^/]*?/Level/m[0-9]{2}[A-Z]{3}_[0-9]{3}").Success) {
+                                string packageName = packagePath.Split("/").Last();
+                                string levelName = packageName.Substring(0, 10);
+                                Godot.Collections.Dictionary<string, string> roomPackageDef = default(Godot.Collections.Dictionary<string, string>);
+                                if (_levelNameToAssetPathMap.ContainsKey(levelName)) {
+                                    roomPackageDef = _levelNameToAssetPathMap[levelName];
+                                } else {
+                                    roomPackageDef = new Godot.Collections.Dictionary<string, string>();
+                                    _levelNameToAssetPathMap[levelName] = roomPackageDef;
+                                }
+                                if (packageName.EndsWith("_BG.umap")) {
+                                    roomPackageDef["bg"] = packagePath;
+                                } else if (packageName.EndsWith("_BG_BuiltData.umap")) {
+                                    roomPackageDef["bg_built_data"] = packagePath;
+                                } else if (packageName.EndsWith("_Enemy.umap")) {
+                                    roomPackageDef["enemy"] = packagePath;
+                                } else if (packageName.EndsWith("_Enemy_Normal.umap")) {
+                                    roomPackageDef["enemy_normal"] = packagePath;
+                                } else if (packageName.EndsWith("_Enemy_Hard.umap")) {
+                                    roomPackageDef["enemy_hard"] = packagePath;
+                                } else if (packageName.EndsWith("_Gimmick.umap")) {
+                                    roomPackageDef["gimmick"] = packagePath;
+                                } else if (packageName.EndsWith("_Gimmick_BuiltData.umap")) {
+                                    roomPackageDef["gimmick_built_data"] = packagePath;
+                                } else if (packageName.EndsWith("_Event.umap")) {
+                                    roomPackageDef["event"] = packagePath;
+                                } else if (packageName.EndsWith("_Setting.umap")) {
+                                    roomPackageDef["setting"] = packagePath;
+                                } else if (packageName.EndsWith("_RV.umap")) {
+                                    roomPackageDef["rv"] = packagePath;
+                                }
                             }
                         }
                     }
                 }
             }
+        } catch (Exception e) {
+            GD.Print(e);
         }
     }
 
@@ -259,12 +263,16 @@ public class UAssetParser : Control {
     }
 
     public void ExtractRoomAssets(string levelName) {
-        Godot.Collections.Dictionary<string, string> levelAssets = _levelNameToAssetPathMap[levelName];
-        string outputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
-        foreach (string key in levelAssets.Keys) {
-            if (!System.IO.File.Exists(outputFolder + "/" + levelAssets[key])) {
-                ExtractAssetToFolder(_assetPathToPakFilePathMap[levelAssets[key]], levelAssets[key], outputFolder);
+        try {
+            Godot.Collections.Dictionary<string, string> levelAssets = _levelNameToAssetPathMap[levelName];
+            string outputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
+            foreach (string key in levelAssets.Keys) {
+                if (!System.IO.File.Exists(outputFolder + "/" + levelAssets[key])) {
+                    ExtractAssetToFolder(_assetPathToPakFilePathMap[levelAssets[key]], levelAssets[key], outputFolder);
+                }
             }
+        } catch (Exception e) {
+            GD.Print(e);
         }
     }
 
@@ -292,8 +300,10 @@ public class UAssetParser : Control {
                     ueExtract.StartInfo.Arguments = @" -export -path=" + "\"" + extractAssetOutputFolder + "\"" + @" -out=" + "\"" + extractModelOutputFolder + "/BloodstainedRotN/Content/\"" + @" -game=ue4.18 -gltf -png " + assetPath;
                     ueExtract.StartInfo.UseShellExecute = false;
                     ueExtract.StartInfo.RedirectStandardOutput = true;
+                    ueExtract.StartInfo.RedirectStandardError = true;
                     ueExtract.Start();
                     string output = ueExtract.StandardOutput.ReadToEnd();
+                    string error = ueExtract.StandardError.ReadToEnd();
                     ueExtract.WaitForExit();
                 }
             }
@@ -549,14 +559,19 @@ public class UAssetParser : Control {
     }
 
     public Godot.Collections.Dictionary<string, object> GetRoomDefinition(string levelName) {
-        ExtractRoomAssets(levelName);
-        string outputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
-        Godot.Collections.Dictionary<string, object> roomDefinition = new Godot.Collections.Dictionary<string, object>();
-        Godot.Collections.Dictionary<string, string> levelAssets = _levelNameToAssetPathMap[levelName];
-        if (levelAssets.ContainsKey("bg")) {
-            roomDefinition["bg"] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets["bg"], UE4Version.VER_UE4_18));
+        try {
+            ExtractRoomAssets(levelName);
+            string outputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
+            Godot.Collections.Dictionary<string, object> roomDefinition = new Godot.Collections.Dictionary<string, object>();
+            Godot.Collections.Dictionary<string, string> levelAssets = _levelNameToAssetPathMap[levelName];
+            if (levelAssets.ContainsKey("bg")) {
+                roomDefinition["bg"] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets["bg"], UE4Version.VER_UE4_18));
+            }
+            return roomDefinition;
+        } catch (Exception e) {
+            GD.Print(e);
+            return new Godot.Collections.Dictionary<string, object>();
         }
-        return roomDefinition;
     }
 
     public static string CamelCaseToSnakeCase(string text) {

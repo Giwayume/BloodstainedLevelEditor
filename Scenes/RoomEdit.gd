@@ -141,6 +141,7 @@ func parse_pak_thread_function(_noop):
 
 func end_parse_pak_thread():
 	parse_pak_thread.wait_to_finish()
+	print_debug("parse pak complete")
 	start_get_room_definition_thread()
 
 func start_get_room_definition_thread():
@@ -154,7 +155,7 @@ func get_room_definition_thread_function(_noop):
 
 func end_get_room_definition_thread():
 	get_room_definition_thread.wait_to_finish()
-	
+	print_debug("get room def complete")
 	threads_finished()
 
 

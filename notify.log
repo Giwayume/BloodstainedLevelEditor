@@ -16,3 +16,107 @@ appMalloc: size=-934012032 (total=5 Mbytes) <- FArray::Empty: -1668988488 x 16 <
 ERROR: Memory: bad allocation size -934012032 bytes
 appMalloc: size=-934012032 (total=5 Mbytes) <- FArray::Empty: -1668988488 x 16 <- TArray::Serialize: 0/0 <- FPackageFileSummary::Serialize4 <- FPackageFileSummary<<: Ver=0/0 <- UnPackage::UnPackage: Content/Core/Environment/ACT01_SIP/Mesh/SIP_Pillar00.uasset, ver=18/0, game=ue4.18 <- UnPackage::LoadPackage(info): Content/Core/Environment/ACT01_SIP/Mesh/SIP_Pillar00.uasset <- Main: umodel_build=1571
 
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/MI_SAN_Relief00_UC1.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_DXT1(5) <- TryExecuteInThread: ExportTexture <- Thread: 5156
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/MI_SAN_Relief00_UC1.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_BC5(24) <- TryExecuteInThread: ExportTexture <- Thread: 17008
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/MI_SAN_Relief00_UC1.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_DXT1(5) <- TryExecuteInThread: ExportTexture <- Thread: 9300
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/MI_SAN_Relief00_UC1.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_DXT1(5) <- TryExecuteInThread: ExportTexture <- Thread: 14904
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/MI_SAN_Relief00_UC1.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_DXT1(5) <- TryExecuteInThread: ExportTexture <- Thread: 8724
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/MI_SAN_Relief00_UC1.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_DXT1(5) <- TryExecuteInThread: ExportTexture <- Thread: 16696
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/MI_SAN_Relief00_UC1.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_BC5(24) <- TryExecuteInThread: ExportTexture <- Thread: 9272
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/MI_SAN_Relief00_Dark2_UC1.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_DXT1(5) <- TryExecuteInThread: ExportTexture <- Thread: 17664
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/MI_SAN_Wood0_Dark.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_BC5(24) <- TryExecuteInThread: ExportTexture <- Thread: 17224
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/MI_SAN_Wood0_Dark.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_DXT1(5) <- TryExecuteInThread: ExportTexture <- Thread: 14088
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/LQ/MIP_SAN_wood_UC1_LQ.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_BC5(24) <- TryExecuteInThread: ExportTexture <- Thread: 10500
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/MI_SAN_Marble_E.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_BC5(24) <- TryExecuteInThread: ExportTexture <- Thread: 5228
+
+
+
+******** BloodstainedRotN/Content/Core/Environment/ACT05_SAN/MI/MI_SAN_Relief00_UC1.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_BC5(24) <- TryExecuteInThread: ExportTexture <- Thread: 2068
+
+
+
+******** BloodstainedRotN/Content/WF_ART/Environment/T_Simple_01_N.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xC8E5
+TryExecuteInThread: ExportTexture <- Thread: 14176
+
+
+
+******** BloodstainedRotN/Content/WF_ART/Environment/T_Simple_01_N.uasset ********
+
+ERROR: Access violation (C0000005) at umodel_64.exe+0xB7170
+CTextureData::Decompress: fmt=PF_BC5(24) <- TryExecuteInThread: ExportTexture <- QueueTask::Exec <- ThreadPool::WaitForCompletion <- ExportPackages <- Main: umodel_build=1571
+
