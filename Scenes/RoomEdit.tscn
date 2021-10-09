@@ -255,7 +255,7 @@ __meta__ = {
 
 [node name="PanelContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Inspector/ScrollContainer"]
 margin_right = 227.0
-margin_bottom = 172.0
+margin_bottom = 160.0
 size_flags_horizontal = 3
 __meta__ = {
 "_edit_use_anchors_": false
@@ -265,7 +265,7 @@ __meta__ = {
 anchor_right = 0.0
 anchor_bottom = 0.0
 margin_right = 227.0
-margin_bottom = 172.0
+margin_bottom = 160.0
 
 [node name="Assets" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer"]
 visible = false

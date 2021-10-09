@@ -17,6 +17,7 @@ var loading_3d_scene_notification: Control
 var loading_status_container: Control
 var loading_status_label: Label
 var menu_bar: Control
+var panel_transform: Control
 var room_3d_display: Spatial
 var room_3d_display_camera: Camera
 var room_3d_focus_container: PanelContainer
@@ -62,6 +63,7 @@ func _ready():
 	loading_status_container = find_node("LoadingStatusContainer", true, true)
 	loading_status_label = find_node("LoadingStatusLabel", true, true)
 	menu_bar = find_node("RoomEditMenuBar", true, true)
+	panel_transform = find_node("TransformPanel", true, true)
 	room_3d_display = find_node("Room3dDisplay", true, true)
 	room_3d_display_camera = room_3d_display.find_node("Camera", true, true)
 	room_3d_focus_container = find_node("Room3dFocusContainer", true, true)
@@ -74,6 +76,7 @@ func _ready():
 	editor_container.hide()
 	loading_status_container.show()
 	loading_3d_scene_notification.hide()
+	panel_transform.hide()
 	
 	background_tree.root_item = background_tree.tree.create_item()
 	background_tree.root_item.set_text(0, "World")
@@ -214,6 +217,7 @@ func on_background_tree_multi_selected(item: TreeItem, column: int, selected: bo
 	else:
 		node.deselect()
 		room_3d_display.selected_nodes.erase(node)
+	update_panels_after_selection()
 	update_3d_cursor_position()
 
 func on_history_changed(action: HistoryAction):
@@ -252,6 +256,7 @@ func on_room_3d_display_selection_changed(selected_nodes):
 		tree_uncollapse_from_item(current_tree.tree_id_map[export_index])
 		current_tree.tree_id_map[export_index].select(0)
 	current_tree.tree.ensure_cursor_is_visible()
+	update_panels_after_selection()
 	update_3d_cursor_position()
 
 func on_room_3d_focus_container_focus():
@@ -450,6 +455,13 @@ func update_3d_cursor_position():
 			room_editor_controls_display_cursor.translation = average_position
 		else:
 			room_editor_controls_display_cursor.hide()
+
+func update_panels_after_selection():
+	if room_3d_display.selected_nodes.size() == 1:
+		panel_transform.show()
+		panel_transform.set_selected_nodes(room_3d_display.selected_nodes)
+	else:
+		panel_transform.hide()
 
 func setup_after_load():
 	editor.load_room_edits()
