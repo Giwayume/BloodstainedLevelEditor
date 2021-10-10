@@ -46,10 +46,28 @@ func _ready():
 			edits[edit][axis].connect("text_entered", self, "on_edit_entered", [edit, axis])
 			edits[edit][axis].connect("focus_entered", self, "on_edit_focus_entered", [edit, axis])
 			edits[edit][axis].connect("focus_exited", self, "on_edit_focus_exited", [edit, axis])
+		edits[edit]["reset"].connect("pressed", self, "on_reset_pressed", [edit])
 	expand_button.connect("toggled", self, "on_expand_button_toggled")
 	
 	reset_edit_dirty_flags()
 	expand()
+
+func on_reset_pressed(field: String):
+	var node = selected_nodes[0].selection_transform_node
+	var current_global_transform = selected_nodes[0].selection_transform_node.get_global_transform()
+	if field == "translation":
+		node.translation = Vector3(0, 0, 0)
+	elif field == "rotation_degrees":
+		node.rotation_degrees = Vector3(0, 0, 0)
+	elif field == "scale":
+		node.scale = Vector3(1, 1, 1)
+	Editor.do_action(
+		SpatialTransformAction.new(
+			node,
+			current_global_transform,
+			node.get_global_transform()
+		)
+	)
 
 func on_edit_changed(new_text: String, field: String, axis: String):
 	edit_dirty_flags[field][axis] = true
