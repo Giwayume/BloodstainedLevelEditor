@@ -21,3 +21,9 @@ func _ready():
 				if child["type"] != "SceneComponent":
 					scene_component["children"].push_back(child)
 			room_3d_display.place_tree_nodes_recursive(self, scene_component)
+
+func set_deleted(deleted: bool):
+	for child in get_children():
+		if child.has_method("set_deleted"):
+			child.set_deleted(deleted)
+	

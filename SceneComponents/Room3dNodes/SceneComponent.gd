@@ -14,3 +14,8 @@ func _ready():
 		rotation_degrees = definition["rotation_degrees"]
 	if definition.has("scale"):
 		scale = definition["scale"]
+
+func set_deleted(deleted: bool):
+	for child in get_children():
+		if child.has_method("set_deleted"):
+			child.set_deleted(deleted)

@@ -467,10 +467,12 @@ public class UAssetParser : Control {
             using (StreamReader reader = System.IO.File.OpenText(filePath)) {
                 JObject editsJson = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
                 if (editsJson.ContainsKey("bg") && AssetPathToPakFilePathMap.ContainsKey(assetBasePath + "_BG.umap")) {
-                    ExtractAssetToFolder(AssetPathToPakFilePathMap[assetBasePath + "_BG.umap"], assetBasePath + "_BG.umap", modifiedAssetsFolder);
-                    UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + "_BG.umap", UE4Version.VER_UE4_18);
-                    UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson["bg"]);
-                    uAsset.Write(modifiedAssetsFolder + "/" + assetBasePath + "_BG.umap");
+                    if (editsJson["bg"]["existing_exports"].Count() > 0 || editsJson["bg"]["new_exports"].Count() > 0) {
+                        ExtractAssetToFolder(AssetPathToPakFilePathMap[assetBasePath + "_BG.umap"], assetBasePath + "_BG.umap", modifiedAssetsFolder);
+                        UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + "_BG.umap", UE4Version.VER_UE4_18);
+                        UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson["bg"]);
+                        uAsset.Write(modifiedAssetsFolder + "/" + assetBasePath + "_BG.umap");
+                    }
                 }
             }
         }

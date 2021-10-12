@@ -113,11 +113,11 @@ func on_expand_button_toggled(button_pressed: bool):
 
 func on_history_changed(action: HistoryAction):
 	if action.get_ids().has(HistoryAction.ID.SPATIAL_TRANSFORM):
-		set_transform_from_selected_nodes()
+		call_deferred("set_transform_from_selected_nodes")
 
 func set_selected_nodes(new_selected_nodes):
 	selected_nodes = new_selected_nodes
-	set_transform_from_selected_nodes()
+	call_deferred("set_transform_from_selected_nodes")
 
 func set_transform_from_selected_nodes():
 	if selected_nodes.size() == 1:
@@ -127,19 +127,19 @@ func set_transform_from_selected_nodes():
 			focused_edit = old_focused_edit
 		var node = selected_nodes[0].selection_transform_node
 		var translation = UE4Convert.convert_translation_from_godot_to_unreal(node.translation)
-		edits.translation.x.text = str(translation.x)
-		edits.translation.y.text = str(translation.y)
-		edits.translation.z.text = str(translation.z)
+		edits.translation.x.text = str(stepify(translation.x, 0.0001))
+		edits.translation.y.text = str(stepify(translation.y, 0.0001))
+		edits.translation.z.text = str(stepify(translation.z, 0.0001))
 		edits.translation.reset.visible = not (translation.x == 0 and translation.y == 0 and translation.z == 0)
 		var rotation_degrees = UE4Convert.convert_rotation_from_godot_to_unreal(node.rotation_degrees)
-		edits.rotation_degrees.x.text = str(rotation_degrees.x)
-		edits.rotation_degrees.y.text = str(rotation_degrees.y)
-		edits.rotation_degrees.z.text = str(rotation_degrees.z)
+		edits.rotation_degrees.x.text = str(stepify(rotation_degrees.x, 0.0001))
+		edits.rotation_degrees.y.text = str(stepify(rotation_degrees.y, 0.0001))
+		edits.rotation_degrees.z.text = str(stepify(rotation_degrees.z, 0.0001))
 		edits.rotation_degrees.reset.visible = not (rotation_degrees.x == 0 and rotation_degrees.y == 0 and rotation_degrees.z == 0)
 		var scale = UE4Convert.convert_scale_from_godot_to_unreal(node.scale)
-		edits.scale.x.text = str(scale.x)
-		edits.scale.y.text = str(scale.y)
-		edits.scale.z.text = str(scale.z)
+		edits.scale.x.text = str(stepify(scale.x, 0.0001))
+		edits.scale.y.text = str(stepify(scale.y, 0.0001))
+		edits.scale.z.text = str(stepify(scale.z, 0.0001))
 		edits.scale.reset.visible = not (scale.x == 1 and scale.y == 1 and scale.z == 1)
 		call_deferred("focused_edit_regrab_focus")
 		call_deferred("reset_edit_dirty_flags")

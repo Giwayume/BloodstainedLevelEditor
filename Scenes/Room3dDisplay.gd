@@ -64,7 +64,7 @@ func _ready():
 	uasset_parser = get_node("/root/UAssetParser")
 	gltf_loader = DynamicGLTFLoader.new()
 	
-	bg_root = get_node("BG")
+	bg_root = $AssetTrees/bg
 	camera = get_node("Camera")
 
 func _input(event):
@@ -209,6 +209,8 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 			return
 		else:
 			already_placed_exports[current_placing_tree_name].push_back(export_index)
+		use_edited_prop_if_exists(definition, export_index, "deleted")
+		use_edited_prop_if_exists(definition, export_index, "hidden")
 		use_edited_prop_if_exists(definition, export_index, "translation")
 		use_edited_prop_if_exists(definition, export_index, "rotation_degrees")
 		use_edited_prop_if_exists(definition, export_index, "scale")
@@ -220,6 +222,11 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 	if is_auto_placement:
 		for child_definition in definition["children"]:
 			place_tree_nodes_recursive(node, child_definition)
+	call_deferred("handle_tree_nodes_after_placement", node, definition)
+
+func handle_tree_nodes_after_placement(node: Spatial, definition: Dictionary):
+	if (definition.has("deleted") and definition["deleted"]):
+		node.set_deleted(true)
 
 func use_edited_prop_if_exists(definition: Dictionary, export_index: int, prop_name: String):
 	var edited_prop = editor.get_room_edit_export_prop(current_placing_tree_name, export_index, prop_name)

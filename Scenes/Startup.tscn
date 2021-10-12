@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=2]
+[gd_scene load_steps=3 format=2]
 
 [ext_resource path="res://Scenes/Startup.gd" type="Script" id=1]
+[ext_resource path="res://EditorTheme/PanelContainerForeground.tres" type="StyleBox" id=2]
 
 [node name="Startup" type="Control"]
 anchor_right = 1.0
@@ -18,6 +19,41 @@ color = Color( 0, 0, 0, 1 )
 [node name="CenterContainer" type="CenterContainer" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
+margin_left = 2.49829
+margin_right = 2.49829
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
+[node name="PanelContainer" type="PanelContainer" parent="CenterContainer"]
+margin_left = 372.0
+margin_top = 241.0
+margin_right = 652.0
+margin_bottom = 359.0
+custom_styles/panel = ExtResource( 2 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer"]
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 275.0
+margin_bottom = 113.0
+
+[node name="Label" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer"]
+margin_right = 270.0
+margin_bottom = 56.0
+text = "This is pre-alpha software.
+Much of planned functionality is missing,
+and there may be bugs."
+align = 1
+
+[node name="GoButton" type="Button" parent="CenterContainer/PanelContainer/VBoxContainer"]
+margin_top = 60.0
+margin_right = 270.0
+margin_bottom = 82.0
+text = "OK"
+
+[node name="DownloadButton" type="Button" parent="CenterContainer/PanelContainer/VBoxContainer"]
+margin_top = 86.0
+margin_right = 270.0
+margin_bottom = 108.0
+text = "Download Latest Release"

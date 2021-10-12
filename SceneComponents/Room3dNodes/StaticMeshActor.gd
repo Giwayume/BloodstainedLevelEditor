@@ -20,3 +20,8 @@ func select():
 func deselect():
 	if selection_transform_node != null:
 		selection_transform_node.deselect()
+
+func set_deleted(deleted: bool):
+	for child in get_children():
+		if child.has_method("set_deleted"):
+			child.set_deleted(deleted)

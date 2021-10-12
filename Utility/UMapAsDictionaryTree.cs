@@ -151,6 +151,16 @@ public class UMapAsDictionaryTree {
                 foreach (var editExportPropEntry in editExport) {
                     string propName = editExportPropEntry.Key;
                     JToken propValue = editExportPropEntry.Value;
+                    if (propName == "deleted" && propValue.Value<bool>() == true) {
+                        FPackageIndex outerIndex = export.OuterIndex;
+                        if (outerIndex.IsExport()) {
+                            Export parentExport = outerIndex.ToExport(uAsset);
+                            if (parentExport is LevelExport parentLevelExport) {
+                                parentLevelExport.IndexData.Remove(exportIndex + 1);
+                            }
+                        }
+                        export.OuterIndex = FPackageIndex.FromRawIndex(0);
+                    }
                     if (propName == "translation") {
                         JObject translationObject = (JObject)propValue;
                         uAsset.AddNameReference(new FString("RelativeLocation"));

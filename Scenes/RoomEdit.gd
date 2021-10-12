@@ -3,6 +3,8 @@ extends Control
 var enemy_profiles = preload("res://Config/EnemyProfiles.gd").enemy_profiles
 var viewport_ui_container_normal_style = preload("res://EditorTheme/ViewportUiContainerNormal.tres")
 var viewport_ui_container_focus_style = preload("res://EditorTheme/ViewportUiContainerFocus.tres")
+var icon_remove = preload("res://Icons/Editor/Remove.svg")
+var icon_reload = preload("res://Icons/Editor/Reload.svg")
 var selectable_types = ["StaticMeshActor", "StaticMeshComponent"]
 
 var editor: Node
@@ -25,14 +27,32 @@ var room_3d_viewport_container: ViewportContainer
 var room_editor_controls_display: Spatial
 var room_editor_controls_display_camera: Camera
 var room_editor_controls_display_cursor: Spatial
+var tree_popup_menu: PopupMenu
 var viewport_toolbar: Control
 
-var background_tree: Dictionary = {
-	"tree": null,
-	"root_item": null,
-	"node_id_map": {},
-	"tree_id_map": {}
+var trees: Dictionary = {
+	"bg": {
+		"tree": null,
+		"root_item": null,
+		"node_id_map": {},
+		"tree_id_map": {}
+	}
 }
+enum { TREE_POPUP_ADD, TREE_POPUP_CLONE, TREE_POPUP_DELETE, TREE_POPUP_UNDELETE }
+var tree_popup_menu_items: Array = [
+	{
+		"id": TREE_POPUP_DELETE,
+		"type": "icon",
+		"texture": icon_remove,
+		"label": "Delete"
+	},
+	{
+		"id": TREE_POPUP_UNDELETE,
+		"type": "icon",
+		"texture": icon_reload,
+		"label": "Un-Delete"
+	}
+]
 
 var room_definition: Dictionary
 
@@ -57,7 +77,7 @@ func _ready():
 	if not editor.selected_level_name:
 		editor.selected_level_name = "m02VIL_006"
 	
-	background_tree.tree = find_node("BackgroundTree", true, true)
+	trees["bg"].tree = find_node("BackgroundTree", true, true)
 	editor_container = find_node("EditorContainer", true, true)
 	loading_3d_scene_notification = find_node("Loading3dSceneNotification", true, true)
 	loading_status_container = find_node("LoadingStatusContainer", true, true)
@@ -71,6 +91,7 @@ func _ready():
 	room_editor_controls_display = find_node("RoomEditorControlsDisplay", true, true)
 	room_editor_controls_display_camera = room_editor_controls_display.find_node("Camera", true, true)
 	room_editor_controls_display_cursor = room_editor_controls_display.find_node("ObjectTransformCursor", true, true)
+	tree_popup_menu = find_node("TreePopupMenu", true, true)
 	viewport_toolbar = find_node("RoomEditViewportToolbar", true, true)
 	
 	editor_container.hide()
@@ -78,11 +99,13 @@ func _ready():
 	loading_3d_scene_notification.hide()
 	panel_transform.hide()
 	
-	background_tree.root_item = background_tree.tree.create_item()
-	background_tree.root_item.set_text(0, "World")
-	background_tree.root_item.disable_folding = true
+	trees["bg"].root_item = trees["bg"].tree.create_item()
+	trees["bg"].root_item.set_text(0, "World")
+	trees["bg"].root_item.disable_folding = true
 	
-	background_tree.tree.connect("multi_selected", self, "on_background_tree_multi_selected")
+	for tree_name in trees:
+		trees[tree_name].tree.connect("multi_selected", self, "on_tree_multi_selected", [tree_name])
+		trees[tree_name].tree.connect("item_rmb_selected", self, "on_tree_rmb_selected", [tree_name])
 	editor.connect("history_changed", self, "on_history_changed")
 	menu_bar.connect("popup_visibility_changed", self, "on_menu_bar_popup_visibility_changed")
 	room_3d_display.connect("loading_start", self, "on_room_3d_display_loading_start")
@@ -102,6 +125,7 @@ func _ready():
 	room_editor_controls_display_cursor.connect("translate_cancel", self, "on_transform_cancel_selection")
 	room_editor_controls_display_cursor.connect("translate_preview", self, "on_translate_preview_selection")
 	room_editor_controls_display_cursor.connect("translate", self, "on_translate_selection")
+	tree_popup_menu.connect("id_pressed", self, "on_tree_popup_menu_id_pressed")
 	viewport_toolbar.connect("tool_changed", self, "on_tool_changed")
 	
 	start_parse_pak_thread()
@@ -120,9 +144,27 @@ func _input(event):
 	is_3d_viewport_focused = room_3d_focus_container.has_focus()
 	room_3d_display_camera.viewport_position = viewport_position
 	update_3d_viewport_input_tracking()
+	
+	# Handle mouse events
 	if event is InputEventMouseButton:
 		if is_mouse_in_3d_viewport_range and event.pressed:
 			room_3d_focus_container.call_deferred("grab_focus")
+	
+	# Handle keyboard events
+	if event is InputEventKey:
+		if event.scancode == KEY_DELETE:
+			if event.pressed:
+				var focus_owner = get_focus_owner()
+				var is_delete_node_focus_owner: bool = false
+				if focus_owner == room_3d_focus_container:
+					is_delete_node_focus_owner = true
+				if not is_delete_node_focus_owner:
+					for tree_name in trees:
+						if trees[tree_name].tree == focus_owner:
+							is_delete_node_focus_owner = true
+							break
+				if is_delete_node_focus_owner and room_3d_display.selected_nodes.size() > 0:
+					delete_selected_nodes()
 
 func _exit_tree():
 	editor.save_room_edits()
@@ -206,8 +248,8 @@ func threads_finished():
 # CALLBACKS #
 #############
 
-func on_background_tree_multi_selected(item: TreeItem, column: int, selected: bool):
-	var current_tree: Dictionary = background_tree
+func on_tree_multi_selected(item: TreeItem, column: int, selected: bool, tree_name: String):
+	var current_tree: Dictionary = trees[tree_name]
 	var selected_nodes = room_3d_display.selected_nodes
 	var export_index: int = item.get_metadata(0).export_index
 	var node = current_tree.node_id_map[export_index]
@@ -220,9 +262,46 @@ func on_background_tree_multi_selected(item: TreeItem, column: int, selected: bo
 	update_panels_after_selection()
 	update_3d_cursor_position()
 
+func on_tree_rmb_selected(position: Vector2, tree_name: String):
+	build_tree_popup_menu()
+	var viewport_size = get_viewport().size
+	var popup_position: Vector2 = trees[tree_name].tree.rect_global_position + position
+	tree_popup_menu.popup()
+	tree_popup_menu.rect_global_position = popup_position
+	tree_popup_menu.set_as_minsize()
+	if popup_position.x + tree_popup_menu.rect_size.x > viewport_size.x:
+		popup_position.x = viewport_size.x - tree_popup_menu.rect_size.x
+	if popup_position.y + tree_popup_menu.rect_size.y > viewport_size.y:
+		popup_position.y = viewport_size.y - tree_popup_menu.rect_size.y
+	tree_popup_menu.rect_global_position = popup_position
+
+func on_tree_popup_menu_id_pressed(id: int):
+	if id == TREE_POPUP_DELETE:
+		delete_selected_nodes()
+	elif id == TREE_POPUP_UNDELETE:
+		undelete_selected_nodes()
+
 func on_history_changed(action: HistoryAction):
-	if action.get_ids().has(HistoryAction.ID.SPATIAL_TRANSFORM):
+	var ids = action.get_ids()
+	var is_update_3d_cursor_position: bool = false
+	var is_rebuild_object_outlines: bool = false
+	var is_clear_selection: bool = false
+	
+	if ids.has(HistoryAction.ID.SPATIAL_TRANSFORM):
+		is_update_3d_cursor_position = true
+	if ids.has(HistoryAction.ID.DELETE_COMPONENT) or ids.has(HistoryAction.ID.UNDELETE_COMPONENT):
+		is_update_3d_cursor_position = true
+		is_rebuild_object_outlines = true
+		is_clear_selection = true
+	
+	if is_clear_selection:
+		for node in room_3d_display.selected_nodes:
+			node.deselect()
+			room_3d_display.selected_nodes.erase(node)
+	if is_update_3d_cursor_position:
 		update_3d_cursor_position()
+	if is_rebuild_object_outlines:
+		build_object_outlines()
 
 func on_menu_bar_popup_visibility_changed(is_visible):
 	is_any_menu_popup_visible = is_visible
@@ -237,7 +316,7 @@ func on_room_3d_display_loading_end():
 	loading_3d_scene_notification.hide()
 
 func on_room_3d_display_selection_changed(selected_nodes):
-	var current_tree: Dictionary = background_tree
+	var current_tree: Dictionary = trees["bg"] # TODO
 	var remaining_selected_nodes: Array = selected_nodes.duplicate(false)
 	var items_to_deselect: Array = []
 	var selected_item: TreeItem = current_tree.tree.get_next_selected(null)
@@ -277,11 +356,10 @@ func on_tool_changed(new_tool: String):
 	current_tool = new_tool
 	if transform_tool_names.has(current_tool):
 		var selection_count = len(room_3d_display.selected_nodes)
-		if selection_count > 0:
-			room_editor_controls_display_cursor.show()
 		room_editor_controls_display_cursor.set_mode(current_tool)
+		room_editor_controls_display_cursor.set_disabled(selection_count == 0)
 	else:
-		room_editor_controls_display_cursor.hide()
+		room_editor_controls_display_cursor.set_disabled(true)
 
 func on_rotate_preview_selection(axis: Vector3, phi: float):
 	var rotate_transform = Transform()
@@ -432,6 +510,30 @@ func on_translate_selection(offset: Vector3):
 # METHODS #
 ###########
 
+func delete_selected_nodes():
+	var delete_actions: Array = []
+	for node in room_3d_display.selected_nodes:
+		if not (node.definition.has("deleted") and node.definition["deleted"]):
+			delete_actions.push_back(
+				DeleteComponentAction.new(node)
+			)
+	if delete_actions.size() > 0:
+		Editor.do_action(
+			HistoryGroupAction.new("Delete Component(s)", delete_actions)
+		)
+
+func undelete_selected_nodes():
+	var undelete_actions: Array = []
+	for node in room_3d_display.selected_nodes:
+		if node.definition.has("deleted") and node.definition["deleted"]:
+			undelete_actions.push_back(
+				UndeleteComponentAction.new(node)
+			)
+	if undelete_actions.size() > 0:
+		Editor.do_action(
+			HistoryGroupAction.new("Un-Delete Component(s)", undelete_actions)
+		)
+
 func update_3d_viewport_input_tracking():
 	var can_capture_mouse = is_mouse_in_3d_viewport_range and not is_any_menu_popup_visible
 	var can_capture_keyboard = is_3d_viewport_focused and not is_any_menu_popup_visible
@@ -446,7 +548,7 @@ func update_3d_cursor_position():
 	if transform_tool_names.has(current_tool):
 		var selection_count = len(room_3d_display.selected_nodes)
 		if selection_count > 0:
-			room_editor_controls_display_cursor.show()
+			room_editor_controls_display_cursor.set_disabled(false)
 			var average_position: Vector3 = Vector3()
 			for node in room_3d_display.selected_nodes:
 				if node.selection_transform_node:
@@ -454,7 +556,7 @@ func update_3d_cursor_position():
 			average_position = average_position / selection_count
 			room_editor_controls_display_cursor.translation = average_position
 		else:
-			room_editor_controls_display_cursor.hide()
+			room_editor_controls_display_cursor.set_disabled(true)
 
 func update_panels_after_selection():
 	if room_3d_display.selected_nodes.size() == 1:
@@ -466,27 +568,60 @@ func update_panels_after_selection():
 func setup_after_load():
 	editor.load_room_edits()
 	setup_3d_view()
-	background_tree.tree_id_map.clear()
-	background_tree.node_id_map.clear()
-	background_tree.tree.clear()
-	build_object_outline(background_tree.tree, background_tree.root_item, background_tree.tree_id_map, background_tree.node_id_map, room_3d_display.find_node("BG", true, true))
+	build_object_outlines()
 
 func setup_3d_view():
 	room_3d_display.set_room_definition(room_definition)
 
+func build_tree_popup_menu():
+	tree_popup_menu.clear()
+	var is_delete_option: bool = false
+	for node in room_3d_display.selected_nodes:
+		if not (node.definition.has("deleted") and node.definition["deleted"]):
+			is_delete_option = true
+	for item in tree_popup_menu_items:
+		if item.id == TREE_POPUP_DELETE and not is_delete_option:
+			continue
+		if item.id == TREE_POPUP_UNDELETE and is_delete_option:
+			continue
+		if item.type == "icon":
+			tree_popup_menu.add_icon_item(item.texture, item.label, item.id)
+		elif item.type == "separator":
+			tree_popup_menu.add_separator()
+
+func build_object_outlines():
+	for tree_name in trees:
+		trees[tree_name].tree_id_map.clear()
+		trees[tree_name].node_id_map.clear()
+		trees[tree_name].tree.clear()
+		build_object_outline(
+			trees[tree_name].tree,
+			trees[tree_name].root_item,
+			trees[tree_name].tree_id_map,
+			trees[tree_name].node_id_map,
+			room_3d_display.find_node("AssetTrees", true, true).get_node(tree_name)
+		)
+
 func build_object_outline(tree: Tree, parent_item: TreeItem, tree_id_map: Dictionary, node_id_map: Dictionary, parent_node: Node):
 	for child_node in parent_node.get_children():
 		var definition = child_node.definition
+		var is_deleted: bool = false
+		if definition.has("deleted") and definition["deleted"]:
+			is_deleted = true
 		var tree_item: TreeItem = tree.create_item(parent_item)
+		var is_selectable = selectable_types.has(definition["type"])
 		tree_item.set_collapsed(true)
 		tree_item.set_text(0, definition["name"])
 		tree_item.set_metadata(0, {
 			"export_index": definition["export_index"]
 		})
-		tree_item.set_selectable(0, selectable_types.has(definition["type"]))
+		tree_item.set_selectable(0, is_selectable)
+		if is_deleted:
+			tree_item.set_custom_color(0, Color("c14224"))
+			tree_item.set_suffix(0, "(DELETED)")
 		tree_id_map[definition["export_index"]] = tree_item
 		node_id_map[definition["export_index"]] = child_node
-		if not child_node.is_tree_leaf:
+		if not child_node.is_tree_leaf and not is_deleted:
 			build_object_outline(tree, tree_item, tree_id_map, node_id_map, child_node)
 
 func tree_uncollapse_from_item(item: TreeItem):

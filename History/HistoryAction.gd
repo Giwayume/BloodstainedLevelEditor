@@ -2,8 +2,10 @@ extends Reference
 class_name HistoryAction
 
 enum ID {
+	DELETE_COMPONENT,
 	HISTORY_GROUP,
 	SPATIAL_TRANSFORM,
+	UNDELETE_COMPONENT,
 	UNDEFINED,
 }
 

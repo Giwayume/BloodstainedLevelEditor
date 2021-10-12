@@ -6,7 +6,9 @@
 [node name="Room3dDisplay" type="Spatial"]
 script = ExtResource( 1 )
 
-[node name="BG" type="Spatial" parent="."]
+[node name="AssetTrees" type="Spatial" parent="."]
+
+[node name="bg" type="Spatial" parent="AssetTrees"]
 
 [node name="Camera" type="Camera" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.8, 8.4, 16.3 )

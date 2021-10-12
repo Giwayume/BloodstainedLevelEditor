@@ -113,6 +113,16 @@ func _process(_delta):
 		var rotate_z = Vector2(translation.z, translation.x).angle_to_point(Vector2(camera.translation.z, camera.translation.x)) + (PI / 2)
 		nodes.z.rotate_handle.rotation = Vector3(0, rotate_z, 0)
 
+func set_disabled(is_disabled: bool):
+	if is_disabled:
+		hide()
+		for axis in nodes:
+			nodes[axis].move_scale_handle_area.collision_layer = 0
+			nodes[axis].rotate_handle_area.collision_layer = 0
+	else:
+		show()
+		set_mode(mode)
+
 func set_mode(new_mode: String):
 	mode = new_mode
 	for axis in nodes:

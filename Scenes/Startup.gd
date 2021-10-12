@@ -5,10 +5,18 @@ extends Control
 # var a = 2
 # var b = "text"
 
+var go_button: Button
+var download_button: Button
+
+var release_link = "https://github.com/Giwayume/BloodstainedLevelEditor/releases"
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	route_to_scene()
+	go_button = find_node("GoButton", true, true)
+	download_button = find_node("DownloadButton", true, true)
+	
+	go_button.connect("pressed", self, "route_to_scene")
+	download_button.connect("pressed", self, "open_download_page")
 
 func route_to_scene():
 	var config = EditorConfig.read_config()
@@ -21,3 +29,6 @@ func route_to_scene():
 				get_tree().change_scene("res://Scenes/SelectPackage.tscn")
 				return
 	get_tree().change_scene("res://Scenes/SelectGameFolder.tscn")
+
+func open_download_page():
+	OS.shell_open(release_link)

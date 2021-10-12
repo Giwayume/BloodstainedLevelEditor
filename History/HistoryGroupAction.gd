@@ -4,7 +4,7 @@ class_name HistoryGroupAction
 var _actions: Array
 
 func _init(group_description, actions: Array):
-	id = HistoryAction.ID.SPATIAL_TRANSFORM
+	id = HistoryAction.ID.HISTORY_GROUP
 	description = group_description
 	_actions = actions
 

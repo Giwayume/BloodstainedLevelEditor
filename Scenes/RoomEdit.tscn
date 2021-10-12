@@ -179,6 +179,7 @@ margin_bottom = -5.0
 [node name="BackgroundTree" type="Tree" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/BG"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+allow_rmb_select = true
 select_mode = 2
 __meta__ = {
 "_edit_use_anchors_": false
@@ -305,6 +306,10 @@ margin_top = 26.0
 margin_right = 227.0
 margin_bottom = 235.0
 size_flags_vertical = 3
+
+[node name="TreePopupMenu" type="PopupMenu" parent="EditorContainer"]
+margin_right = 16.0
+margin_bottom = 16.0
 
 [node name="LoadingStatusContainer" type="Control" parent="."]
 visible = false

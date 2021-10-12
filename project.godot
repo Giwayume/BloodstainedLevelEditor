@@ -14,6 +14,11 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://Utility/ArrayExt.gd"
 }, {
+"base": "HistoryAction",
+"class": "DeleteComponentAction",
+"language": "GDScript",
+"path": "res://History/DeleteComponentAction.gd"
+}, {
 "base": "Reference",
 "class": "EditorConfig",
 "language": "GDScript",
@@ -48,16 +53,23 @@ _global_script_classes=[ {
 "class": "UE4Convert",
 "language": "GDScript",
 "path": "res://Utility/UE4Convert.gd"
+}, {
+"base": "HistoryAction",
+"class": "UndeleteComponentAction",
+"language": "GDScript",
+"path": "res://History/UndeleteComponentAction.gd"
 } ]
 _global_script_class_icons={
 "ArrayExt": "",
+"DeleteComponentAction": "",
 "EditorConfig": "",
 "HistoryAction": "",
 "HistoryGroupAction": "",
 "MeshRayCast": "",
 "PhysicsLayers3d": "",
 "SpatialTransformAction": "",
-"UE4Convert": ""
+"UE4Convert": "",
+"UndeleteComponentAction": ""
 }
 
 [application]
