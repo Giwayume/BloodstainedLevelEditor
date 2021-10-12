@@ -75,6 +75,19 @@ public class UAssetParser : Control {
     }
 
     /**
+     * Map of assetPath|modelName|modelNameInstance to assetPath where the model was actually located (package referenced had a _# at the end of the filename)
+     */
+    private Godot.Collections.Dictionary<string, string> _cachedModelReLookupAssetPaths = new Godot.Collections.Dictionary<string, string>();
+    public Godot.Collections.Dictionary<string, string> CachedModelReLookupAssetPaths {
+        get {
+            return _cachedModelReLookupAssetPaths;
+        }
+        set {
+            _cachedModelReLookupAssetPaths = value;
+        }
+    }
+
+    /**
      * Map of "filename|uassetPath|objectName" key to snippet object for blueprint reuse.
      */
     private Dictionary<string, UAssetSnippet> _blueprintSnippets = new Dictionary<string, UAssetSnippet>();
@@ -276,28 +289,55 @@ public class UAssetParser : Control {
         }
     }
 
-    private void EnsureModelCache(string assetPath) {
+    private string EnsureModelCache(string assetPath, string meshName, int meshNameInstance) {
+        string newAssetPath = assetPath;
         try {
             string extractAssetOutputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
             string extractModelOutputFolder = ProjectSettings.GlobalizePath(@"user://ModelCache");
             string ueViewerPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/UEViewer/umodel_64.exe");
 
             // Extract model uasset to output folder
-            if (!System.IO.File.Exists(extractAssetOutputFolder + "/" + assetPath)) {
-                _cachedModelResourcesByAssetPath.Remove(assetPath);
-                ExtractAssetToFolder(_assetPathToPakFilePathMap[assetPath], assetPath, extractAssetOutputFolder);
+            if (!_cachedModelReLookupAssetPaths.ContainsKey(assetPath + "|" + meshName + "|" + meshNameInstance)) {
+                List<string> assetPartPaths = new List<string>();
+                UAsset uAsset;
+                for (int i = 0; i < 10; i++) {
+                    string suffix = (i == 0 ? "" : "_" + i);
+                    string assetPathWithSuffix = assetPath.Replace(".uasset", "") + suffix + ".uasset";
+                    if (_assetPathToPakFilePathMap.ContainsKey(assetPathWithSuffix)) {
+                        assetPartPaths.Add(assetPathWithSuffix);
+                        // Extract assets to asset cache
+                        if (!System.IO.File.Exists(extractAssetOutputFolder + "/" + assetPathWithSuffix)) {
+                            _cachedModelResourcesByAssetPath.Remove(assetPathWithSuffix);
+                            ExtractAssetToFolder(_assetPathToPakFilePathMap[assetPathWithSuffix], assetPathWithSuffix, extractAssetOutputFolder);
+                        }
+                        if (i > 0) {
+                            uAsset = new UAsset(extractAssetOutputFolder + '/' + assetPathWithSuffix, UE4Version.VER_UE4_18);
+                            foreach (Export export in uAsset.Exports) {
+                                if (export.bIsAsset && export.ObjectName.Value.Value == meshName && export.ObjectName.Number == meshNameInstance) {
+                                    newAssetPath = assetPathWithSuffix;
+                                    break;
+                                }
+                            }
+                        }
+                        if (newAssetPath != assetPath) {
+                            _cachedModelReLookupAssetPaths[assetPath + "|" + meshName + "|" + meshNameInstance] = newAssetPath;
+                            break;
+                        }
+                    }
+                }
+                uAsset = null;
             }
 
             // Extract material imports inside model
-            if (!_cachedModelResourcesByAssetPath.ContainsKey(assetPath)) {
-                _cachedModelResourcesByAssetPath[assetPath] = ExtractModelMaterialsRecursive(assetPath);
+            if (!_cachedModelResourcesByAssetPath.ContainsKey(newAssetPath)) {
+                _cachedModelResourcesByAssetPath[newAssetPath] = ExtractModelMaterialsRecursive(newAssetPath);
             }
 
             // Extract gltf and png textures from model uasset
-            if (!System.IO.File.Exists(extractModelOutputFolder + "/" + assetPath.Replace(".uasset", ".gltf"))) {
+            if (!System.IO.File.Exists(extractModelOutputFolder + "/" + newAssetPath.Replace(".uasset", ".gltf"))) {
                 using (Process ueExtract = new Process()) {
                     ueExtract.StartInfo.FileName = ueViewerPath;
-                    ueExtract.StartInfo.Arguments = @" -export -path=" + "\"" + extractAssetOutputFolder + "\"" + @" -out=" + "\"" + extractModelOutputFolder + "/BloodstainedRotN/Content/\"" + @" -game=ue4.18 -gltf -png " + assetPath;
+                    ueExtract.StartInfo.Arguments = @" -export -path=" + "\"" + extractAssetOutputFolder + "\"" + @" -out=" + "\"" + extractModelOutputFolder + "/BloodstainedRotN/Content/\"" + @" -game=ue4.18 -gltf -png " + newAssetPath;
                     ueExtract.StartInfo.UseShellExecute = false;
                     ueExtract.StartInfo.RedirectStandardOutput = true;
                     ueExtract.StartInfo.RedirectStandardError = true;
@@ -311,6 +351,7 @@ public class UAssetParser : Control {
             GD.Print("Error extracting model asset: ", assetPath);
             GD.Print(e);
         }
+        return newAssetPath;
     }
 
     public Godot.Collections.Array<Godot.Collections.Dictionary<string, object>> ExtractModelMaterialsRecursive(string assetPath, Godot.Collections.Array<Godot.Collections.Dictionary<string, object>> extractedMaterials = default(Godot.Collections.Array<Godot.Collections.Dictionary<string, object>>), int materialIndex = -1) {
@@ -466,12 +507,27 @@ public class UAssetParser : Control {
             string assetBasePath = filePath.Replace(editsFolder + "/", "").Replace(".json", "");
             using (StreamReader reader = System.IO.File.OpenText(filePath)) {
                 JObject editsJson = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
-                if (editsJson.ContainsKey("bg") && AssetPathToPakFilePathMap.ContainsKey(assetBasePath + "_BG.umap")) {
-                    if (editsJson["bg"]["existing_exports"].Count() > 0 || editsJson["bg"]["new_exports"].Count() > 0) {
-                        ExtractAssetToFolder(AssetPathToPakFilePathMap[assetBasePath + "_BG.umap"], assetBasePath + "_BG.umap", modifiedAssetsFolder);
-                        UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + "_BG.umap", UE4Version.VER_UE4_18);
-                        UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson["bg"]);
-                        uAsset.Write(modifiedAssetsFolder + "/" + assetBasePath + "_BG.umap");
+                List<System.Collections.Generic.Dictionary<string, string>> assetsToCheck = new List<System.Collections.Generic.Dictionary<string, string>>();
+                assetsToCheck.Add(
+                    new System.Collections.Generic.Dictionary<string, string>{
+                        { "key", "bg" },
+                        { "suffix", "_BG.umap" }
+                    }
+                );
+                assetsToCheck.Add(
+                    new System.Collections.Generic.Dictionary<string, string>{
+                        { "key", "gimmick" },
+                        { "suffix", "_Gimmick.umap" }
+                    }
+                );
+                foreach (System.Collections.Generic.Dictionary<string, string> checkDef in assetsToCheck) {
+                    if (editsJson.ContainsKey(checkDef["key"]) && AssetPathToPakFilePathMap.ContainsKey(assetBasePath + checkDef["suffix"])) {
+                        if (editsJson[checkDef["key"]]["existing_exports"].Count() > 0 || editsJson[checkDef["key"]]["new_exports"].Count() > 0) {
+                            ExtractAssetToFolder(AssetPathToPakFilePathMap[assetBasePath + checkDef["suffix"]], assetBasePath + checkDef["suffix"], modifiedAssetsFolder);
+                            UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"], UE4Version.VER_UE4_18);
+                            UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson[checkDef["key"]]);
+                            uAsset.Write(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"]);
+                        }
                     }
                 }
             }
@@ -568,6 +624,9 @@ public class UAssetParser : Control {
             Godot.Collections.Dictionary<string, string> levelAssets = _levelNameToAssetPathMap[levelName];
             if (levelAssets.ContainsKey("bg")) {
                 roomDefinition["bg"] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets["bg"], UE4Version.VER_UE4_18));
+            }
+            if (levelAssets.ContainsKey("gimmick")) {
+                roomDefinition["gimmick"] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets["gimmick"], UE4Version.VER_UE4_18));
             }
             return roomDefinition;
         } catch (Exception e) {

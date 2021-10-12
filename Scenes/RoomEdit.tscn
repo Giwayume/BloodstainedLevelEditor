@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=2]
+[gd_scene load_steps=12 format=2]
 
 [ext_resource path="res://Scenes/RoomEdit.gd" type="Script" id=1]
 [ext_resource path="res://Scenes/Room3dDisplay.tscn" type="PackedScene" id=2]
@@ -8,6 +8,7 @@
 [ext_resource path="res://Scenes/RoomEditorControlsDisplay.tscn" type="PackedScene" id=6]
 [ext_resource path="res://SceneComponents/RoomEditMenuBar.tscn" type="PackedScene" id=7]
 [ext_resource path="res://SceneComponents/Inspector/TransformPanel.tscn" type="PackedScene" id=8]
+[ext_resource path="res://SceneComponents/Inspector/MeshInfoPanel.tscn" type="PackedScene" id=9]
 
 [sub_resource type="StyleBoxEmpty" id=1]
 content_margin_left = 4.0
@@ -163,12 +164,12 @@ margin_bottom = 277.0
 size_flags_vertical = 3
 custom_constants/margin_right = 8
 
-[node name="TabContainer" type="TabContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer"]
+[node name="LevelOutlineTabContainer" type="TabContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer"]
 margin_right = 237.0
 margin_bottom = 277.0
 tab_align = 0
 
-[node name="BG" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer"]
+[node name="BG" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 5.0
@@ -176,7 +177,7 @@ margin_top = 29.0
 margin_right = -5.0
 margin_bottom = -5.0
 
-[node name="BackgroundTree" type="Tree" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/BG"]
+[node name="BackgroundTree" type="Tree" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/BG"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 allow_rmb_select = true
@@ -185,7 +186,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Enemy" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer"]
+[node name="Enemy" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer"]
 visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -194,23 +195,23 @@ margin_top = 29.0
 margin_right = -5.0
 margin_bottom = -5.0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/Enemy"]
+[node name="VBoxContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="HBoxContainer" type="HBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/Enemy/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer"]
 margin_right = 227.0
 margin_bottom = 22.0
 
-[node name="Label" type="Label" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/Enemy/VBoxContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer/HBoxContainer"]
 margin_right = 65.0
 margin_bottom = 22.0
 text = "Difficulty"
 
-[node name="OptionButton" type="OptionButton" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/Enemy/VBoxContainer/HBoxContainer"]
+[node name="OptionButton" type="OptionButton" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer/HBoxContainer"]
 margin_left = 69.0
 margin_right = 227.0
 margin_bottom = 22.0
@@ -219,11 +220,29 @@ text = "All"
 items = [ "All", null, false, 0, null, "Normal", null, false, 1, null, "Hard", null, false, 2, null ]
 selected = 0
 
-[node name="ItemList" type="ItemList" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/TabContainer/Enemy/VBoxContainer"]
+[node name="ItemList" type="ItemList" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer"]
 margin_top = 26.0
 margin_right = 227.0
 margin_bottom = 243.0
 size_flags_vertical = 3
+
+[node name="Gimmick" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 5.0
+margin_top = 29.0
+margin_right = -5.0
+margin_bottom = -5.0
+
+[node name="GimmickTree" type="Tree" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Gimmick"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+allow_rmb_select = true
+select_mode = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="AssetListMarginContainer" type="MarginContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer"]
 margin_top = 285.0
@@ -255,18 +274,25 @@ __meta__ = {
 }
 
 [node name="PanelContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Inspector/ScrollContainer"]
-margin_right = 227.0
-margin_bottom = 160.0
+margin_right = 215.0
+margin_bottom = 278.0
 size_flags_horizontal = 3
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="MeshInfoPanel" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Inspector/ScrollContainer/PanelContainer" instance=ExtResource( 9 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_right = 215.0
+margin_bottom = 114.0
+
 [node name="TransformPanel" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Inspector/ScrollContainer/PanelContainer" instance=ExtResource( 8 )]
 anchor_right = 0.0
 anchor_bottom = 0.0
-margin_right = 227.0
-margin_bottom = 160.0
+margin_top = 118.0
+margin_right = 215.0
+margin_bottom = 278.0
 
 [node name="Assets" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer"]
 visible = false

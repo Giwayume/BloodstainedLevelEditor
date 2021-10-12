@@ -15,10 +15,12 @@ var get_room_definition_thread: Thread
 var parse_enemy_blueprint_thread: Thread
 
 var editor_container: Control
+var level_outline_tab_container: TabContainer
 var loading_3d_scene_notification: Control
 var loading_status_container: Control
 var loading_status_label: Label
 var menu_bar: Control
+var panel_mesh_info: Control
 var panel_transform: Control
 var room_3d_display: Spatial
 var room_3d_display_camera: Camera
@@ -32,6 +34,14 @@ var viewport_toolbar: Control
 
 var trees: Dictionary = {
 	"bg": {
+		"tab_index": 0,
+		"tree": null,
+		"root_item": null,
+		"node_id_map": {},
+		"tree_id_map": {}
+	},
+	"gimmick": {
+		"tab_index": 2,
 		"tree": null,
 		"root_item": null,
 		"node_id_map": {},
@@ -63,6 +73,7 @@ var is_mouse_in_3d_viewport_range: bool = false
 var is_3d_viewport_focused: bool = false
 var is_3d_editor_control_active: bool = false
 var selected_node_initial_transforms: Array = []
+var ignore_tree_multi_selected_signal: bool = false
 
 #############
 # LIFECYCLE #
@@ -77,12 +88,13 @@ func _ready():
 	if not editor.selected_level_name:
 		editor.selected_level_name = "m02VIL_006"
 	
-	trees["bg"].tree = find_node("BackgroundTree", true, true)
 	editor_container = find_node("EditorContainer", true, true)
+	level_outline_tab_container = find_node("LevelOutlineTabContainer", true, true)
 	loading_3d_scene_notification = find_node("Loading3dSceneNotification", true, true)
 	loading_status_container = find_node("LoadingStatusContainer", true, true)
 	loading_status_label = find_node("LoadingStatusLabel", true, true)
 	menu_bar = find_node("RoomEditMenuBar", true, true)
+	panel_mesh_info = find_node("MeshInfoPanel", true, true)
 	panel_transform = find_node("TransformPanel", true, true)
 	room_3d_display = find_node("Room3dDisplay", true, true)
 	room_3d_display_camera = room_3d_display.find_node("Camera", true, true)
@@ -91,17 +103,21 @@ func _ready():
 	room_editor_controls_display = find_node("RoomEditorControlsDisplay", true, true)
 	room_editor_controls_display_camera = room_editor_controls_display.find_node("Camera", true, true)
 	room_editor_controls_display_cursor = room_editor_controls_display.find_node("ObjectTransformCursor", true, true)
+	trees["bg"].tree = find_node("BackgroundTree", true, true)
+	trees["gimmick"].tree = find_node("GimmickTree", true, true)
 	tree_popup_menu = find_node("TreePopupMenu", true, true)
 	viewport_toolbar = find_node("RoomEditViewportToolbar", true, true)
 	
 	editor_container.hide()
 	loading_status_container.show()
 	loading_3d_scene_notification.hide()
+	panel_mesh_info.hide()
 	panel_transform.hide()
 	
-	trees["bg"].root_item = trees["bg"].tree.create_item()
-	trees["bg"].root_item.set_text(0, "World")
-	trees["bg"].root_item.disable_folding = true
+	for tree_name in trees:
+		trees[tree_name].root_item = trees[tree_name].tree.create_item()
+		trees[tree_name].root_item.set_text(0, "World")
+		trees[tree_name].root_item.disable_folding = true
 	
 	for tree_name in trees:
 		trees[tree_name].tree.connect("multi_selected", self, "on_tree_multi_selected", [tree_name])
@@ -249,18 +265,27 @@ func threads_finished():
 #############
 
 func on_tree_multi_selected(item: TreeItem, column: int, selected: bool, tree_name: String):
-	var current_tree: Dictionary = trees[tree_name]
-	var selected_nodes = room_3d_display.selected_nodes
-	var export_index: int = item.get_metadata(0).export_index
-	var node = current_tree.node_id_map[export_index]
-	if selected:
-		node.select()
-		room_3d_display.selected_nodes.push_back(node)
-	else:
-		node.deselect()
-		room_3d_display.selected_nodes.erase(node)
-	update_panels_after_selection()
-	update_3d_cursor_position()
+	if not ignore_tree_multi_selected_signal:
+		ignore_tree_multi_selected_signal = true
+		if selected:
+			for node in room_3d_display.selected_nodes:
+				if node.tree_name != tree_name:
+					node.deselect()
+					room_3d_display.selected_nodes.erase(node)
+					trees[node.tree_name].tree_id_map[node.definition.export_index].deselect(0)
+		var selected_nodes = room_3d_display.selected_nodes
+		var current_tree: Dictionary = trees[tree_name]
+		var export_index: int = item.get_metadata(0).export_index
+		var node = current_tree.node_id_map[export_index]
+		if selected:
+			node.select()
+			room_3d_display.selected_nodes.push_back(node)
+		else:
+			node.deselect()
+			room_3d_display.selected_nodes.erase(node)
+		update_panels_after_selection()
+		update_3d_cursor_position()
+		ignore_tree_multi_selected_signal = false
 
 func on_tree_rmb_selected(position: Vector2, tree_name: String):
 	build_tree_popup_menu()
@@ -316,25 +341,35 @@ func on_room_3d_display_loading_end():
 	loading_3d_scene_notification.hide()
 
 func on_room_3d_display_selection_changed(selected_nodes):
-	var current_tree: Dictionary = trees["bg"] # TODO
-	var remaining_selected_nodes: Array = selected_nodes.duplicate(false)
-	var items_to_deselect: Array = []
-	var selected_item: TreeItem = current_tree.tree.get_next_selected(null)
-	while selected_item != null:
-		var export_index = selected_item.get_metadata(0).export_index
-		var existing_selected_node_index = remaining_selected_nodes.find(current_tree.node_id_map[export_index])
-		if existing_selected_node_index == -1:
-			items_to_deselect.push_back(selected_item)
-		else:
-			remaining_selected_nodes.remove(existing_selected_node_index)
-		selected_item = current_tree.tree.get_next_selected(selected_item)
-	for item in items_to_deselect:
-		item.deselect(0)
-	for node in remaining_selected_nodes:
-		var export_index = node.definition.export_index
-		tree_uncollapse_from_item(current_tree.tree_id_map[export_index])
-		current_tree.tree_id_map[export_index].select(0)
-	current_tree.tree.ensure_cursor_is_visible()
+	var selected_nodes_by_tree_name = {}
+	for node in selected_nodes:
+		if not selected_nodes_by_tree_name.has(node.tree_name):
+			selected_nodes_by_tree_name[node.tree_name] = []
+		selected_nodes_by_tree_name[node.tree_name].push_back(node)
+	var last_tree_name = ""
+	for tree_name in selected_nodes_by_tree_name:
+		var current_tree: Dictionary = trees[tree_name]
+		var remaining_selected_nodes: Array = selected_nodes_by_tree_name[tree_name].duplicate(false)
+		var items_to_deselect: Array = []
+		var selected_item: TreeItem = current_tree.tree.get_next_selected(null)
+		while selected_item != null:
+			var export_index = selected_item.get_metadata(0).export_index
+			var existing_selected_node_index = remaining_selected_nodes.find(current_tree.node_id_map[export_index])
+			if existing_selected_node_index == -1:
+				items_to_deselect.push_back(selected_item)
+			else:
+				remaining_selected_nodes.remove(existing_selected_node_index)
+			selected_item = current_tree.tree.get_next_selected(selected_item)
+		for item in items_to_deselect:
+			item.deselect(0)
+		for node in remaining_selected_nodes:
+			var export_index = node.definition.export_index
+			tree_uncollapse_from_item(current_tree.tree_id_map[export_index])
+			current_tree.tree_id_map[export_index].select(0)
+		current_tree.tree.ensure_cursor_is_visible()
+		last_tree_name = tree_name
+	if last_tree_name:
+		level_outline_tab_container.current_tab = trees[last_tree_name].tab_index
 	update_panels_after_selection()
 	update_3d_cursor_position()
 
@@ -559,7 +594,9 @@ func update_3d_cursor_position():
 			room_editor_controls_display_cursor.set_disabled(true)
 
 func update_panels_after_selection():
-	if room_3d_display.selected_nodes.size() == 1:
+	if room_3d_display.selected_nodes.size() == 1 and "selection_transform_node" in room_3d_display.selected_nodes[0]:
+		panel_mesh_info.show()
+		panel_mesh_info.set_selected_nodes(room_3d_display.selected_nodes)
 		panel_transform.show()
 		panel_transform.set_selected_nodes(room_3d_display.selected_nodes)
 	else:

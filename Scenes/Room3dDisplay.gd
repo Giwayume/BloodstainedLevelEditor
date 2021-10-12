@@ -9,6 +9,14 @@ var custom_component_scripts = {
 		"auto_placement": false,
 		"script": preload("res://SceneComponents/Room3dNodes/BlueprintGeneratedClass.gd")
 	},
+	"DynamicClass": {
+		"auto_placement": false,
+		"script": preload("res://SceneComponents/Room3dNodes/DynamicClass.gd")
+	},
+	"EventRootComponent": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/EventRootComponent.gd")
+	},
 	"SceneComponent": {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/SceneComponent.gd")
@@ -33,7 +41,7 @@ var uasset_parser: Node
 var extract_3d_model_thread: Thread = null
 var is_extracting_3d_models: bool = false
 
-var bg_root: Spatial
+var asset_roots: Dictionary = {}
 var camera: Camera
 
 var gltf_loader: DynamicGLTFLoader
@@ -64,7 +72,10 @@ func _ready():
 	uasset_parser = get_node("/root/UAssetParser")
 	gltf_loader = DynamicGLTFLoader.new()
 	
-	bg_root = $AssetTrees/bg
+	asset_roots = {
+		"bg": $AssetTrees/bg,
+		"gimmick": $AssetTrees/gimmick
+	}
 	camera = get_node("Camera")
 
 func _input(event):
@@ -98,6 +109,11 @@ func start_extract_3d_model_thread():
 	
 	# Check if model already cached, callback immediately if so
 	var package_path = current_waitlist_item["definition"]["static_mesh_asset_path"]
+	var mesh_name = current_waitlist_item["definition"]["static_mesh_name"]
+	var mesh_name_instance = current_waitlist_item["definition"]["static_mesh_name_instance"]
+	var relookup_key = package_path + "|" + mesh_name + "|" + str(mesh_name_instance)
+	if uasset_parser.CachedModelReLookupAssetPaths.has(relookup_key):
+		package_path = uasset_parser.CachedModelReLookupAssetPaths[relookup_key]
 	if cached_models.has(package_path):
 		extract_3d_model_thread = null
 		var loaded_model = cached_models[package_path]
@@ -112,7 +128,9 @@ func start_extract_3d_model_thread():
 func extract_3d_model_thread_function(_noop):
 	if (current_waitlist_item.has("definition") and current_waitlist_item["definition"].has("static_mesh_asset_path")):
 		var asset_path = current_waitlist_item["definition"]["static_mesh_asset_path"]
-		uasset_parser.EnsureModelCache(asset_path)
+		var mesh_name = current_waitlist_item["definition"]["static_mesh_name"]
+		var mesh_name_instance = current_waitlist_item["definition"]["static_mesh_name_instance"]
+		current_waitlist_item["definition"]["static_mesh_asset_path"] = uasset_parser.EnsureModelCache(asset_path, mesh_name, mesh_name_instance)
 	call_deferred("end_extract_3d_model_thread")
 
 func end_extract_3d_model_thread():
@@ -127,6 +145,8 @@ func end_extract_3d_model_thread():
 		var model_full_path = model_cache_path + "/" + package_path.replace(".uasset", ".gltf")
 		var loaded_model = gltf_loader.import_scene(model_full_path, 1, 1);
 		cached_models[package_path] = loaded_model
+		if package_path == "BloodstainedRotN/Content/Core/Environment/Common/Mesh/Gimmick/COM_Lamp01.uasset":
+			print_debug(loaded_model)
 		if loaded_model != null:
 			if uasset_parser.CachedModelResourcesByAssetPath.has(package_path):
 				var model_resources = uasset_parser.CachedModelResourcesByAssetPath[package_path]
@@ -165,10 +185,11 @@ func end_extract_3d_model_thread():
 func set_room_definition(new_room_definition: Dictionary):
 	already_placed_exports = {}
 	room_definition = new_room_definition
-	if room_definition.has("bg"):
-		already_placed_exports["bg"] = []
-		current_placing_tree_name = "bg"
-		place_tree_nodes_recursive(bg_root, room_definition["bg"])
+	for asset_key in asset_roots:
+		if room_definition.has(asset_key):
+			already_placed_exports[asset_key] = []
+			current_placing_tree_name = asset_key
+			place_tree_nodes_recursive(asset_roots[asset_key], room_definition[asset_key])
 
 #####################
 # LOADING 3D MODELS #
