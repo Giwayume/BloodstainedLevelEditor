@@ -14,6 +14,11 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://Utility/ArrayExt.gd"
 }, {
+"base": "Spatial",
+"class": "BaseRoom3dNode",
+"language": "GDScript",
+"path": "res://SceneComponents/Room3dNodes/BaseRoom3dNode.gd"
+}, {
 "base": "HistoryAction",
 "class": "DeleteComponentAction",
 "language": "GDScript",
@@ -61,6 +66,7 @@ _global_script_classes=[ {
 } ]
 _global_script_class_icons={
 "ArrayExt": "",
+"BaseRoom3dNode": "",
 "DeleteComponentAction": "",
 "EditorConfig": "",
 "HistoryAction": "",

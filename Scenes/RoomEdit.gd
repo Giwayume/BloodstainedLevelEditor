@@ -594,12 +594,13 @@ func update_3d_cursor_position():
 			room_editor_controls_display_cursor.set_disabled(true)
 
 func update_panels_after_selection():
-	if room_3d_display.selected_nodes.size() == 1 and "selection_transform_node" in room_3d_display.selected_nodes[0]:
+	if room_3d_display.selected_nodes.size() == 1 and room_3d_display.selected_nodes[0]["selection_transform_node"] != null:
 		panel_mesh_info.show()
 		panel_mesh_info.set_selected_nodes(room_3d_display.selected_nodes)
 		panel_transform.show()
 		panel_transform.set_selected_nodes(room_3d_display.selected_nodes)
 	else:
+		panel_mesh_info.hide()
 		panel_transform.hide()
 
 func setup_after_load():
@@ -652,7 +653,7 @@ func build_object_outline(tree: Tree, parent_item: TreeItem, tree_id_map: Dictio
 		tree_item.set_metadata(0, {
 			"export_index": definition["export_index"]
 		})
-		tree_item.set_selectable(0, is_selectable)
+		tree_item.set_selectable(0, true)
 		if is_deleted:
 			tree_item.set_custom_color(0, Color("c14224"))
 			tree_item.set_suffix(0, "(DELETED)")

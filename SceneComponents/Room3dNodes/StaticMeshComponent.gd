@@ -1,11 +1,4 @@
-extends Spatial
-
-var room_3d_display: Spatial
-var tree_name: String
-var definition: Dictionary
-var is_tree_leaf: bool = true
-var use_parent_as_proxy: bool = false
-var selection_transform_node: Spatial = null
+extends BaseRoom3dNode
 
 var selection_box_material = preload("res://Materials/EditorSelectionBox.tres")
 var selection_mesh_material = preload("res://Materials/EditorSelectionMesh.tres")
@@ -14,7 +7,9 @@ var loaded_model: Spatial
 var loaded_model_mesh_instance: MeshInstance
 var loaded_model_mesh: Mesh
 var model_just_selected_timeout = 0
-var is_in_deleted_branch: bool = false
+
+func _init():
+	is_tree_leaf = true
 
 func _ready():
 	selection_transform_node = self
@@ -91,10 +86,7 @@ func deselect():
 		loaded_model.show()
 
 func set_deleted(deleted: bool):
-	is_in_deleted_branch = deleted
-	for child in get_children():
-		if child.has_method("set_deleted"):
-			child.set_deleted(deleted)
+	.set_deleted(deleted)
 	var collision_area = get_node_or_null("CollisionArea")
 	if collision_area:
 		if deleted:

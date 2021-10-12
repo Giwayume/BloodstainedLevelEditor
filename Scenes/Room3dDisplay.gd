@@ -145,8 +145,6 @@ func end_extract_3d_model_thread():
 		var model_full_path = model_cache_path + "/" + package_path.replace(".uasset", ".gltf")
 		var loaded_model = gltf_loader.import_scene(model_full_path, 1, 1);
 		cached_models[package_path] = loaded_model
-		if package_path == "BloodstainedRotN/Content/Core/Environment/Common/Mesh/Gimmick/COM_Lamp01.uasset":
-			print_debug(loaded_model)
 		if loaded_model != null:
 			if uasset_parser.CachedModelResourcesByAssetPath.has(package_path):
 				var model_resources = uasset_parser.CachedModelResourcesByAssetPath[package_path]

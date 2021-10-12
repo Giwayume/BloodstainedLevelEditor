@@ -1,10 +1,7 @@
-extends Spatial
+extends BaseRoom3dNode
 
-var room_3d_display: Spatial
-var tree_name: String
-var definition: Dictionary
-var is_tree_leaf: bool = true
-var selection_transform_node: Spatial = null
+func _init():
+	is_tree_leaf = true
 
 func _ready():
 	if definition.has("children"):
@@ -20,8 +17,3 @@ func select():
 func deselect():
 	if selection_transform_node != null:
 		selection_transform_node.deselect()
-
-func set_deleted(deleted: bool):
-	for child in get_children():
-		if child.has_method("set_deleted"):
-			child.set_deleted(deleted)
