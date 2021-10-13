@@ -25,6 +25,11 @@ _global_script_classes=[ {
 "path": "res://History/DeleteComponentAction.gd"
 }, {
 "base": "Reference",
+"class": "DirectoryExt",
+"language": "GDScript",
+"path": "res://Utility/DirectoryExt.gd"
+}, {
+"base": "Reference",
 "class": "EditorConfig",
 "language": "GDScript",
 "path": "res://Utility/EditorConfig.gd"
@@ -68,6 +73,7 @@ _global_script_class_icons={
 "ArrayExt": "",
 "BaseRoom3dNode": "",
 "DeleteComponentAction": "",
+"DirectoryExt": "",
 "EditorConfig": "",
 "HistoryAction": "",
 "HistoryGroupAction": "",

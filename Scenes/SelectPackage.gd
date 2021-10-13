@@ -123,8 +123,8 @@ func on_press_delete_confirm_button():
 	if selected_package_item > -1:
 		var package_name = package_list.get_item_text(selected_package_item)
 		var dir = Directory.new()
-		if dir.remove(user_packages_folder + "/" + package_name) == OK:
-			update_package_list()
+		DirectoryExt.remove_recursive(user_packages_folder + "/" + package_name)
+		update_package_list()
 
 func on_press_new_package_button():
 	new_package_name_edit.text = ""
