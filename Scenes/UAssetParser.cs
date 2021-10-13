@@ -491,59 +491,64 @@ public class UAssetParser : Control {
     }
 
     public void PackageAndInstallMod(string packageName) {
-        string gameDirectory = (string)GetNode("/root/Editor").Call("read_config_prop", "game_directory");
-        string selectedPackageName = (string)GetNode("/root/Editor").Get("selected_package");
-        string unrealPakPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/UnrealPak/UnrealPak.exe");
-        string pakExtractFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
-        string filelistPath = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/PackageFileList.txt");
-        string modifiedAssetsFolder = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/ModifiedAssets");
-        string editsFolder = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/Edits").Replace("\\", "/");
-        string outputPakFilePath = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/ModifiedAssets.pak");
-        string gamePakLinkPath = gameDirectory + "/BloodstainedRotN/Content/Paks/~BloodstainedLevelEditor/" + selectedPackageName + ".pak";
+        GuaranteeAssetListFromPakFiles();
+        try {
+            string gameDirectory = (string)GetNode("/root/Editor").Call("read_config_prop", "game_directory");
+            string selectedPackageName = packageName;
+            string unrealPakPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/UnrealPak/UnrealPak.exe");
+            string pakExtractFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
+            string filelistPath = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/PackageFileList.txt");
+            string modifiedAssetsFolder = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/ModifiedAssets");
+            string editsFolder = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/Edits").Replace("\\", "/");
+            string outputPakFilePath = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/ModifiedAssets.pak");
+            string gamePakLinkPath = gameDirectory + "/BloodstainedRotN/Content/Paks/~BloodstainedLevelEditor/" + selectedPackageName + ".pak";
 
-        // Modify .uasset files based on room edit .json files
-        foreach (string file in FileExt.GetFilesRecursive(editsFolder)) {
-            string filePath = file.Replace("\\", "/");
-            string assetBasePath = filePath.Replace(editsFolder + "/", "").Replace(".json", "");
-            using (StreamReader reader = System.IO.File.OpenText(filePath)) {
-                JObject editsJson = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
-                List<System.Collections.Generic.Dictionary<string, string>> assetsToCheck = new List<System.Collections.Generic.Dictionary<string, string>>();
-                assetsToCheck.Add(
-                    new System.Collections.Generic.Dictionary<string, string>{
-                        { "key", "bg" },
-                        { "suffix", "_BG.umap" }
-                    }
-                );
-                assetsToCheck.Add(
-                    new System.Collections.Generic.Dictionary<string, string>{
-                        { "key", "gimmick" },
-                        { "suffix", "_Gimmick.umap" }
-                    }
-                );
-                foreach (System.Collections.Generic.Dictionary<string, string> checkDef in assetsToCheck) {
-                    if (editsJson.ContainsKey(checkDef["key"]) && AssetPathToPakFilePathMap.ContainsKey(assetBasePath + checkDef["suffix"])) {
-                        if (editsJson[checkDef["key"]]["existing_exports"].Count() > 0 || editsJson[checkDef["key"]]["new_exports"].Count() > 0) {
-                            ExtractAssetToFolder(AssetPathToPakFilePathMap[assetBasePath + checkDef["suffix"]], assetBasePath + checkDef["suffix"], modifiedAssetsFolder);
-                            UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"], UE4Version.VER_UE4_18);
-                            UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson[checkDef["key"]]);
-                            uAsset.Write(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"]);
+            // Modify .uasset files based on room edit .json files
+            foreach (string file in FileExt.GetFilesRecursive(editsFolder)) {
+                string filePath = file.Replace("\\", "/");
+                string assetBasePath = filePath.Replace(editsFolder + "/", "").Replace(".json", "");
+                using (StreamReader reader = System.IO.File.OpenText(filePath)) {
+                    JObject editsJson = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
+                    List<System.Collections.Generic.Dictionary<string, string>> assetsToCheck = new List<System.Collections.Generic.Dictionary<string, string>>();
+                    assetsToCheck.Add(
+                        new System.Collections.Generic.Dictionary<string, string>{
+                            { "key", "bg" },
+                            { "suffix", "_BG.umap" }
+                        }
+                    );
+                    assetsToCheck.Add(
+                        new System.Collections.Generic.Dictionary<string, string>{
+                            { "key", "gimmick" },
+                            { "suffix", "_Gimmick.umap" }
+                        }
+                    );
+                    foreach (System.Collections.Generic.Dictionary<string, string> checkDef in assetsToCheck) {
+                        if (editsJson.ContainsKey(checkDef["key"]) && AssetPathToPakFilePathMap.ContainsKey(assetBasePath + checkDef["suffix"])) {
+                            if (editsJson[checkDef["key"]]["existing_exports"].Count() > 0 || editsJson[checkDef["key"]]["new_exports"].Count() > 0) {
+                                ExtractAssetToFolder(AssetPathToPakFilePathMap[assetBasePath + checkDef["suffix"]], assetBasePath + checkDef["suffix"], modifiedAssetsFolder);
+                                UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"], UE4Version.VER_UE4_18);
+                                UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson[checkDef["key"]]);
+                                uAsset.Write(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"]);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Package uassets
-        System.IO.File.WriteAllText(filelistPath, "\"" + modifiedAssetsFolder.Replace("/", "\\") + "\\*.*\" \"..\\..\\..\\*.*\"");
-        using (Process pack = new Process()) {
-            pack.StartInfo.FileName = unrealPakPath;
-            pack.StartInfo.Arguments = " \"" + outputPakFilePath.Replace("/", "\\") + "\" \"-Create=" + filelistPath.Replace("/", "\\") + "\"";
-            pack.StartInfo.UseShellExecute = false;
-            pack.StartInfo.RedirectStandardOutput = true;
-            pack.Start();
-            pack.WaitForExit();
+            // Package uassets
+            System.IO.File.WriteAllText(filelistPath, "\"" + modifiedAssetsFolder.Replace("/", "\\") + "\\*.*\" \"..\\..\\..\\*.*\"");
+            using (Process pack = new Process()) {
+                pack.StartInfo.FileName = unrealPakPath;
+                pack.StartInfo.Arguments = " \"" + outputPakFilePath.Replace("/", "\\") + "\" \"-Create=" + filelistPath.Replace("/", "\\") + "\"";
+                pack.StartInfo.UseShellExecute = false;
+                pack.StartInfo.RedirectStandardOutput = true;
+                pack.Start();
+                pack.WaitForExit();
+            }
+            System.IO.File.Copy(outputPakFilePath, gamePakLinkPath, true);
+        } catch (Exception e) {
+            GD.Print(e);
         }
-        System.IO.File.Copy(outputPakFilePath, gamePakLinkPath, true);
     }
 
     public void ParseBlueprintForReuse(string pakFilePath, string assetPath, string objectName) {

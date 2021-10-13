@@ -155,7 +155,10 @@ func on_map_level_activated(level_name_to_activate: String):
 func on_menu_popup_package_pressed(id: int):
 	if id == 0:
 		editor.package_and_install()
-	elif id == 2:
+	if id == 1:
+		var open_path = str("file://", ProjectSettings.globalize_path("user://UserPackages/" + editor.selected_package))
+		OS.shell_open(open_path)
+	elif id == 3:
 		 get_tree().change_scene("res://Scenes/SelectPackage.tscn")
 
 func on_search_level_name_changed(search_text: String):

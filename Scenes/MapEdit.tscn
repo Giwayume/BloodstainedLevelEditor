@@ -67,7 +67,7 @@ margin_bottom = 22.0
 margin_right = 63.0
 margin_bottom = 22.0
 text = "Package"
-items = [ "Test In-Game", null, 0, false, false, 0, 0, null, "", false, "", null, 0, false, false, 1, 0, null, "", true, "Exit", null, 0, false, false, 2, 0, null, "", false ]
+items = [ "Test In-Game", null, 0, false, false, 0, 0, null, "", false, "Open Package Folder", null, 0, false, false, 1, 0, null, "", false, "", null, 0, false, false, 2, 0, null, "", true, "Exit", null, 0, false, false, 3, 0, null, "", false ]
 
 [node name="EditMenuButton" type="MenuButton" parent="RoomSelectContainer/VBoxContainer/PanelContainer/HBoxContainer"]
 margin_left = 67.0

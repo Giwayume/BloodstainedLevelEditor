@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=2]
+[gd_scene load_steps=13 format=2]
 
 [ext_resource path="res://Scenes/RoomEdit.gd" type="Script" id=1]
 [ext_resource path="res://Scenes/Room3dDisplay.tscn" type="PackedScene" id=2]
@@ -22,6 +22,12 @@ content_margin_right = 4.0
 content_margin_top = 4.0
 content_margin_bottom = 4.0
 bg_color = Color( 0, 0, 0, 0.560784 )
+
+[sub_resource type="StyleBoxFlat" id=3]
+content_margin_top = 4.0
+content_margin_bottom = 4.0
+bg_color = Color( 0.25098, 0.258824, 0.321569, 1 )
+border_color = Color( 0.14902, 0.152941, 0.188235, 1 )
 
 [node name="RoomEdit" type="Control"]
 anchor_right = 1.0
@@ -275,24 +281,33 @@ __meta__ = {
 
 [node name="PanelContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Inspector/ScrollContainer"]
 margin_right = 215.0
-margin_bottom = 278.0
+margin_bottom = 304.0
 size_flags_horizontal = 3
+custom_constants/separation = 0
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="PanelSelectionTypeLabel" type="Label" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Inspector/ScrollContainer/PanelContainer"]
+margin_right = 215.0
+margin_bottom = 22.0
+custom_styles/normal = SubResource( 3 )
+text = "Foo"
+align = 1
+
 [node name="MeshInfoPanel" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Inspector/ScrollContainer/PanelContainer" instance=ExtResource( 9 )]
 anchor_right = 0.0
 anchor_bottom = 0.0
+margin_top = 22.0
 margin_right = 215.0
-margin_bottom = 114.0
+margin_bottom = 140.0
 
 [node name="TransformPanel" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer/Inspector/ScrollContainer/PanelContainer" instance=ExtResource( 8 )]
 anchor_right = 0.0
 anchor_bottom = 0.0
-margin_top = 118.0
+margin_top = 140.0
 margin_right = 215.0
-margin_bottom = 278.0
+margin_bottom = 304.0
 
 [node name="Assets" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/AssetListMarginContainer/TabContainer"]
 visible = false

@@ -21,6 +21,7 @@ var loading_status_container: Control
 var loading_status_label: Label
 var menu_bar: Control
 var panel_mesh_info: Control
+var panel_selection_type_label: Label
 var panel_transform: Control
 var room_3d_display: Spatial
 var room_3d_display_camera: Camera
@@ -38,14 +39,16 @@ var trees: Dictionary = {
 		"tree": null,
 		"root_item": null,
 		"node_id_map": {},
-		"tree_id_map": {}
+		"tree_id_map": {},
+		"restore_collapse_state": {}
 	},
 	"gimmick": {
 		"tab_index": 2,
 		"tree": null,
 		"root_item": null,
 		"node_id_map": {},
-		"tree_id_map": {}
+		"tree_id_map": {},
+		"restore_collapse_state": {}
 	}
 }
 enum { TREE_POPUP_ADD, TREE_POPUP_CLONE, TREE_POPUP_DELETE, TREE_POPUP_UNDELETE }
@@ -95,6 +98,7 @@ func _ready():
 	loading_status_label = find_node("LoadingStatusLabel", true, true)
 	menu_bar = find_node("RoomEditMenuBar", true, true)
 	panel_mesh_info = find_node("MeshInfoPanel", true, true)
+	panel_selection_type_label = find_node("PanelSelectionTypeLabel", true, true)
 	panel_transform = find_node("TransformPanel", true, true)
 	room_3d_display = find_node("Room3dDisplay", true, true)
 	room_3d_display_camera = room_3d_display.find_node("Camera", true, true)
@@ -320,9 +324,10 @@ func on_history_changed(action: HistoryAction):
 		is_clear_selection = true
 	
 	if is_clear_selection:
-		for node in room_3d_display.selected_nodes:
+		for node in room_3d_display.selected_nodes.duplicate(false):
 			node.deselect()
 			room_3d_display.selected_nodes.erase(node)
+			trees[node.tree_name].tree_id_map[node.definition.export_index].deselect(0)
 	if is_update_3d_cursor_position:
 		update_3d_cursor_position()
 	if is_rebuild_object_outlines:
@@ -583,18 +588,30 @@ func update_3d_cursor_position():
 	if transform_tool_names.has(current_tool):
 		var selection_count = len(room_3d_display.selected_nodes)
 		if selection_count > 0:
+			var transformable_count: int = 0
 			room_editor_controls_display_cursor.set_disabled(false)
 			var average_position: Vector3 = Vector3()
 			for node in room_3d_display.selected_nodes:
 				if node.selection_transform_node:
 					average_position += node.selection_transform_node.get_global_transform().origin
-			average_position = average_position / selection_count
-			room_editor_controls_display_cursor.translation = average_position
+					transformable_count += 1
+			if transformable_count > 0:
+				average_position = average_position / transformable_count
+				room_editor_controls_display_cursor.translation = average_position
+			else:
+				room_editor_controls_display_cursor.set_disabled(true)
 		else:
 			room_editor_controls_display_cursor.set_disabled(true)
 
 func update_panels_after_selection():
-	if room_3d_display.selected_nodes.size() == 1 and room_3d_display.selected_nodes[0]["selection_transform_node"] != null:
+	var selection_count: int = room_3d_display.selected_nodes.size()
+	if selection_count == 1:
+		panel_selection_type_label.text = room_3d_display.selected_nodes[0].definition.type
+	elif selection_count > 1:
+		panel_selection_type_label.text = "Multiple Selection (" + str(selection_count) + ")"
+	else:
+		panel_selection_type_label.text = "Nothing Selected"
+	if selection_count == 1 and room_3d_display.selected_nodes[0]["selection_transform_node"] != null:
 		panel_mesh_info.show()
 		panel_mesh_info.set_selected_nodes(room_3d_display.selected_nodes)
 		panel_transform.show()
@@ -602,11 +619,13 @@ func update_panels_after_selection():
 	else:
 		panel_mesh_info.hide()
 		panel_transform.hide()
+	
 
 func setup_after_load():
 	editor.load_room_edits()
 	setup_3d_view()
 	build_object_outlines()
+	update_panels_after_selection()
 
 func setup_3d_view():
 	room_3d_display.set_room_definition(room_definition)
@@ -629,6 +648,8 @@ func build_tree_popup_menu():
 
 func build_object_outlines():
 	for tree_name in trees:
+		for id in trees[tree_name].tree_id_map:
+			trees[tree_name].restore_collapse_state[id] = trees[tree_name].tree_id_map[id].collapsed
 		trees[tree_name].tree_id_map.clear()
 		trees[tree_name].node_id_map.clear()
 		trees[tree_name].tree.clear()
@@ -637,30 +658,36 @@ func build_object_outlines():
 			trees[tree_name].root_item,
 			trees[tree_name].tree_id_map,
 			trees[tree_name].node_id_map,
+			trees[tree_name].restore_collapse_state,
 			room_3d_display.find_node("AssetTrees", true, true).get_node(tree_name)
 		)
+		trees[tree_name].restore_collapse_state = {}
 
-func build_object_outline(tree: Tree, parent_item: TreeItem, tree_id_map: Dictionary, node_id_map: Dictionary, parent_node: Node):
+func build_object_outline(tree: Tree, parent_item: TreeItem, tree_id_map: Dictionary, node_id_map: Dictionary, restore_collapse_state: Dictionary, parent_node: Node):
 	for child_node in parent_node.get_children():
 		var definition = child_node.definition
+		var export_index = definition["export_index"]
 		var is_deleted: bool = false
 		if definition.has("deleted") and definition["deleted"]:
 			is_deleted = true
 		var tree_item: TreeItem = tree.create_item(parent_item)
 		var is_selectable = selectable_types.has(definition["type"])
-		tree_item.set_collapsed(true)
+		if restore_collapse_state.has(export_index):
+			tree_item.set_collapsed(restore_collapse_state[export_index])
+		else:
+			tree_item.set_collapsed(true)
 		tree_item.set_text(0, definition["name"])
 		tree_item.set_metadata(0, {
-			"export_index": definition["export_index"]
+			"export_index": export_index
 		})
 		tree_item.set_selectable(0, true)
 		if is_deleted:
 			tree_item.set_custom_color(0, Color("c14224"))
 			tree_item.set_suffix(0, "(DELETED)")
-		tree_id_map[definition["export_index"]] = tree_item
-		node_id_map[definition["export_index"]] = child_node
+		tree_id_map[export_index] = tree_item
+		node_id_map[export_index] = child_node
 		if not child_node.is_tree_leaf and not is_deleted:
-			build_object_outline(tree, tree_item, tree_id_map, node_id_map, child_node)
+			build_object_outline(tree, tree_item, tree_id_map, node_id_map, restore_collapse_state, child_node)
 
 func tree_uncollapse_from_item(item: TreeItem):
 	item.set_collapsed(false)

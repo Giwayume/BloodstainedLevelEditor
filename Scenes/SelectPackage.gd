@@ -3,8 +3,10 @@ extends Control
 var package_installed_icon = preload("res://Icons/PackageInstalled.png")
 var package_not_installed_icon = preload("res://Icons/PackageNotInstalled.png")
 
+var editor: Node
+
 var edit_button: Button
-var install_button: Button
+var install_uninstall_button: Button
 var delete_button: Button
 var new_package_button: Button
 var new_package_dialog: WindowDialog
@@ -21,9 +23,11 @@ var error_dialog: AcceptDialog
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	editor = get_node("/root/Editor")
+	
 	package_list = find_node("PackageList", true, true)
 	edit_button = find_node("EditButton", true, true)
-	install_button = find_node("InstallButton", true, true)
+	install_uninstall_button = find_node("InstallUninstallButton", true, true)
 	delete_button = find_node("DeleteButton", true, true)
 	new_package_button = find_node("NewPackageButton", true, true)
 	new_package_dialog = find_node("NewPackageDialog", true, true)
@@ -35,6 +39,7 @@ func _ready():
 	level_editor_folder = game_directory + "/BloodstainedRotN/Content/Paks/~BloodstainedLevelEditor"
 	
 	edit_button.connect("pressed", self, "on_press_edit_button")
+	install_uninstall_button.connect("pressed", self, "on_press_install_or_uninstall_button")
 	delete_button.connect("pressed", self, "on_press_delete_button")
 	delete_dialog.get_ok().text = "Delete"
 	delete_dialog.get_ok().connect("pressed", self, "on_press_delete_confirm_button")
@@ -77,18 +82,36 @@ func update_package_list():
 		package_list.select(0)
 		selected_package_item = 0
 		edit_button.disabled = false
-		install_button.disabled = false
+		install_uninstall_button.disabled = false
 		delete_button.disabled = false
+		if package_list.get_item_icon(0) == package_installed_icon:
+			install_uninstall_button.text = "Uninstall"
+		else:
+			install_uninstall_button.text = "Install"
 	else:
 		selected_package_item = -1
 		edit_button.disabled = true
-		install_button.disabled = true
+		install_uninstall_button.disabled = true
 		delete_button.disabled = true
 
 func on_press_edit_button():
 	if selected_package_item > -1:
 		get_node("/root/Editor").selected_package = package_list.get_item_text(selected_package_item)
 		get_tree().change_scene("res://Scenes/MapEdit.tscn")
+
+func on_press_install_or_uninstall_button():
+	if selected_package_item > -1:
+		var package_name = package_name_list[selected_package_item]
+		if package_list.get_item_icon(selected_package_item) == package_installed_icon:
+			var dir = Directory.new()
+			if dir.file_exists(level_editor_folder + "/" + package_name + ".pak"):
+				dir.remove(level_editor_folder + "/" + package_name + ".pak")
+			update_package_list()
+		else:
+			editor.package_and_install(package_name, false, self, "on_install_finished")
+
+func on_install_finished():
+	update_package_list()
 
 func on_press_delete_button():
 	if selected_package_item > -1:
@@ -128,8 +151,12 @@ func on_press_create_package_button():
 func on_select_package(index: int):
 	selected_package_item = index
 	edit_button.disabled = false
-	install_button.disabled = false
+	install_uninstall_button.disabled = false
 	delete_button.disabled = false
+	if package_list.get_item_icon(index) == package_installed_icon:
+		install_uninstall_button.text = "Uninstall"
+	else:
+		install_uninstall_button.text = "Install"
 	
 func on_activate_package(index: int):
 	selected_package_item = index

@@ -2,6 +2,7 @@ extends Control
 
 signal history_changed
 
+var toast_scene = preload("res://SceneComponents/UiComponents/Toast.tscn")
 var loading_screen_scene = preload("res://Scenes/LoadingScreen.tscn")
 
 var package_and_install_thread: Thread
@@ -163,28 +164,36 @@ func remove_room_edit_export_prop(asset_type: String, export_index, prop_name: S
 # PACKAGING #
 #############
 
-func package_and_install(package_name: String = ""):
+func package_and_install(package_name: String = "", is_run_game: bool = true, install_finish_callback_target: Object = null, install_finish_callback_method: String = ""):
 	save_room_edits()
 	if package_name == "":
 		package_name = selected_package
-	start_package_and_install_thread(package_name)
+	start_package_and_install_thread(package_name, is_run_game, install_finish_callback_target, install_finish_callback_method)
 
-func start_package_and_install_thread(package_name: String):
+func start_package_and_install_thread(package_name: String, is_run_game: bool, install_finish_callback_target: Object, install_finish_callback_method: String):
 	loading_screen = loading_screen_scene.instance()
 	get_tree().get_root().add_child(loading_screen)
 	loading_screen.set_status_text("Packaging Project...")
 	package_and_install_thread = Thread.new()
-	package_and_install_thread.start(self, "package_and_install_thread_function", package_name)
+	package_and_install_thread.start(self, "package_and_install_thread_function", [package_name, is_run_game, install_finish_callback_target, install_finish_callback_method])
 
-func package_and_install_thread_function(package_name: String):
+func package_and_install_thread_function(thread_data: Array):
 	var uasset_parser = get_node("/root/UAssetParser")
+	var package_name: String = thread_data[0]
 	uasset_parser.PackageAndInstallMod(package_name)
-	call_deferred("end_package_and_install_thread")
+	call_deferred("end_package_and_install_thread", thread_data[1], thread_data[2], thread_data[3])
 
-func end_package_and_install_thread():
+func end_package_and_install_thread(is_run_game: bool, install_finish_callback_target: Object, install_finish_callback_method: String):
 	package_and_install_thread.wait_to_finish()
 	get_tree().get_root().remove_child(loading_screen)
 	loading_screen = null
 	
-	var game_directory = EditorConfig.read_config()["game_directory"]
-	# OS.execute(game_directory + "/BloodstainedRotN/Binaries/Win64/BloodstainedRotN-Win64-Shipping.exe", [], false)
+	if is_run_game:
+		var game_directory = EditorConfig.read_config()["game_directory"]
+		OS.execute(game_directory + "/BloodstainedRotN/Binaries/Win64/BloodstainedRotN-Win64-Shipping.exe", [], false)
+		var toast = toast_scene.instance()
+		get_tree().get_root().add_child(toast)
+		toast.set_text("The game will launch momentarily...")
+	
+	if install_finish_callback_target != null:
+		install_finish_callback_target.call_deferred(install_finish_callback_method)
