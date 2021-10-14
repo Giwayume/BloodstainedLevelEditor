@@ -14,7 +14,9 @@ var parse_pak_thread: Thread
 var get_room_definition_thread: Thread
 var parse_enemy_blueprint_thread: Thread
 
+var asset_explorer: Control
 var editor_container: Control
+var enemy_difficulty_select_option_button: OptionButton
 var level_outline_tab_container: TabContainer
 var loading_3d_scene_notification: Control
 var loading_status_container: Control
@@ -36,6 +38,33 @@ var viewport_toolbar: Control
 var trees: Dictionary = {
 	"bg": {
 		"tab_index": 0,
+		"tree": null,
+		"root_item": null,
+		"node_id_map": {},
+		"tree_id_map": {},
+		"restore_collapse_state": {}
+	},
+	"enemy": {
+		"tab_index": 1,
+		"tab_section_index": 0,
+		"tree": null,
+		"root_item": null,
+		"node_id_map": {},
+		"tree_id_map": {},
+		"restore_collapse_state": {}
+	},
+	"enemy_hard": {
+		"tab_index": 1,
+		"tab_section_index": 2,
+		"tree": null,
+		"root_item": null,
+		"node_id_map": {},
+		"tree_id_map": {},
+		"restore_collapse_state": {}
+	},
+	"enemy_normal": {
+		"tab_index": 1,
+		"tab_section_index": 1,
 		"tree": null,
 		"root_item": null,
 		"node_id_map": {},
@@ -91,6 +120,8 @@ func _ready():
 	if not editor.selected_level_name:
 		editor.selected_level_name = "m02VIL_006"
 	
+	asset_explorer = find_node("AssetExplorer", true, true)
+	enemy_difficulty_select_option_button = find_node("EnemyDifficultySelectOptionButton", true, true)
 	editor_container = find_node("EditorContainer", true, true)
 	level_outline_tab_container = find_node("LevelOutlineTabContainer", true, true)
 	loading_3d_scene_notification = find_node("Loading3dSceneNotification", true, true)
@@ -108,6 +139,9 @@ func _ready():
 	room_editor_controls_display_camera = room_editor_controls_display.find_node("Camera", true, true)
 	room_editor_controls_display_cursor = room_editor_controls_display.find_node("ObjectTransformCursor", true, true)
 	trees["bg"].tree = find_node("BackgroundTree", true, true)
+	trees["enemy"].tree = find_node("EnemySharedTree", true, true)
+	trees["enemy_hard"].tree = find_node("EnemyHardTree", true, true)
+	trees["enemy_normal"].tree = find_node("EnemyNormalTree", true, true)
 	trees["gimmick"].tree = find_node("GimmickTree", true, true)
 	tree_popup_menu = find_node("TreePopupMenu", true, true)
 	viewport_toolbar = find_node("RoomEditViewportToolbar", true, true)
@@ -127,6 +161,7 @@ func _ready():
 		trees[tree_name].tree.connect("multi_selected", self, "on_tree_multi_selected", [tree_name])
 		trees[tree_name].tree.connect("item_rmb_selected", self, "on_tree_rmb_selected", [tree_name])
 	editor.connect("history_changed", self, "on_history_changed")
+	enemy_difficulty_select_option_button.connect("item_selected", self, "on_enemy_difficulty_item_selected")
 	menu_bar.connect("popup_visibility_changed", self, "on_menu_bar_popup_visibility_changed")
 	room_3d_display.connect("loading_start", self, "on_room_3d_display_loading_start")
 	room_3d_display.connect("loading_end", self, "on_room_3d_display_loading_end")
@@ -147,6 +182,8 @@ func _ready():
 	room_editor_controls_display_cursor.connect("translate", self, "on_translate_selection")
 	tree_popup_menu.connect("id_pressed", self, "on_tree_popup_menu_id_pressed")
 	viewport_toolbar.connect("tool_changed", self, "on_tool_changed")
+	
+	on_enemy_difficulty_item_selected(0)
 	
 	start_parse_pak_thread()
 
@@ -319,15 +356,11 @@ func on_history_changed(action: HistoryAction):
 	if ids.has(HistoryAction.ID.SPATIAL_TRANSFORM):
 		is_update_3d_cursor_position = true
 	if ids.has(HistoryAction.ID.DELETE_COMPONENT) or ids.has(HistoryAction.ID.UNDELETE_COMPONENT):
-		is_update_3d_cursor_position = true
 		is_rebuild_object_outlines = true
 		is_clear_selection = true
 	
 	if is_clear_selection:
-		for node in room_3d_display.selected_nodes.duplicate(false):
-			node.deselect()
-			room_3d_display.selected_nodes.erase(node)
-			trees[node.tree_name].tree_id_map[node.definition.export_index].deselect(0)
+		clear_selection()
 	if is_update_3d_cursor_position:
 		update_3d_cursor_position()
 	if is_rebuild_object_outlines:
@@ -335,6 +368,23 @@ func on_history_changed(action: HistoryAction):
 
 func on_menu_bar_popup_visibility_changed(is_visible):
 	is_any_menu_popup_visible = is_visible
+
+func on_enemy_difficulty_item_selected(index: int):
+	var current_index = -1
+	if trees["enemy"].tree.visible:
+		current_index = 0
+	elif trees["enemy_normal"].tree.visible:
+		current_index = 1
+	elif trees["enemy_hard"].tree.visible:
+		current_index = 2
+	trees["enemy"].tree.visible = (index == 0)
+	room_3d_display.asset_roots["enemy"].visible = (index == 0)
+	trees["enemy_normal"].tree.visible = (index == 1)
+	room_3d_display.asset_roots["enemy_normal"].visible = (index == 1)
+	trees["enemy_hard"].tree.visible = (index == 2)
+	room_3d_display.asset_roots["enemy_hard"].visible = (index == 2)
+	if index != current_index:
+		call_deferred("clear_selection")
 
 func on_room_3d_display_camera_transform_changed(transform):
 	room_editor_controls_display_camera.transform = transform
@@ -375,6 +425,8 @@ func on_room_3d_display_selection_changed(selected_nodes):
 		last_tree_name = tree_name
 	if last_tree_name:
 		level_outline_tab_container.current_tab = trees[last_tree_name].tab_index
+		if trees[last_tree_name].has("tab_section_index"):
+			on_enemy_difficulty_item_selected(trees[last_tree_name].tab_section_index)
 	update_panels_after_selection()
 	update_3d_cursor_position()
 
@@ -574,6 +626,13 @@ func undelete_selected_nodes():
 			HistoryGroupAction.new("Un-Delete Component(s)", undelete_actions)
 		)
 
+func clear_selection():
+	for node in room_3d_display.selected_nodes.duplicate(false):
+		node.deselect()
+		room_3d_display.selected_nodes.erase(node)
+		trees[node.tree_name].tree_id_map[node.definition.export_index].deselect(0)
+	update_3d_cursor_position()
+
 func update_3d_viewport_input_tracking():
 	var can_capture_mouse = is_mouse_in_3d_viewport_range and not is_any_menu_popup_visible
 	var can_capture_keyboard = is_3d_viewport_focused and not is_any_menu_popup_visible
@@ -619,13 +678,14 @@ func update_panels_after_selection():
 	else:
 		panel_mesh_info.hide()
 		panel_transform.hide()
-	
+
 
 func setup_after_load():
 	editor.load_room_edits()
 	setup_3d_view()
 	build_object_outlines()
 	update_panels_after_selection()
+	asset_explorer.load_asset_list()
 
 func setup_3d_view():
 	room_3d_display.set_room_definition(room_definition)
@@ -665,6 +725,8 @@ func build_object_outlines():
 
 func build_object_outline(tree: Tree, parent_item: TreeItem, tree_id_map: Dictionary, node_id_map: Dictionary, restore_collapse_state: Dictionary, parent_node: Node):
 	for child_node in parent_node.get_children():
+		if child_node == null or not "definition" in child_node:
+			return
 		var definition = child_node.definition
 		var export_index = definition["export_index"]
 		var is_deleted: bool = false

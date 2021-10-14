@@ -118,8 +118,9 @@ theme/custom="res://EditorTheme/MainTheme.tres"
 2d_render/layer_1="default"
 3d_render/layer_1="default"
 3d_physics/layer_1="default"
-3d_physics/layer_2="editor_select"
-3d_physics/layer_3="editor_control_select"
+3d_physics/layer_2="editor_select_mesh"
+3d_physics/layer_3="editor_select_collider"
+3d_physics/layer_4="editor_control_select"
 
 [physics]
 

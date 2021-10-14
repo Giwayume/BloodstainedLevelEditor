@@ -522,6 +522,24 @@ public class UAssetParser : Control {
                             { "suffix", "_Gimmick.umap" }
                         }
                     );
+                    assetsToCheck.Add(
+                        new System.Collections.Generic.Dictionary<string, string>{
+                            { "key", "enemy" },
+                            { "suffix", "_Enemy.umap" }
+                        }
+                    );
+                    assetsToCheck.Add(
+                        new System.Collections.Generic.Dictionary<string, string>{
+                            { "key", "enemy_normal" },
+                            { "suffix", "_Enemy_Normal.umap" }
+                        }
+                    );
+                    assetsToCheck.Add(
+                        new System.Collections.Generic.Dictionary<string, string>{
+                            { "key", "enemy_hard" },
+                            { "suffix", "_Enemy_Hard.umap" }
+                        }
+                    );
                     foreach (System.Collections.Generic.Dictionary<string, string> checkDef in assetsToCheck) {
                         if (editsJson.ContainsKey(checkDef["key"]) && AssetPathToPakFilePathMap.ContainsKey(assetBasePath + checkDef["suffix"])) {
                             if (editsJson[checkDef["key"]]["existing_exports"].Count() > 0 || editsJson[checkDef["key"]]["new_exports"].Count() > 0) {
@@ -627,11 +645,11 @@ public class UAssetParser : Control {
             string outputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
             Godot.Collections.Dictionary<string, object> roomDefinition = new Godot.Collections.Dictionary<string, object>();
             Godot.Collections.Dictionary<string, string> levelAssets = _levelNameToAssetPathMap[levelName];
-            if (levelAssets.ContainsKey("bg")) {
-                roomDefinition["bg"] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets["bg"], UE4Version.VER_UE4_18));
-            }
-            if (levelAssets.ContainsKey("gimmick")) {
-                roomDefinition["gimmick"] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets["gimmick"], UE4Version.VER_UE4_18));
+            string[] checkKeys = new string[]{ "bg", "enemy", "enemy_hard", "enemy_normal", "gimmick" };
+            foreach (string key in checkKeys) {
+                if (levelAssets.ContainsKey(key)) {
+                    roomDefinition[key] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets[key], UE4Version.VER_UE4_18));
+                }
             }
             return roomDefinition;
         } catch (Exception e) {

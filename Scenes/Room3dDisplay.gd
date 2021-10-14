@@ -9,6 +9,10 @@ var custom_component_scripts = {
 		"auto_placement": false,
 		"script": preload("res://SceneComponents/Room3dNodes/BlueprintGeneratedClass.gd")
 	},
+	"CapsuleComponent": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/CapsuleComponent.gd")
+	},
 	"DynamicClass": {
 		"auto_placement": false,
 		"script": preload("res://SceneComponents/Room3dNodes/DynamicClass.gd")
@@ -74,6 +78,9 @@ func _ready():
 	
 	asset_roots = {
 		"bg": $AssetTrees/bg,
+		"enemy": $AssetTrees/enemy,
+		"enemy_hard": $AssetTrees/enemy_hard,
+		"enemy_normal": $AssetTrees/enemy_normal,
 		"gimmick": $AssetTrees/gimmick
 	}
 	camera = get_node("Camera")
@@ -269,7 +276,7 @@ func select_object_at_mouse(is_add: bool = false):
 	var space_state = get_world().direct_space_state
 	var intersections: Array = []
 	# Find all intersections on ray
-	var collision_mask = PhysicsLayers3d.layers.editor_select
+	var collision_mask = PhysicsLayers3d.layers.editor_select_mesh | PhysicsLayers3d.layers.editor_select_collider
 	var current_intersection = space_state.intersect_ray(ray_from, ray_to, [], collision_mask, true, true)
 	while current_intersection != null and current_intersection.has("collider"):
 		if not intersections.has(current_intersection.collider):
@@ -288,6 +295,9 @@ func select_object_at_mouse(is_add: bool = false):
 					closest_intersect_distance = cast_result.closest_distance
 					closest_point = cast_result.closest
 					closest_intersection = intersection
+		else:
+			closest_intersection = intersection
+			break
 	if closest_intersection != null:
 		var node_to_select = closest_intersection.get_parent()
 		if "use_parent_as_proxy" in node_to_select and node_to_select["use_parent_as_proxy"]:

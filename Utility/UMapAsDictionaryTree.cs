@@ -105,6 +105,16 @@ public class UMapAsDictionaryTree {
                         }
                     }
                 }
+                else if (propertyName == "CapsuleHalfHeight") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["capsule_half_height"] = floatPropertyData.Value * 0.01f;
+                    }
+                }
+                else if (propertyName == "CapsuleRadius") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["capsule_radius"] = floatPropertyData.Value * 0.01f;
+                    }
+                }
                 else if (propertyName == "RelativeLocation") {
                     if (propertyData is StructPropertyData structPropertyData) {
                         if (structPropertyData.Value[0] is VectorPropertyData vectorPropertyData) {
@@ -151,17 +161,31 @@ public class UMapAsDictionaryTree {
                 foreach (var editExportPropEntry in editExport) {
                     string propName = editExportPropEntry.Key;
                     JToken propValue = editExportPropEntry.Value;
-                    if (propName == "deleted" && propValue.Value<bool>() == true) {
-                        FPackageIndex outerIndex = export.OuterIndex;
-                        if (outerIndex.IsExport()) {
-                            Export parentExport = outerIndex.ToExport(uAsset);
-                            if (parentExport is LevelExport parentLevelExport) {
-                                parentLevelExport.IndexData.Remove(exportIndex + 1);
+                    if (propName == "deleted") {
+                        if (propValue.Value<bool>() == true) {
+                            FPackageIndex outerIndex = export.OuterIndex;
+                            if (outerIndex.IsExport()) {
+                                Export parentExport = outerIndex.ToExport(uAsset);
+                                if (parentExport is LevelExport parentLevelExport) {
+                                    parentLevelExport.IndexData.Remove(exportIndex + 1);
+                                }
                             }
+                            export.OuterIndex = FPackageIndex.FromRawIndex(0);
                         }
-                        export.OuterIndex = FPackageIndex.FromRawIndex(0);
                     }
-                    if (propName == "translation") {
+                    else if (propName == "capsule_half_height") {
+                        uAsset.AddNameReference(new FString("CapsuleHalfHeight"));
+                        FloatPropertyData unrealCapsuleHalfHeight = new FloatPropertyData(new FName("CapsuleHalfHeight"));
+                        unrealCapsuleHalfHeight.Value = propValue.Value<float>() * 100f;
+                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName("CapsuleHalfHeight"), unrealCapsuleHalfHeight);
+                    }
+                    else if (propName == "capsule_radius") {
+                        uAsset.AddNameReference(new FString("CapsuleRadius"));
+                        FloatPropertyData unrealCapsuleRadius = new FloatPropertyData(new FName("CapsuleRadius"));
+                        unrealCapsuleRadius.Value = propValue.Value<float>() * 100f;
+                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName("CapsuleRadius"), unrealCapsuleRadius);
+                    }
+                    else if (propName == "translation") {
                         JObject translationObject = (JObject)propValue;
                         uAsset.AddNameReference(new FString("RelativeLocation"));
                         uAsset.AddNameReference(new FString("Vector"));

@@ -50,7 +50,7 @@ func on_3d_model_loaded(new_loaded_model):
 			if is_in_deleted_branch:
 				area.collision_layer = 0
 			else:
-				area.collision_layer = PhysicsLayers3d.layers.editor_select
+				area.collision_layer = PhysicsLayers3d.layers.editor_select_mesh
 			area.collision_mask = PhysicsLayers3d.layers.none
 			collision_shape.set_shape(box_shape)
 			area.add_child(collision_shape)
@@ -93,5 +93,5 @@ func set_deleted(deleted: bool):
 			get_node("CollisionArea").collision_layer = 0
 			hide()
 		else:
-			get_node("CollisionArea").collision_layer = PhysicsLayers3d.layers.editor_select
+			get_node("CollisionArea").collision_layer = PhysicsLayers3d.layers.editor_select_mesh
 			show()

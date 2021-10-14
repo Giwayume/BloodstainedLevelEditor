@@ -10,6 +10,12 @@ script = ExtResource( 1 )
 
 [node name="bg" type="Spatial" parent="AssetTrees"]
 
+[node name="enemy" type="Spatial" parent="AssetTrees"]
+
+[node name="enemy_hard" type="Spatial" parent="AssetTrees"]
+
+[node name="enemy_normal" type="Spatial" parent="AssetTrees"]
+
 [node name="gimmick" type="Spatial" parent="AssetTrees"]
 
 [node name="Camera" type="Camera" parent="."]
