@@ -13,6 +13,10 @@ var custom_component_scripts = {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/CapsuleComponent.gd")
 	},
+	"Character": {
+		"auto_placement": false,
+		"script": preload("res://SceneComponents/Room3dNodes/Character.gd")
+	},
 	"DynamicClass": {
 		"auto_placement": false,
 		"script": preload("res://SceneComponents/Room3dNodes/DynamicClass.gd")
@@ -150,7 +154,10 @@ func end_extract_3d_model_thread():
 	if not cached_models.has(package_path):
 		var model_cache_path = ProjectSettings.globalize_path(@"user://ModelCache")
 		var model_full_path = model_cache_path + "/" + package_path.replace(".uasset", ".gltf")
-		var loaded_model = gltf_loader.import_scene(model_full_path, 1, 1);
+		var dir = Directory.new()
+		var loaded_model = null
+		if dir.file_exists(model_full_path):
+			loaded_model = gltf_loader.import_scene(model_full_path, 1, 1);
 		cached_models[package_path] = loaded_model
 		if loaded_model != null:
 			if uasset_parser.CachedModelResourcesByAssetPath.has(package_path):
@@ -231,7 +238,7 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 	if definition.has("export_index"):
 		var export_index = definition["export_index"]
 		if already_placed_exports[current_placing_tree_name].has(export_index):
-			print_debug("Infinite recursion at export ", export_index)
+			# print_debug("Infinite recursion at export ", export_index)
 			return
 		else:
 			already_placed_exports[current_placing_tree_name].push_back(export_index)
@@ -244,6 +251,10 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 	node.room_3d_display = self
 	node.tree_name = current_placing_tree_name
 	parent.add_child(node)
+	if "is_tree_leaf" in parent and parent.is_tree_leaf:
+		node.leaf_parent = parent
+	elif "leaf_parent" in parent and parent.leaf_parent:
+		node.leaf_parent = parent.leaf_parent
 	node.name = definition["type"] + "__" + definition["name"]
 	if is_auto_placement:
 		for child_definition in definition["children"]:
@@ -300,8 +311,8 @@ func select_object_at_mouse(is_add: bool = false):
 			break
 	if closest_intersection != null:
 		var node_to_select = closest_intersection.get_parent()
-		if "use_parent_as_proxy" in node_to_select and node_to_select["use_parent_as_proxy"]:
-			node_to_select = node_to_select.get_parent()
+		if node_to_select.leaf_parent != null:
+			node_to_select = node_to_select.leaf_parent
 		if is_add:
 			if selected_nodes.has(node_to_select):
 				node_to_select.deselect()

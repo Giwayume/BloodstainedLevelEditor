@@ -18,9 +18,8 @@ func _ready():
 		capsule_half_height = definition["capsule_half_height"]
 	if definition.has("capsule_radius"):
 		capsule_radius = definition["capsule_radius"]
-
-func _enter_tree():
 	call_deferred("create_collision_area")
+
 
 func create_collision_area():
 	var area = Area.new()
@@ -65,11 +64,15 @@ func create_collision_area():
 	im.material_override = editor_collider_visualization_material
 	add_child(im)
 	im.name = "CollisionAreaVisualization"
+	
+	if is_in_hidden_branch or is_in_deleted_branch:
+		get_node("CollisionArea").collision_layer = 0
+		hide()
 
 func draw_circle_arc(im: ImmediateGeometry, center: Vector3, rotation_axis: Vector3, rotation_phi: float, radius: float, angle_from: float, angle_to: float, nb_points: int = 16):
 	var points_arc = PoolVector3Array()
 	var transform = Transform()
-	transform = transform.rotated(rotation_axis, deg2rad(rotation_phi))
+	transform = transform.rotated(rotation_axis.normalized(), deg2rad(rotation_phi))
 
 	for i in range(nb_points + 1):
 		var angle_point = deg2rad(angle_from + i * (angle_to-angle_from) / nb_points - 90)
@@ -95,6 +98,17 @@ func set_deleted(deleted: bool):
 		if deleted:
 			get_node("CollisionArea").collision_layer = 0
 			hide()
-		else:
+		elif not is_in_hidden_branch:
+			get_node("CollisionArea").collision_layer = PhysicsLayers3d.layers.editor_select_collider
+			show()
+
+func set_hidden(hidden: bool):
+	.set_hidden(hidden)
+	var collision_area = get_node_or_null("CollisionArea")
+	if collision_area:
+		if hidden:
+			get_node("CollisionArea").collision_layer = 0
+			hide()
+		elif not is_in_deleted_branch:
 			get_node("CollisionArea").collision_layer = PhysicsLayers3d.layers.editor_select_collider
 			show()

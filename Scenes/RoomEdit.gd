@@ -1,6 +1,6 @@
 extends Control
 
-var enemy_profiles = preload("res://Config/EnemyProfiles.gd").enemy_profiles
+
 var viewport_ui_container_normal_style = preload("res://EditorTheme/ViewportUiContainerNormal.tres")
 var viewport_ui_container_focus_style = preload("res://EditorTheme/ViewportUiContainerFocus.tres")
 var icon_remove = preload("res://Icons/Editor/Remove.svg")
@@ -22,6 +22,7 @@ var loading_3d_scene_notification: Control
 var loading_status_container: Control
 var loading_status_label: Label
 var menu_bar: Control
+var panel_character_params: Control
 var panel_mesh_info: Control
 var panel_selection_type_label: Label
 var panel_transform: Control
@@ -128,6 +129,7 @@ func _ready():
 	loading_status_container = find_node("LoadingStatusContainer", true, true)
 	loading_status_label = find_node("LoadingStatusLabel", true, true)
 	menu_bar = find_node("RoomEditMenuBar", true, true)
+	panel_character_params = find_node("CharacterParamsPanel", true, true)
 	panel_mesh_info = find_node("MeshInfoPanel", true, true)
 	panel_selection_type_label = find_node("PanelSelectionTypeLabel", true, true)
 	panel_transform = find_node("TransformPanel", true, true)
@@ -149,6 +151,7 @@ func _ready():
 	editor_container.hide()
 	loading_status_container.show()
 	loading_3d_scene_notification.hide()
+	panel_character_params.hide()
 	panel_mesh_info.hide()
 	panel_transform.hide()
 	
@@ -182,8 +185,6 @@ func _ready():
 	room_editor_controls_display_cursor.connect("translate", self, "on_translate_selection")
 	tree_popup_menu.connect("id_pressed", self, "on_tree_popup_menu_id_pressed")
 	viewport_toolbar.connect("tool_changed", self, "on_tool_changed")
-	
-	on_enemy_difficulty_item_selected(0)
 	
 	start_parse_pak_thread()
 
@@ -378,11 +379,17 @@ func on_enemy_difficulty_item_selected(index: int):
 	elif trees["enemy_hard"].tree.visible:
 		current_index = 2
 	trees["enemy"].tree.visible = (index == 0)
-	room_3d_display.asset_roots["enemy"].visible = (index == 0)
+	for child in room_3d_display.asset_roots["enemy"].get_children():
+		if child.has_method("set_hidden"):
+			child.set_hidden(index != 0)
 	trees["enemy_normal"].tree.visible = (index == 1)
-	room_3d_display.asset_roots["enemy_normal"].visible = (index == 1)
+	for child in room_3d_display.asset_roots["enemy_normal"].get_children():
+		if child.has_method("set_hidden"):
+			child.set_hidden(index != 1)
 	trees["enemy_hard"].tree.visible = (index == 2)
-	room_3d_display.asset_roots["enemy_hard"].visible = (index == 2)
+	for child in room_3d_display.asset_roots["enemy_hard"].get_children():
+		if child.has_method("set_hidden"):
+			child.set_hidden(index != 2)
 	if index != current_index:
 		call_deferred("clear_selection")
 
@@ -664,15 +671,28 @@ func update_3d_cursor_position():
 
 func update_panels_after_selection():
 	var selection_count: int = room_3d_display.selected_nodes.size()
+	# Component type panel
 	if selection_count == 1:
 		panel_selection_type_label.text = room_3d_display.selected_nodes[0].definition.type
 	elif selection_count > 1:
 		panel_selection_type_label.text = "Multiple Selection (" + str(selection_count) + ")"
 	else:
 		panel_selection_type_label.text = "Nothing Selected"
+	
+	# Character params panel
+	if selection_count == 1 and room_3d_display.selected_nodes[0].definition.type == "Character":
+		panel_character_params.show()
+		panel_character_params.set_selected_nodes(room_3d_display.selected_nodes)
+	else:
+		panel_character_params.hide()
+	
+	# Mesh and transform panels
 	if selection_count == 1 and room_3d_display.selected_nodes[0]["selection_transform_node"] != null:
-		panel_mesh_info.show()
-		panel_mesh_info.set_selected_nodes(room_3d_display.selected_nodes)
+		if room_3d_display.selected_nodes[0]["selection_transform_node"].definition.has("static_mesh_name_instance"):
+			panel_mesh_info.show()
+			panel_mesh_info.set_selected_nodes(room_3d_display.selected_nodes)
+		else:
+			panel_mesh_info.hide()
 		panel_transform.show()
 		panel_transform.set_selected_nodes(room_3d_display.selected_nodes)
 	else:
@@ -686,6 +706,7 @@ func setup_after_load():
 	build_object_outlines()
 	update_panels_after_selection()
 	asset_explorer.load_asset_list()
+	on_enemy_difficulty_item_selected(0)
 
 func setup_3d_view():
 	room_3d_display.set_room_definition(room_definition)

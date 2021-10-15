@@ -11,9 +11,11 @@ func _ready():
 				selection_transform_node = get_children()[0]
 
 func select():
+	.select()
 	if selection_transform_node != null:
 		selection_transform_node.select()
 
 func deselect():
+	.deselect()
 	if selection_transform_node != null:
 		selection_transform_node.deselect()

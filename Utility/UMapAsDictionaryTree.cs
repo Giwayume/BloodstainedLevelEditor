@@ -115,6 +115,23 @@ public class UMapAsDictionaryTree {
                         treeNode["capsule_radius"] = floatPropertyData.Value * 0.01f;
                     }
                 }
+                else if (propertyName == "CharacterParamaters") {
+                    if (propertyData is StructPropertyData structPropertyData) {
+                        treeNode["type"] = "Character";
+                        foreach (PropertyData characterPropertyData in structPropertyData.Value) {
+                            propertyName = characterPropertyData.Name.Value.Value;
+                            if (propertyName == "CharacterId") {
+                                if (characterPropertyData is NamePropertyData namePropertyData) {
+                                    string characterId = namePropertyData.Value.Value.Value;
+                                    if (characterId == null) {
+                                        characterId = "N/A";
+                                    }
+                                    treeNode["character_id"] = characterId;
+                                }
+                            }
+                        }
+                    }
+                }
                 else if (propertyName == "RelativeLocation") {
                     if (propertyData is StructPropertyData structPropertyData) {
                         if (structPropertyData.Value[0] is VectorPropertyData vectorPropertyData) {

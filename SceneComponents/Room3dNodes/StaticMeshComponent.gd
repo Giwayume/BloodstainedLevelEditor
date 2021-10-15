@@ -59,6 +59,7 @@ func on_3d_model_loaded(new_loaded_model):
 			break
 
 func select():
+	.select()
 	if loaded_model_mesh_instance != null and not get_node_or_null("SelectionOutline"):
 		loaded_model_mesh_instance.material_override = null
 		
@@ -76,6 +77,7 @@ func select():
 		# loaded_model.hide()
 
 func deselect():
+	.deselect()
 	if loaded_model_mesh_instance != null:
 		var selection_outline = get_node_or_null("SelectionOutline")
 		if selection_outline != null:
@@ -92,6 +94,17 @@ func set_deleted(deleted: bool):
 		if deleted:
 			get_node("CollisionArea").collision_layer = 0
 			hide()
-		else:
+		elif not is_in_hidden_branch:
+			get_node("CollisionArea").collision_layer = PhysicsLayers3d.layers.editor_select_mesh
+			show()
+
+func set_hidden(hidden: bool):
+	.set_hidden(hidden)
+	var collision_area = get_node_or_null("CollisionArea")
+	if collision_area:
+		if hidden:
+			get_node("CollisionArea").collision_layer = 0
+			hide()
+		elif not is_in_deleted_branch:
 			get_node("CollisionArea").collision_layer = PhysicsLayers3d.layers.editor_select_mesh
 			show()

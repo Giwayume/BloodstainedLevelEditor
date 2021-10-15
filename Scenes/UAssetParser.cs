@@ -300,8 +300,8 @@ public class UAssetParser : Control {
             if (!_cachedModelReLookupAssetPaths.ContainsKey(assetPath + "|" + meshName + "|" + meshNameInstance)) {
                 List<string> assetPartPaths = new List<string>();
                 UAsset uAsset;
-                for (int i = 0; i < 10; i++) {
-                    string suffix = (i == 0 ? "" : "_" + i);
+                for (int i = -1; i < 20; i++) {
+                    string suffix = (i == -1 ? "" : "_" + i);
                     string assetPathWithSuffix = assetPath.Replace(".uasset", "") + suffix + ".uasset";
                     if (_assetPathToPakFilePathMap.ContainsKey(assetPathWithSuffix)) {
                         assetPartPaths.Add(assetPathWithSuffix);
@@ -310,7 +310,7 @@ public class UAssetParser : Control {
                             _cachedModelResourcesByAssetPath.Remove(assetPathWithSuffix);
                             ExtractAssetToFolder(_assetPathToPakFilePathMap[assetPathWithSuffix], assetPathWithSuffix, extractAssetOutputFolder);
                         }
-                        if (i > 0) {
+                        if (i > -1 && System.IO.File.Exists(extractAssetOutputFolder + "/" + assetPathWithSuffix)) {
                             uAsset = new UAsset(extractAssetOutputFolder + '/' + assetPathWithSuffix, UE4Version.VER_UE4_18);
                             foreach (Export export in uAsset.Exports) {
                                 if (export.bIsAsset && export.ObjectName.Value.Value == meshName && export.ObjectName.Number == meshNameInstance) {
@@ -326,25 +326,46 @@ public class UAssetParser : Control {
                     }
                 }
                 uAsset = null;
+            } else {
+                newAssetPath = _cachedModelReLookupAssetPaths[assetPath + "|" + meshName + "|" + meshNameInstance];
             }
 
-            // Extract material imports inside model
-            if (!_cachedModelResourcesByAssetPath.ContainsKey(newAssetPath)) {
-                _cachedModelResourcesByAssetPath[newAssetPath] = ExtractModelMaterialsRecursive(newAssetPath);
-            }
+            if (System.IO.File.Exists(extractAssetOutputFolder + "/" + newAssetPath)) {
+                // Extract material imports inside model
+                if (!_cachedModelResourcesByAssetPath.ContainsKey(newAssetPath)) {
+                    // _cachedModelResourcesByAssetPath[newAssetPath] = ExtractModelMaterialsRecursive(newAssetPath);
+                }
 
-            // Extract gltf and png textures from model uasset
-            if (!System.IO.File.Exists(extractModelOutputFolder + "/" + newAssetPath.Replace(".uasset", ".gltf"))) {
-                using (Process ueExtract = new Process()) {
-                    ueExtract.StartInfo.FileName = ueViewerPath;
-                    ueExtract.StartInfo.Arguments = @" -export -path=" + "\"" + extractAssetOutputFolder + "\"" + @" -out=" + "\"" + extractModelOutputFolder + "/BloodstainedRotN/Content/\"" + @" -game=ue4.18 -gltf -png " + newAssetPath;
-                    ueExtract.StartInfo.UseShellExecute = false;
-                    ueExtract.StartInfo.RedirectStandardOutput = true;
-                    ueExtract.StartInfo.RedirectStandardError = true;
-                    ueExtract.Start();
-                    string output = ueExtract.StandardOutput.ReadToEnd();
-                    string error = ueExtract.StandardError.ReadToEnd();
-                    ueExtract.WaitForExit();
+                // Extract gltf and png textures from model uasset
+                string gltfOutputPath = extractModelOutputFolder + "/" + newAssetPath.Replace(".uasset", ".gltf");
+                if (!System.IO.File.Exists(gltfOutputPath)) {
+                    using (Process ueExtract = new Process()) {
+                        ueExtract.StartInfo.FileName = ueViewerPath;
+                        ueExtract.StartInfo.Arguments = @" -export -path=" + "\"" + extractAssetOutputFolder + "\"" + @" -out=" + "\"" + extractModelOutputFolder + "/BloodstainedRotN/Content/\"" + @" -game=ue4.18 -gltf -png " + newAssetPath;
+                        ueExtract.StartInfo.UseShellExecute = false;
+                        ueExtract.StartInfo.RedirectStandardOutput = true;
+                        ueExtract.StartInfo.RedirectStandardError = true;
+                        ueExtract.Start();
+                        string output = ueExtract.StandardOutput.ReadToEnd();
+                        string error = ueExtract.StandardError.ReadToEnd();
+                        ueExtract.WaitForExit();
+                    }
+                }
+
+                if (System.IO.File.Exists(gltfOutputPath)) {
+                    JObject gltfJson = default(JObject);
+                    using (StreamReader reader = System.IO.File.OpenText(gltfOutputPath)) {
+                        gltfJson = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
+                        if (gltfJson.ContainsKey("nodes")) {
+                            JArray nodes = (JArray)gltfJson["nodes"];
+                            foreach (JObject node in nodes) {
+                                if (node.ContainsKey("skin")) {
+                                    node.Remove("skin");
+                                }
+                            }
+                        }
+                    }
+                    System.IO.File.WriteAllText(gltfOutputPath, gltfJson.ToString());
                 }
             }
         } catch (Exception e) {
