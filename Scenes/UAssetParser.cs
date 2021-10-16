@@ -49,6 +49,19 @@ public class UAssetParser : Control {
     }
 
     /**
+     * 
+     */
+    private Godot.Collections.Dictionary<string, Godot.Collections.Array<string>> _characterMeshAssetPathMap = new Godot.Collections.Dictionary<string, Godot.Collections.Array<string>>();
+    public Godot.Collections.Dictionary<string, Godot.Collections.Array<string>> CharacterMeshAssetPathMap {
+        get {
+            return _characterMeshAssetPathMap;
+        }
+        set {
+            _characterMeshAssetPathMap = value;
+        }
+    }
+
+    /**
      * Array of dictionaries, each dictionary contains all info for that map room. Keys converted to snake case.
      */
     private Godot.Collections.Array _mapRooms = default(Godot.Collections.Array);
@@ -144,6 +157,30 @@ public class UAssetParser : Control {
                         // For each package path found in the .pak file, store in a dictionary in memory that specifies which .pak file it was found in
                         foreach (string packagePath in packagePaths) {
                             _assetPathToPakFilePathMap[packagePath] = filePath;
+
+                            // Add any character model assets we find to a separate list for easy reading
+                            if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Character/[^/]*?/Mesh/").Success) {
+                                string[] pathSplit = packagePath.Split("/");
+                                string characterId = "";
+                                bool hasFoundCharacterFolder = false;
+                                foreach (string folderName in pathSplit) {
+                                    if (hasFoundCharacterFolder) {
+                                        characterId = folderName;
+                                        break;
+                                    }
+                                    if (folderName == "Character") {
+                                        hasFoundCharacterFolder = true;
+                                    }
+                                }
+                                Godot.Collections.Array<string> characterMeshAssets = default(Godot.Collections.Array<string>);
+                                if (_characterMeshAssetPathMap.ContainsKey(characterId)) {
+                                    characterMeshAssets = _characterMeshAssetPathMap[characterId];
+                                } else {
+                                    characterMeshAssets = new Godot.Collections.Array<string>();
+                                    _characterMeshAssetPathMap[characterId] = characterMeshAssets;
+                                }
+                                characterMeshAssets.Add(packagePath);
+                            }
 
                             // Add any room/level assets we find to a separate list for easy reading
                             if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Environment/[^/]*?/Level/m[0-9]{2}[A-Z]{3}_[0-9]{3}").Success) {

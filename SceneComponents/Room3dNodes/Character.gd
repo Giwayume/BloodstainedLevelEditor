@@ -35,16 +35,42 @@ func _ready():
 func start_model_load():
 	if definition.has("character_id"):
 		var character_id = definition.character_id
-		var try_filenames = [character_id, "SK_" + character_id + "_Body", "SK_" + character_id + "_body", "SK_" + character_id]
-		for filename in try_filenames:
-			var model_definition = {
-				"static_mesh_name": filename,
-				"static_mesh_name_instance": 0,
-				"static_mesh_asset_path": "BloodstainedRotN/Content/Core/Character/" + character_id + "/Mesh/" + filename + ".uasset"
-			}
-			if uasset_parser.AssetPathToPakFilePathMap.has(model_definition.static_mesh_asset_path):
-				room_3d_display.load_3d_model(model_definition, self, "on_3d_model_loaded")
-				break
+		var character_id_lower = character_id.to_lower()
+		if uasset_parser.CharacterMeshAssetPathMap.has(character_id):
+			var mesh_assets = uasset_parser.CharacterMeshAssetPathMap[character_id]
+			var highest_scoring_filename = null
+			var highest_score = -INF
+			for mesh_asset in mesh_assets:
+				var filename = Array(mesh_asset.rsplit("/")).pop_back().replace(".uasset", "")
+				var filename_lower = filename.to_lower()
+				var score = 0
+				if "body" in filename_lower:
+					score += 3
+				if "core" in filename_lower:
+					score += 4
+				if character_id_lower == filename_lower:
+					score += 3
+				elif character_id_lower in filename_lower:
+					score += 1
+				if "physics" in filename_lower:
+					score -= 4
+				if "skeleton" in filename_lower:
+					continue
+				if "physicsasset" in filename_lower:
+					continue
+				if character_id == "N3003":
+					print_debug(mesh_asset, " ", score)
+				if score > highest_score:
+					highest_scoring_filename = filename
+					highest_score = score
+			if highest_scoring_filename != null:
+				var model_definition = {
+					"static_mesh_name": highest_scoring_filename,
+					"static_mesh_name_instance": 0,
+					"static_mesh_asset_path": "BloodstainedRotN/Content/Core/Character/" + character_id + "/Mesh/" + highest_scoring_filename + ".uasset"
+				}
+				if uasset_parser.AssetPathToPakFilePathMap.has(model_definition.static_mesh_asset_path):
+					room_3d_display.load_3d_model(model_definition, self, "on_3d_model_loaded")
 
 func on_3d_model_loaded(new_loaded_model):
 	var model_placement_parent = self
