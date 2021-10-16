@@ -20,6 +20,7 @@ using UAssetAPI.StructTypes;
 public class UMapAsDictionaryTree {
 
     public class ParseInfo {
+        // Mapping of export index to the export indices of other exports that reference that export as outer index.
         private System.Collections.Generic.Dictionary<int, List<int>> _exportDependencyMap = null;
         public System.Collections.Generic.Dictionary<int, List<int>> ExportDependencyMap {
             get {
@@ -29,6 +30,17 @@ public class UMapAsDictionaryTree {
                 _exportDependencyMap = value;
             }
         }
+        // Mapping of export index to the export index of the parent it wants to attach to.
+        private System.Collections.Generic.Dictionary<int, Godot.Collections.Dictionary<string, object>> _exportIndexDefinitionMap = null;
+        public System.Collections.Generic.Dictionary<int, Godot.Collections.Dictionary<string, object>> ExportIndexDefinitionMap {
+            get {
+                return _exportIndexDefinitionMap;
+            }
+            set {
+                _exportIndexDefinitionMap = value;
+            }
+        }
+        public int CurrentParentExportIndex = 0;
     }
 
     public static Godot.Collections.Dictionary<string, object> ToDictionaryTree(UAsset uAsset) {
@@ -53,8 +65,33 @@ public class UMapAsDictionaryTree {
 
         ParseInfo parseInfo = new ParseInfo();
         parseInfo.ExportDependencyMap = exportDependencyMap;
+        parseInfo.ExportIndexDefinitionMap = new System.Collections.Generic.Dictionary<int, Godot.Collections.Dictionary<string, object>>();
 
-        return ParseExportsRecursive(uAsset, mainExportIndex, parseInfo);
+        Godot.Collections.Dictionary<string, object> parsedExports = ParseExportsRecursive(uAsset, mainExportIndex, parseInfo);
+
+        // Reorganize children by attach parent if property exists
+        foreach (var exportDefinition in parseInfo.ExportIndexDefinitionMap) {
+            exportIndex = exportDefinition.Key;
+            Godot.Collections.Dictionary<string, object> definition = exportDefinition.Value;
+            int outerExportIndex = (int)definition["outer_export_index"];
+            if (definition.ContainsKey("attach_parent_export_index") && (int)definition["attach_parent_export_index"] != outerExportIndex) {
+                int attachParentIndex = (int)definition["attach_parent_export_index"];
+                if (parseInfo.ExportIndexDefinitionMap.ContainsKey(attachParentIndex)) {
+                    try {
+                        Godot.Collections.Dictionary<string, object> attachParentDefinition = parseInfo.ExportIndexDefinitionMap[attachParentIndex];
+                        if (parseInfo.ExportIndexDefinitionMap.ContainsKey(outerExportIndex)) {
+                            ((Godot.Collections.Array)parseInfo.ExportIndexDefinitionMap[outerExportIndex]["children"]).Remove(definition);
+                        }
+                        ((Godot.Collections.Array)parseInfo.ExportIndexDefinitionMap[attachParentIndex]["children"]).Add(definition);
+                    } catch (Exception e) {
+                        GD.Print(e);
+                    }
+                }
+            }
+        }
+
+        parseInfo = null;
+        return parsedExports;
     }
 
     public static Godot.Collections.Dictionary<string, object> ParseExportsRecursive(UAsset uAsset, int exportIndex, ParseInfo parseInfo) {
@@ -62,6 +99,7 @@ public class UMapAsDictionaryTree {
         Godot.Collections.Dictionary<string, object> treeNode = new Godot.Collections.Dictionary<string, object>();
 
         treeNode["export_index"] = exportIndex;
+        treeNode["outer_export_index"] = parseInfo.CurrentParentExportIndex;
 
         // Get the type of node
         FPackageIndex classIndex = export.ClassIndex;
@@ -86,7 +124,24 @@ public class UMapAsDictionaryTree {
                 string propertyName = propertyData.Name.Value.Value;
                 if (propertyName == "RootComponent") {
                     if (propertyData is ObjectPropertyData objectPropertyData) {
-                        treeNode["root_component_export_index"] = Math.Abs(objectPropertyData.Value.Index) - 1;
+                        if (objectPropertyData.Value.Index > 0) {
+                            treeNode["root_component_export_index"] = Math.Abs(objectPropertyData.Value.Index) - 1;
+                        }
+                    }
+                }
+                else if (propertyName == "AttachParent") {
+                    if (propertyData is ObjectPropertyData objectPropertyData) {
+                        if (objectPropertyData.Value.Index > 0) {
+                            treeNode["attach_parent_export_index"] = Math.Abs(objectPropertyData.Value.Index) - 1;
+                        }
+                    }
+                }
+                else if (propertyName == "Mesh") {
+                    if (propertyData is ObjectPropertyData objectPropertyData) {
+                        FPackageIndex staticMeshPointer = objectPropertyData.Value;
+                        if (staticMeshPointer.IsExport()) {
+                            treeNode["mesh_export_index"] = Math.Abs(objectPropertyData.Value.Index) - 1;
+                        }
                     }
                 }
                 else if (propertyName == "StaticMesh") {
@@ -160,10 +215,14 @@ public class UMapAsDictionaryTree {
         Godot.Collections.Array<Godot.Collections.Dictionary<string, object>> children = new Godot.Collections.Array<Godot.Collections.Dictionary<string, object>>();
         if (parseInfo.ExportDependencyMap.ContainsKey(exportIndex)) {
             foreach (int childIndex in parseInfo.ExportDependencyMap[exportIndex]) {
+                parseInfo.CurrentParentExportIndex = exportIndex;
                 children.Add(ParseExportsRecursive(uAsset, childIndex, parseInfo));
+                parseInfo.CurrentParentExportIndex = 0;
             }
         }
         treeNode["children"] = children;
+
+        parseInfo.ExportIndexDefinitionMap[exportIndex] = treeNode;
 
         return treeNode;
     }

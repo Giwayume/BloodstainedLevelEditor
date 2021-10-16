@@ -5,9 +5,10 @@ var uasset_parser: Node
 var loaded_model: Spatial
 var loaded_model_mesh_instance: MeshInstance
 var loaded_model_mesh: Mesh
+var main_skeletal_mesh: Spatial = null
 
 func _ready():
-	is_tree_leaf = true
+	# is_tree_leaf = true
 	
 	uasset_parser = get_node("/root/UAssetParser")
 	
@@ -46,9 +47,11 @@ func start_model_load():
 				break
 
 func on_3d_model_loaded(new_loaded_model):
-	if selection_transform_node:
+	var model_placement_parent = self
+	if main_skeletal_mesh != null:
+		model_placement_parent = main_skeletal_mesh
 		loaded_model = new_loaded_model
-		selection_transform_node.add_child(loaded_model)
+		model_placement_parent.add_child(loaded_model)
 		loaded_model.name = "Model3D"
 		if is_in_deleted_branch:
 			hide()

@@ -25,9 +25,17 @@ var custom_component_scripts = {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/EventRootComponent.gd")
 	},
+	"PBMeshParentComponent": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/PBMeshParentComponent.gd")
+	},
 	"SceneComponent": {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/SceneComponent.gd")
+	},
+	"SkeletalMeshComponent": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/SkeletalMeshComponent.gd")
 	},
 	"StaticMeshActor": {
 		"auto_placement": false,
@@ -229,6 +237,9 @@ func load_3d_model(definition: Dictionary, callback_instance: Object, callback_m
 
 func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 	var node = Spatial.new()
+	var parent_definition = null
+	if "definition" in parent:
+		parent_definition = parent.definition
 	var is_auto_placement = true
 	var script_def = custom_component_scripts["Unknown"]
 	if custom_component_scripts.has(definition["type"]):
@@ -250,6 +261,10 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 	node.definition = definition
 	node.room_3d_display = self
 	node.tree_name = current_placing_tree_name
+	if parent_definition and parent_definition["type"] == "Level":
+		node.persistent_level_child_ancestor = node
+	elif "persistent_level_child_ancestor" in parent:
+		node.persistent_level_child_ancestor = parent.persistent_level_child_ancestor
 	parent.add_child(node)
 	if "is_tree_leaf" in parent and parent.is_tree_leaf:
 		node.leaf_parent = parent
