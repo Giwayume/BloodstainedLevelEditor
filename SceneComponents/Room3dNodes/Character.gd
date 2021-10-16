@@ -2,13 +2,10 @@ extends BaseRoom3dNode
 
 var uasset_parser: Node
 
-var loaded_model: Spatial
-var loaded_model_mesh_instance: MeshInstance
-var loaded_model_mesh: Mesh
 var main_skeletal_mesh: Spatial = null
 
 func _ready():
-	# is_tree_leaf = true
+	is_tree_leaf = true
 	
 	uasset_parser = get_node("/root/UAssetParser")
 	
@@ -75,18 +72,7 @@ func start_model_load():
 func on_3d_model_loaded(new_loaded_model):
 	var model_placement_parent = self
 	if main_skeletal_mesh != null:
-		model_placement_parent = main_skeletal_mesh
-		loaded_model = new_loaded_model
-		model_placement_parent.add_child(loaded_model)
-		loaded_model.name = "Model3D"
-		if is_in_deleted_branch:
-			hide()
-		for child_node in loaded_model.get_children():
-			if child_node is MeshInstance:
-				loaded_model_mesh_instance = child_node
-				var mesh = child_node.mesh
-				loaded_model_mesh = mesh
-				break
+		main_skeletal_mesh.on_3d_model_loaded(new_loaded_model)
 
 func load_character_image():
 	if definition.has("character_id") and selection_transform_node:
