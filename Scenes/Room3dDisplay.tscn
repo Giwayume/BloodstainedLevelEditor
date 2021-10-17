@@ -1,7 +1,18 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://Scenes/Room3dDisplay.gd" type="Script" id=1]
 [ext_resource path="res://SceneComponents/Room3dDisplayCamera.gd" type="Script" id=2]
+
+[sub_resource type="ProceduralSky" id=1]
+
+[sub_resource type="Environment" id=2]
+background_mode = 2
+background_sky = SubResource( 1 )
+background_energy = 0.39
+ambient_light_energy = 0.0
+ambient_light_sky_contribution = 0.0
+tonemap_mode = 3
+tonemap_white = 16.0
 
 [node name="Room3dDisplay" type="Spatial"]
 script = ExtResource( 1 )
@@ -22,3 +33,6 @@ script = ExtResource( 1 )
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.8, 8.4, 16.3 )
 far = 1000.0
 script = ExtResource( 2 )
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource( 2 )

@@ -1,0 +1,40 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://SceneComponents/UiComponents/RangeEdit.gd" type="Script" id=1]
+[ext_resource path="res://Icons/Editor/SliderGrabberHidden.png" type="Texture" id=2]
+
+[node name="RangeEdit" type="Container"]
+anchor_right = 1.0
+margin_bottom = 22.0
+rect_min_size = Vector2( 0, 22 )
+focus_mode = 2
+size_flags_horizontal = 3
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+max_value = 100.0
+step = 1.0
+
+[node name="LineEdit" type="LineEdit" parent="."]
+margin_right = 1024.0
+margin_bottom = 22.0
+custom_constants/minimum_spaces = 0
+text = "0"
+caret_blink = true
+caret_blink_speed = 0.5
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HSlider" type="HSlider" parent="."]
+margin_left = 3.0
+margin_top = 10.0
+margin_right = 1021.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+custom_icons/grabber_highlight = ExtResource( 2 )
+custom_icons/grabber = ExtResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}

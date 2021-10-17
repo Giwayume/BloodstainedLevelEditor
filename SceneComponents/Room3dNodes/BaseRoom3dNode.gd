@@ -7,6 +7,7 @@ var definition: Dictionary
 var use_parent_as_proxy: bool = false
 var leaf_parent: Spatial = null
 var selection_transform_node: Spatial = null
+var selection_light_node: Spatial = null
 var persistent_level_child_ancestor: Spatial = null
 var is_tree_leaf: bool = false
 var is_in_deleted_branch: bool = false

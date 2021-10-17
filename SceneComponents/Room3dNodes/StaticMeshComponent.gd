@@ -2,6 +2,8 @@ extends BaseRoom3dNode
 
 var selection_box_material = preload("res://Materials/EditorSelectionBox.tres")
 var selection_mesh_material = preload("res://Materials/EditorSelectionMesh.tres")
+const node_selection_area_script = preload("res://SceneComponents/Room3dNodes/NodeSelectionArea.gd")
+
 var selection_line_size = 0.05
 var loaded_model: Spatial
 var loaded_model_mesh_instance: MeshInstance
@@ -43,11 +45,13 @@ func on_3d_model_loaded(new_loaded_model):
 			loaded_model_mesh = mesh
 			var aabb = mesh.get_aabb()
 			var area = Area.new()
+			area.set_script(node_selection_area_script)
+			area.selectable_parent = self
 			var collision_shape = CollisionShape.new()
 			var box_shape = BoxShape.new()
 			box_shape.extents = aabb.size / 2
 			area.translation = aabb.position + (box_shape.extents)
-			if is_in_deleted_branch:
+			if is_in_deleted_branch or is_in_hidden_branch:
 				area.collision_layer = 0
 			else:
 				area.collision_layer = PhysicsLayers3d.layers.editor_select_mesh

@@ -146,7 +146,7 @@ func set_transform_from_selected_nodes():
 
 func focused_edit_regrab_focus():
 	if focused_edit:
-			focused_edit.grab_focus()
+		focused_edit.grab_focus()
 
 func reset_edit_dirty_flags():
 	edit_dirty_flags = {

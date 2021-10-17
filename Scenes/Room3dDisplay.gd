@@ -29,6 +29,10 @@ var custom_component_scripts = {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/PBMeshParentComponent.gd")
 	},
+	"PointLightComponent": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/PointLightComponent.gd")
+	},
 	"SceneComponent": {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/SceneComponent.gd")
@@ -302,7 +306,7 @@ func select_object_at_mouse(is_add: bool = false):
 	var space_state = get_world().direct_space_state
 	var intersections: Array = []
 	# Find all intersections on ray
-	var collision_mask = PhysicsLayers3d.layers.editor_select_mesh | PhysicsLayers3d.layers.editor_select_collider
+	var collision_mask = PhysicsLayers3d.layers.editor_select_mesh | PhysicsLayers3d.layers.editor_select_collider | PhysicsLayers3d.layers.editor_select_light
 	var current_intersection = space_state.intersect_ray(ray_from, ray_to, [], collision_mask, true, true)
 	while current_intersection != null and current_intersection.has("collider"):
 		if not intersections.has(current_intersection.collider):
@@ -325,7 +329,7 @@ func select_object_at_mouse(is_add: bool = false):
 			closest_intersection = intersection
 			break
 	if closest_intersection != null:
-		var node_to_select = closest_intersection.get_parent()
+		var node_to_select = closest_intersection.selectable_parent
 		if node_to_select.leaf_parent != null:
 			node_to_select = node_to_select.leaf_parent
 		if is_add:

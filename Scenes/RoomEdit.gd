@@ -23,7 +23,9 @@ var loading_status_container: Control
 var loading_status_label: Label
 var menu_bar: Control
 var panel_character_params: Control
+var panel_light: Control
 var panel_mesh_info: Control
+var panel_selection_export_number_label: Label
 var panel_selection_type_label: Label
 var panel_transform: Control
 var room_3d_display: Spatial
@@ -130,7 +132,9 @@ func _ready():
 	loading_status_label = find_node("LoadingStatusLabel", true, true)
 	menu_bar = find_node("RoomEditMenuBar", true, true)
 	panel_character_params = find_node("CharacterParamsPanel", true, true)
+	panel_light = find_node("LightPanel", true, true)
 	panel_mesh_info = find_node("MeshInfoPanel", true, true)
+	panel_selection_export_number_label = find_node("PanelSelectionExportNumberLabel", true, true)
 	panel_selection_type_label = find_node("PanelSelectionTypeLabel", true, true)
 	panel_transform = find_node("TransformPanel", true, true)
 	room_3d_display = find_node("Room3dDisplay", true, true)
@@ -673,11 +677,16 @@ func update_panels_after_selection():
 	var selection_count: int = room_3d_display.selected_nodes.size()
 	# Component type panel
 	if selection_count == 1:
-		panel_selection_type_label.text = room_3d_display.selected_nodes[0].definition.type
+		var definition = room_3d_display.selected_nodes[0].definition
+		panel_selection_type_label.text = definition.type
+		panel_selection_export_number_label.text = "Export " + str(definition.export_index + 1)
+		panel_selection_export_number_label.show()
 	elif selection_count > 1:
 		panel_selection_type_label.text = "Multiple Selection (" + str(selection_count) + ")"
+		panel_selection_export_number_label.hide()
 	else:
 		panel_selection_type_label.text = "Nothing Selected"
+		panel_selection_export_number_label.hide()
 	
 	# Character params panel
 	if selection_count == 1 and room_3d_display.selected_nodes[0].definition.type == "Character":
@@ -685,6 +694,13 @@ func update_panels_after_selection():
 		panel_character_params.set_selected_nodes(room_3d_display.selected_nodes)
 	else:
 		panel_character_params.hide()
+	
+	# Light panel
+	if selection_count == 1 and room_3d_display.selected_nodes[0]["selection_light_node"] != null:
+		panel_light.show()
+		panel_light.set_selected_nodes(room_3d_display.selected_nodes)
+	else:
+		panel_light.hide()
 	
 	# Mesh and transform panels
 	if selection_count == 1 and room_3d_display.selected_nodes[0]["selection_transform_node"] != null:

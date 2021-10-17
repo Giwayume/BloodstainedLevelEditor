@@ -45,6 +45,11 @@ _global_script_classes=[ {
 "path": "res://History/HistoryGroupAction.gd"
 }, {
 "base": "Reference",
+"class": "ImmediateGeometryExt",
+"language": "GDScript",
+"path": "res://Utility/ImmediateGeometryExt.gd"
+}, {
+"base": "Reference",
 "class": "MeshRayCast",
 "language": "GDScript",
 "path": "res://Utility/MeshRayCast.gd"
@@ -53,6 +58,11 @@ _global_script_classes=[ {
 "class": "PhysicsLayers3d",
 "language": "GDScript",
 "path": "res://Utility/PhysicsLayers3d.gd"
+}, {
+"base": "Container",
+"class": "RangeEdit",
+"language": "GDScript",
+"path": "res://SceneComponents/UiComponents/RangeEdit.gd"
 }, {
 "base": "HistoryAction",
 "class": "SpatialTransformAction",
@@ -77,8 +87,10 @@ _global_script_class_icons={
 "EditorConfig": "",
 "HistoryAction": "",
 "HistoryGroupAction": "",
+"ImmediateGeometryExt": "",
 "MeshRayCast": "",
 "PhysicsLayers3d": "",
+"RangeEdit": "",
 "SpatialTransformAction": "",
 "UE4Convert": "",
 "UndeleteComponentAction": ""
@@ -120,7 +132,8 @@ theme/custom="res://EditorTheme/MainTheme.tres"
 3d_physics/layer_1="default"
 3d_physics/layer_2="editor_select_mesh"
 3d_physics/layer_3="editor_select_collider"
-3d_physics/layer_4="editor_control_select"
+3d_physics/layer_4="editor_select_light"
+3d_physics/layer_8="editor_control_select"
 
 [physics]
 
@@ -129,4 +142,5 @@ common/enable_pause_aware_picking=true
 
 [rendering]
 
+limits/rendering/max_lights_per_object=128
 environment/default_environment="res://default_env.tres"

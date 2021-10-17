@@ -55,8 +55,6 @@ func start_model_load():
 					continue
 				if "physicsasset" in filename_lower:
 					continue
-				if character_id == "N3003":
-					print_debug(mesh_asset, " ", score)
 				if score > highest_score:
 					highest_scoring_filename = filename
 					highest_score = score

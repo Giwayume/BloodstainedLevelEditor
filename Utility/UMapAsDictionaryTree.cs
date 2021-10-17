@@ -136,6 +136,9 @@ public class UMapAsDictionaryTree {
                         }
                     }
                 }
+                /*
+                 * BLUEPRINT/DYNAMIC CLASS PROPS
+                 */
                 else if (propertyName == "Mesh") {
                     if (propertyData is ObjectPropertyData objectPropertyData) {
                         FPackageIndex staticMeshPointer = objectPropertyData.Value;
@@ -144,6 +147,9 @@ public class UMapAsDictionaryTree {
                         }
                     }
                 }
+                /*
+                 * STATIC MESH PROPS
+                 */
                 else if (propertyName == "StaticMesh") {
                     if (propertyData is ObjectPropertyData objectPropertyData) {
                         FPackageIndex staticMeshPointer = objectPropertyData.Value;
@@ -160,6 +166,9 @@ public class UMapAsDictionaryTree {
                         }
                     }
                 }
+                /*
+                 * CAPSULE PROPS
+                 */
                 else if (propertyName == "CapsuleHalfHeight") {
                     if (propertyData is FloatPropertyData floatPropertyData) {
                         treeNode["capsule_half_height"] = floatPropertyData.Value * 0.01f;
@@ -170,6 +179,9 @@ public class UMapAsDictionaryTree {
                         treeNode["capsule_radius"] = floatPropertyData.Value * 0.01f;
                     }
                 }
+                /*
+                 * CHARACTER PROPS
+                 */
                 else if (propertyName == "CharacterParamaters") {
                     if (propertyData is StructPropertyData structPropertyData) {
                         treeNode["type"] = "Character";
@@ -187,6 +199,89 @@ public class UMapAsDictionaryTree {
                         }
                     }
                 }
+                /*
+                 * LIGHT PROPS
+                 */
+                else if (propertyName == "Intensity") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["intensity"] = floatPropertyData.Value;
+                    }
+                }
+                else if (propertyName == "LightColor") {
+                    if (propertyData is StructPropertyData structPropertyData) {
+                        if (structPropertyData.Value[0] is ColorPropertyData colorPropertyData) {
+                            treeNode["light_color"] = new Godot.Color(colorPropertyData.Value.R / 255f, colorPropertyData.Value.G / 255f, colorPropertyData.Value.B / 255f, colorPropertyData.Value.A / 255f);
+                        }
+                    }
+                }
+                else if (propertyName == "InnerConeAngle") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["inner_cone_angle"] = floatPropertyData.Value;
+                    }
+                }
+                else if (propertyName == "OuterConeAngle") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["outer_cone_angle"] = floatPropertyData.Value;
+                    }
+                }
+                else if (propertyName == "AttenuationRadius") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["attenuation_radius"] = floatPropertyData.Value * 0.01f;
+                    }
+                }
+                else if (propertyName == "SourceRadius") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["source_radius"] = floatPropertyData.Value * 0.01f;
+                    }
+                }
+                else if (propertyName == "SoftSourceRadius") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["soft_source_radius"] = floatPropertyData.Value * 0.01f;
+                    }
+                }
+                else if (propertyName == "SourceLength") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["source_length"] = floatPropertyData.Value * 0.01f;
+                    }
+                }
+                else if (propertyName == "Temperature") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["temperature"] = floatPropertyData.Value;
+                    }
+                }
+                else if (propertyName == "bUseTemperature") {
+                    if (propertyData is BoolPropertyData boolPropertyData) {
+                        treeNode["use_temperature"] = boolPropertyData.Value;
+                    }
+                }
+                else if (propertyName == "CastShadows") {
+                    if (propertyData is BoolPropertyData boolPropertyData) {
+                        treeNode["cast_shadows"] = boolPropertyData.Value;
+                    }
+                }
+                else if (propertyName == "bUseInverseSquaredFalloff") {
+                    if (propertyData is BoolPropertyData boolPropertyData) {
+                        treeNode["use_inverse_squared_falloff"] = boolPropertyData.Value;
+                    }
+                }
+                else if (propertyName == "LightFalloffExponent") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["light_falloff_exponent"] = floatPropertyData.Value;
+                    }
+                }
+                else if (propertyName == "IndirectLightingIntensity") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["indirect_lighting_intensity"] = floatPropertyData.Value;
+                    }
+                }
+                else if (propertyName == "VolumetricScatteringIntensity") {
+                    if (propertyData is FloatPropertyData floatPropertyData) {
+                        treeNode["volumetric_scattering_intensity"] = floatPropertyData.Value;
+                    }
+                }
+                /*
+                 * TRANSFORM PROPS
+                 */
                 else if (propertyName == "RelativeLocation") {
                     if (propertyData is StructPropertyData structPropertyData) {
                         if (structPropertyData.Value[0] is VectorPropertyData vectorPropertyData) {

@@ -1,0 +1,368 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Icons/Editor/GUITreeArrowRight.svg" type="Texture" id=1]
+[ext_resource path="res://SceneComponents/Inspector/LightPanel.gd" type="Script" id=2]
+[ext_resource path="res://EditorTheme/ExpandableSectionButtonHeader.tres" type="Theme" id=3]
+[ext_resource path="res://SceneComponents/UiComponents/RangeEdit.tscn" type="PackedScene" id=4]
+
+[sub_resource type="StyleBoxEmpty" id=1]
+content_margin_left = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+
+[node name="LightPanel" type="VBoxContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_constants/separation = 0
+script = ExtResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ExpandButton" type="Button" parent="."]
+margin_right = 1024.0
+margin_bottom = 22.0
+theme = ExtResource( 3 )
+toggle_mode = true
+text = "Light"
+icon = ExtResource( 1 )
+align = 0
+
+[node name="ExpandSection" type="PanelContainer" parent="."]
+margin_top = 22.0
+margin_right = 1024.0
+margin_bottom = 364.0
+custom_styles/panel = SubResource( 1 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ExpandSection"]
+margin_left = 4.0
+margin_right = 1020.0
+margin_bottom = 338.0
+
+[node name="MarginContainer" type="MarginContainer" parent="ExpandSection/VBoxContainer"]
+margin_right = 1016.0
+margin_bottom = 338.0
+custom_constants/margin_right = 0
+custom_constants/margin_top = 4
+custom_constants/margin_left = 0
+custom_constants/margin_bottom = 0
+
+[node name="GridContainer" type="GridContainer" parent="ExpandSection/VBoxContainer/MarginContainer"]
+margin_top = 4.0
+margin_right = 1016.0
+margin_bottom = 338.0
+custom_constants/vseparation = 2
+custom_constants/hseparation = 4
+columns = 2
+
+[node name="IntensityLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_right = 506.0
+margin_bottom = 22.0
+hint_tooltip = "Intensity - Total energy that the light emits. For point/spot lights with inverse square falloff, this is lumens. 1700 lumens corresponds to a 100W light bulb. For other lights, this is just a brightness multiplier."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Intensity"
+autowrap = true
+
+[node name="IntensityEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_right = 1016.0
+margin_bottom = 22.0
+size_flags_horizontal = 3
+
+[node name="IntensityEdit" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/IntensityEditContainer" instance=ExtResource( 4 )]
+max_value = 100000.0
+step = 0.001
+
+[node name="LightColorLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 24.0
+margin_right = 506.0
+margin_bottom = 46.0
+hint_tooltip = "Light Color - The color that the light emits."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Light Color"
+autowrap = true
+
+[node name="LightColorEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 24.0
+margin_right = 1016.0
+margin_bottom = 46.0
+size_flags_horizontal = 3
+
+[node name="LightColorEdit" type="ColorPickerButton" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/LightColorEditContainer"]
+anchor_right = 1.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+edit_alpha = false
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="InnerConeAngleLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 48.0
+margin_right = 506.0
+margin_bottom = 70.0
+hint_tooltip = "Inner Cone Angle - Sets the inner cone angle of the Spot Light, in degrees."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Inner Cone Angle"
+autowrap = true
+
+[node name="InnerConeAngleEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 48.0
+margin_right = 1016.0
+margin_bottom = 70.0
+size_flags_horizontal = 3
+
+[node name="InnerConeAngleEdit" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/InnerConeAngleEditContainer" instance=ExtResource( 4 )]
+max_value = 90.0
+step = 0.001
+
+[node name="OuterConeAngleLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 72.0
+margin_right = 506.0
+margin_bottom = 94.0
+hint_tooltip = "Outer Cone Angle - Sets the outer cone angle of the Spot Light, in degrees."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Outer Cone Angle"
+autowrap = true
+
+[node name="OuterConeAngleEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 72.0
+margin_right = 1016.0
+margin_bottom = 94.0
+size_flags_horizontal = 3
+
+[node name="OuterConeAngleEdit" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/OuterConeAngleEditContainer" instance=ExtResource( 4 )]
+max_value = 90.0
+step = 0.001
+
+[node name="AttenuationRadiusLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 96.0
+margin_right = 506.0
+margin_bottom = 118.0
+hint_tooltip = "Attenuation Radius - Bounds of the light's visible influence."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Attenuation Radius"
+autowrap = true
+
+[node name="AttenuationRadiusEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 96.0
+margin_right = 1016.0
+margin_bottom = 118.0
+size_flags_horizontal = 3
+
+[node name="AttenuationRadiusEdit" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/AttenuationRadiusEditContainer" instance=ExtResource( 4 )]
+value = 8.0
+min_value = 8.0
+max_value = 16384.0
+step = 0.001
+
+[node name="SourceRadiusLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 120.0
+margin_right = 506.0
+margin_bottom = 142.0
+hint_tooltip = "Source Radius - Radius of light source shape."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Source Radius"
+autowrap = true
+
+[node name="SourceRadiusEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 120.0
+margin_right = 1016.0
+margin_bottom = 142.0
+size_flags_horizontal = 3
+
+[node name="SourceRadiusEdit" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/SourceRadiusEditContainer" instance=ExtResource( 4 )]
+max_value = 100000.0
+step = 0.001
+
+[node name="SoftSourceRadiusLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 144.0
+margin_right = 506.0
+margin_bottom = 166.0
+hint_tooltip = "Soft Source Radius - Soft radius of light source shape."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Soft Source Radius"
+autowrap = true
+
+[node name="SoftSourceRadiusEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 144.0
+margin_right = 1016.0
+margin_bottom = 166.0
+size_flags_horizontal = 3
+
+[node name="SoftSourceRadiusEdit" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/SoftSourceRadiusEditContainer" instance=ExtResource( 4 )]
+max_value = 100000.0
+step = 0.001
+
+[node name="SourceLengthLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 168.0
+margin_right = 506.0
+margin_bottom = 190.0
+hint_tooltip = "Source Length - Length of the light source shape. "
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Source Length"
+autowrap = true
+
+[node name="SourceLengthEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 168.0
+margin_right = 1016.0
+margin_bottom = 190.0
+size_flags_horizontal = 3
+
+[node name="SourceLengthEdit" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/SourceLengthEditContainer" instance=ExtResource( 4 )]
+max_value = 100000.0
+step = 0.001
+
+[node name="UseTemperatureLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 192.0
+margin_right = 506.0
+margin_bottom = 214.0
+hint_tooltip = "Use Temperature - Use white (D65) as illuminant."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Use Temperature"
+autowrap = true
+
+[node name="UseTemperatureEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 192.0
+margin_right = 1016.0
+margin_bottom = 214.0
+size_flags_horizontal = 3
+
+[node name="UseTemperatureEdit" type="CheckButton" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/UseTemperatureEditContainer"]
+anchor_bottom = 1.0
+margin_right = 50.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="TemperatureLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 216.0
+margin_right = 506.0
+margin_bottom = 238.0
+hint_tooltip = "Temperature - Color temperature in Kelvin of the blackbody illuminant. White (D65) is 6500K."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Temperature"
+autowrap = true
+
+[node name="TemperatureEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 216.0
+margin_right = 1016.0
+margin_bottom = 238.0
+size_flags_horizontal = 3
+
+[node name="TemperatureEdit" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/TemperatureEditContainer" instance=ExtResource( 4 )]
+margin_left = -1.18921
+margin_top = 1.18921
+margin_right = -1.18921
+margin_bottom = 23.1892
+max_value = 40000.0
+step = 0.001
+
+[node name="CastShadowsLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 240.0
+margin_right = 506.0
+margin_bottom = 262.0
+hint_tooltip = "Cast Shadows - Whether the light should cast any shadows."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Cast Shadows"
+autowrap = true
+
+[node name="CastShadowsEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 240.0
+margin_right = 1016.0
+margin_bottom = 262.0
+size_flags_horizontal = 3
+
+[node name="CastShadowsEdit" type="CheckButton" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/CastShadowsEditContainer"]
+anchor_bottom = 1.0
+margin_right = 50.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="InverseSquaredFalloffLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 264.0
+margin_right = 506.0
+margin_bottom = 286.0
+hint_tooltip = "Inverse Square Falloff - Whether light intensity should be calculated in lumens or not."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Inverse Square Falloff"
+autowrap = true
+
+[node name="InverseSquaredFalloffEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 264.0
+margin_right = 1016.0
+margin_bottom = 286.0
+size_flags_horizontal = 3
+
+[node name="InverseSquaredFalloffEdit" type="CheckButton" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/InverseSquaredFalloffEditContainer"]
+anchor_bottom = 1.0
+margin_right = 50.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="IndirectLightingIntensityLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 288.0
+margin_right = 506.0
+margin_bottom = 310.0
+hint_tooltip = "Indirect Lighting Intensity - Scales the indirect lighting contribution from this light. A value of 0 disables an GI for this light. Default value is 1."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Indirect Lighting Intensity"
+autowrap = true
+
+[node name="IndirectLightingIntensityEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 288.0
+margin_right = 1016.0
+margin_bottom = 310.0
+size_flags_horizontal = 3
+
+[node name="IndirectLightingIntensityEdit" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/IndirectLightingIntensityEditContainer" instance=ExtResource( 4 )]
+max_value = 6.0
+step = 0.001
+
+[node name="VolumetricScatteringIntensityLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_top = 312.0
+margin_right = 506.0
+margin_bottom = 334.0
+hint_tooltip = "Volumetric Scattering Intensity - This scales Intensity and Light Color."
+mouse_filter = 1
+size_flags_horizontal = 3
+text = "Volumetric Scattering Intensity"
+autowrap = true
+
+[node name="VolumetricScatteringIntensityEditContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
+margin_left = 510.0
+margin_top = 312.0
+margin_right = 1016.0
+margin_bottom = 334.0
+size_flags_horizontal = 3
+
+[node name="VolumetricScatteringIntensityEdit" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/VolumetricScatteringIntensityEditContainer" instance=ExtResource( 4 )]
+max_value = 4.0
+step = 0.001
