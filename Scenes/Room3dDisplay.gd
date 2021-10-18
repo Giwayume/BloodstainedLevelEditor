@@ -4,6 +4,8 @@ signal loading_start
 signal loading_end
 signal selection_changed
 
+const light_defaults = preload("res://Config/LightDefaults.gd").light_defaults;
+
 var custom_component_scripts = {
 	"BlueprintGeneratedClass": {
 		"auto_placement": false,
@@ -262,6 +264,8 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 		use_edited_prop_if_exists(definition, export_index, "translation")
 		use_edited_prop_if_exists(definition, export_index, "rotation_degrees")
 		use_edited_prop_if_exists(definition, export_index, "scale")
+		for prop_name in light_defaults:
+			use_edited_prop_if_exists(definition, export_index, prop_name)
 	node.definition = definition
 	node.room_3d_display = self
 	node.tree_name = current_placing_tree_name

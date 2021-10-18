@@ -129,6 +129,8 @@ func get_room_edit_export_prop(asset_type: String, export_index, prop_name: Stri
 					if prop_value.has("type"):
 						if prop_value["type"] == "Vector3":
 							prop_value = Vector3(prop_value.x, prop_value.y, prop_value.z)
+						elif prop_value["type"] == "Color":
+							prop_value = Color(prop_value.r, prop_value.g, prop_value.b, prop_value.a)
 	return prop_value
 
 func set_room_edit_export_prop(asset_type: String, export_index, prop_name: String, prop_value):
@@ -149,6 +151,14 @@ func set_room_edit_export_prop(asset_type: String, export_index, prop_name: Stri
 				"x": prop_value.x,
 				"y": prop_value.y,
 				"z": prop_value.z
+			}
+		elif prop_value is Color:
+			prop_value = {
+				"type": "Color",
+				"r": prop_value.r,
+				"g": prop_value.g,
+				"b": prop_value.b,
+				"a": prop_value.a
 			}
 		room_edits[asset_type]["existing_exports"][export_index][prop_name] = prop_value
 
@@ -188,7 +198,7 @@ func end_package_and_install_thread(is_run_game: bool, install_finish_callback_t
 	get_tree().get_root().remove_child(loading_screen)
 	loading_screen = null
 	
-	if is_run_game:
+	if false and is_run_game:
 		var game_directory = EditorConfig.read_config()["game_directory"]
 		OS.execute(game_directory + "/BloodstainedRotN/Binaries/Win64/BloodstainedRotN-Win64-Shipping.exe", [], false)
 		var toast = toast_scene.instance()
