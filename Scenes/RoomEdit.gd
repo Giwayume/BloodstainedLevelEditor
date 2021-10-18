@@ -22,10 +22,10 @@ var loading_3d_scene_notification: Control
 var loading_status_container: Control
 var loading_status_label: Label
 var menu_bar: Control
+var panel_asset_info: Control
 var panel_character_params: Control
 var panel_light: Control
 var panel_mesh_info: Control
-var panel_selection_export_number_label: Label
 var panel_selection_type_label: Label
 var panel_transform: Control
 var room_3d_display: Spatial
@@ -105,6 +105,7 @@ var current_tool: String = "move"
 var transform_tool_names = ["select", "move", "rotate", "scale"]
 var is_any_menu_popup_visible: bool = false
 var is_mouse_in_3d_viewport_range: bool = false
+var is_panel_popup_blocking: bool = false
 var is_3d_viewport_focused: bool = false
 var is_3d_editor_control_active: bool = false
 var selected_node_initial_transforms: Array = []
@@ -131,10 +132,10 @@ func _ready():
 	loading_status_container = find_node("LoadingStatusContainer", true, true)
 	loading_status_label = find_node("LoadingStatusLabel", true, true)
 	menu_bar = find_node("RoomEditMenuBar", true, true)
+	panel_asset_info = find_node("AssetInfoPanel", true, true)
 	panel_character_params = find_node("CharacterParamsPanel", true, true)
 	panel_light = find_node("LightPanel", true, true)
 	panel_mesh_info = find_node("MeshInfoPanel", true, true)
-	panel_selection_export_number_label = find_node("PanelSelectionExportNumberLabel", true, true)
 	panel_selection_type_label = find_node("PanelSelectionTypeLabel", true, true)
 	panel_transform = find_node("TransformPanel", true, true)
 	room_3d_display = find_node("Room3dDisplay", true, true)
@@ -155,6 +156,7 @@ func _ready():
 	editor_container.hide()
 	loading_status_container.show()
 	loading_3d_scene_notification.hide()
+	panel_asset_info.hide()
 	panel_character_params.hide()
 	panel_mesh_info.hide()
 	panel_transform.hide()
@@ -170,6 +172,7 @@ func _ready():
 	editor.connect("history_changed", self, "on_history_changed")
 	enemy_difficulty_select_option_button.connect("item_selected", self, "on_enemy_difficulty_item_selected")
 	menu_bar.connect("popup_visibility_changed", self, "on_menu_bar_popup_visibility_changed")
+	panel_light.connect("popup_blocking_changed", self, "on_panel_popup_blocking_changed")
 	room_3d_display.connect("loading_start", self, "on_room_3d_display_loading_start")
 	room_3d_display.connect("loading_end", self, "on_room_3d_display_loading_end")
 	room_3d_display.connect("selection_changed", self, "on_room_3d_display_selection_changed")
@@ -309,6 +312,9 @@ func threads_finished():
 #############
 # CALLBACKS #
 #############
+
+func on_panel_popup_blocking_changed(blocking: bool):
+	is_panel_popup_blocking = blocking
 
 func on_tree_multi_selected(item: TreeItem, column: int, selected: bool, tree_name: String):
 	if not ignore_tree_multi_selected_signal:
@@ -645,7 +651,7 @@ func clear_selection():
 	update_3d_cursor_position()
 
 func update_3d_viewport_input_tracking():
-	var can_capture_mouse = is_mouse_in_3d_viewport_range and not is_any_menu_popup_visible
+	var can_capture_mouse = is_mouse_in_3d_viewport_range and not is_any_menu_popup_visible and not is_panel_popup_blocking
 	var can_capture_keyboard = is_3d_viewport_focused and not is_any_menu_popup_visible
 	room_3d_display.can_capture_mouse = can_capture_mouse and not is_3d_editor_control_active
 	room_3d_display.can_capture_keyboard = can_capture_keyboard
@@ -679,14 +685,10 @@ func update_panels_after_selection():
 	if selection_count == 1:
 		var definition = room_3d_display.selected_nodes[0].definition
 		panel_selection_type_label.text = definition.type
-		panel_selection_export_number_label.text = "Export " + str(definition.export_index + 1)
-		panel_selection_export_number_label.show()
 	elif selection_count > 1:
 		panel_selection_type_label.text = "Multiple Selection (" + str(selection_count) + ")"
-		panel_selection_export_number_label.hide()
 	else:
 		panel_selection_type_label.text = "Nothing Selected"
-		panel_selection_export_number_label.hide()
 	
 	# Character params panel
 	if selection_count == 1 and room_3d_display.selected_nodes[0].definition.type == "Character":
@@ -715,6 +717,12 @@ func update_panels_after_selection():
 		panel_mesh_info.hide()
 		panel_transform.hide()
 
+	# Asset info panel
+	if selection_count == 1:
+		panel_asset_info.show()
+		panel_asset_info.set_selected_nodes(room_3d_display.selected_nodes)
+	else:
+		panel_asset_info.hide()
 
 func setup_after_load():
 	editor.load_room_edits()

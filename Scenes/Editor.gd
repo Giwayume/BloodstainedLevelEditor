@@ -17,6 +17,7 @@ var room_edits = null
 var history: Array = []
 var history_index = 0
 var history_max = 50
+var history_shortcuts_disabled: bool = false
 
 func _ready():
 	PhysicsLayers3d.read_layers()
@@ -45,8 +46,7 @@ func do_action(action: HistoryAction):
 		history = ArrayExt.slice(history, 0, history_index)
 	history.push_back(action)
 	if history.size() > history_max:
-		var discard_action = history.pop_front()
-		discard_action.queue_free()
+		history.pop_front()
 	else:
 		history_index += 1
 	emit_signal("history_changed", action)

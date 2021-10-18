@@ -78,6 +78,11 @@ _global_script_classes=[ {
 "class": "UndeleteComponentAction",
 "language": "GDScript",
 "path": "res://History/UndeleteComponentAction.gd"
+}, {
+"base": "HistoryAction",
+"class": "UpdateLightAction",
+"language": "GDScript",
+"path": "res://History/UpdateLightAction.gd"
 } ]
 _global_script_class_icons={
 "ArrayExt": "",
@@ -93,7 +98,8 @@ _global_script_class_icons={
 "RangeEdit": "",
 "SpatialTransformAction": "",
 "UE4Convert": "",
-"UndeleteComponentAction": ""
+"UndeleteComponentAction": "",
+"UpdateLightAction": ""
 }
 
 [application]

@@ -1,5 +1,7 @@
 extends Control
 
+signal popup_blocking_changed
+
 var gui_tree_arrow_right_icon = preload("res://Icons/Editor/GUITreeArrowRight.svg")
 var gui_tree_arrow_down_icon = preload("res://Icons/Editor/GUITreeArrowDown.svg")
 const light_defaults = preload("res://Config/LightDefaults.gd").light_defaults
@@ -10,9 +12,13 @@ var expand_button: Button
 var expand_section: Control
 var edits: Dictionary
 var edit_dirty_flags: Dictionary
+var edit_start_selected_nodes: Array
+var edit_start_values: Dictionary
+var edit_preview_values: Dictionary
 
 var selected_nodes: Array = []
 var focused_edit = null
+var ignore_edit_signals: bool = false
 
 func _ready():
 	editor = get_node("/root/Editor")
@@ -100,29 +106,92 @@ func _ready():
 		if edits[edit]["edit"] is RangeEdit:
 			edits[edit]["edit"].connect("value_changed", self, "on_edit_range_value_changed", [edit])
 			edits[edit]["edit"].connect("value_committed", self, "on_edit_range_value_committed", [edit])
-		if edits[edit]["edit"] is CheckButton:
+		if edits[edit]["edit"] is CheckBox:
 			edits[edit]["edit"].connect("toggled", self, "on_edit_check_button_toggled", [edit])
 		if edits[edit]["edit"] is ColorPickerButton:
+			edits[edit]["edit"].get_popup().connect("about_to_show", self, "on_edit_color_picker_button_popup_about_to_show", [edit])
 			edits[edit]["edit"].connect("color_changed", self, "on_edit_color_picker_button_color_changed", [edit])
+			edits[edit]["edit"].connect("popup_closed", self, "on_edit_color_picker_button_popup_closed", [edit])
 		edits[edit]["edit"].connect("focus_entered", self, "on_edit_focus_entered", [edit])
 		edits[edit]["edit"].connect("focus_exited", self, "on_edit_focus_exited", [edit])
 	
 	collapse()
 
+func _exit_tree():
+	emit_signal("popup_blocking_changed", false)
+
 func on_history_changed(action: HistoryAction):
-	pass
+	if action.get_ids().has(HistoryAction.ID.UPDATE_LIGHT):
+		set_edits_from_selected_nodes()
 	
 func on_edit_range_value_changed(new_value: float, field: String):
-	pass
+	if not ignore_edit_signals:
+		edit_start_selected_nodes = selected_nodes
+		var node = edit_start_selected_nodes[0].selection_light_node
+		if not edit_start_values.has(field):
+			if node.definition.has(field):
+				edit_start_values[field] = node.definition[field]
+			else:
+				edit_start_values[field] = light_defaults[field]
+		if "radius" in field:
+			new_value = new_value * 0.01
+		node.set_light_properties({
+			field: new_value
+		})
 
 func on_edit_range_value_committed(new_value: float, field: String):
-	pass
+	if not ignore_edit_signals:
+		if edit_start_selected_nodes.size() > 0:
+			var node = edit_start_selected_nodes[0].selection_light_node
+			if "radius" in field:
+				new_value = new_value * 0.01
+			editor.do_action(
+				UpdateLightAction.new(node, { field: new_value }, { field: edit_start_values[field] })
+			)
+			edit_start_values.erase(field)
+			edit_start_selected_nodes = []
+		else:
+			edit_start_values.erase(field)
 
 func on_edit_check_button_toggled(button_pressed: bool, field: String):
-	pass
+	if not ignore_edit_signals:
+		var node = selected_nodes[0].selection_light_node
+		editor.do_action(
+			UpdateLightAction.new(node, { field: button_pressed }, { field: !button_pressed })
+		)
+
+func on_edit_color_picker_button_popup_about_to_show(field: String):
+	edit_start_selected_nodes = selected_nodes
+	var node = edit_start_selected_nodes[0].selection_light_node
+	if node.definition.has(field):
+		edit_start_values[field] = node.definition[field]
+	else:
+		edit_start_values[field] = light_defaults[field]
+	emit_signal("popup_blocking_changed", true)
 
 func on_edit_color_picker_button_color_changed(color: Color, field: String):
-	pass
+	if not ignore_edit_signals:
+		if edit_start_selected_nodes.size() > 0:
+			var node = edit_start_selected_nodes[0].selection_light_node
+			edit_preview_values[field] = color
+			node.set_light_properties({
+				field: color
+			})
+
+func on_edit_color_picker_button_popup_closed(field: String):
+	if not ignore_edit_signals:
+		if edit_start_selected_nodes.size() > 0:
+			var node = edit_start_selected_nodes[0].selection_light_node
+			if edit_preview_values.has(field) and edit_preview_values[field] != edit_start_values[field]:
+				editor.do_action(
+					UpdateLightAction.new(node, { field: edit_preview_values[field] }, { field: edit_start_values[field] })
+				)
+			edit_preview_values.erase(field)
+			edit_start_values.erase(field)
+			edit_start_selected_nodes = []
+		else:
+			edit_start_values.erase(field)
+	emit_signal("popup_blocking_changed", false)
 
 func on_edit_focus_entered(field: String):
 	focused_edit = edits[field]["edit"]
@@ -141,12 +210,12 @@ func set_selected_nodes(new_selected_nodes):
 	call_deferred("set_edits_from_selected_nodes")
 
 func set_edits_from_selected_nodes():
+	ignore_edit_signals = true
 	if selected_nodes.size() == 1:
 		if focused_edit:
-			var old_focused_edit = focused_edit
 			focused_edit.release_focus()
-			focused_edit = old_focused_edit
-			
+			focused_edit = null
+		
 		var node = selected_nodes[0].selection_light_node
 		var definition = node.definition
 		var type = definition.type
@@ -229,8 +298,7 @@ func set_edits_from_selected_nodes():
 			edits["volumetric_scattering_intensity"].edit.value = definition["volumetric_scattering_intensity"]
 		else:
 			edits["volumetric_scattering_intensity"].edit.value = light_defaults["volumetric_scattering_intensity"]
-		
-		call_deferred("focused_edit_regrab_focus")
+	ignore_edit_signals = false
 
 func focused_edit_regrab_focus():
 	if focused_edit:

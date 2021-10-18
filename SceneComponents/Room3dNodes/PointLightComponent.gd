@@ -190,19 +190,17 @@ func convert_kelvin_to_color(kelvin: float):
 func update_gizmo_bounds():
 	remove_gizmo_bounds()
 	
-	var attenuation_radius = light_defaults["attenuation_radius"]
-	if definition.has("attenuation_radius"):
-		attenuation_radius = definition["attenuation_radius"]
+	var attenuation_radius = omni_light.omni_range
 	
 	gizmo_bounds = ImmediateGeometry.new()
 	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
-	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(0, 0, 0), 0, attenuation_radius, 0, 360, 32)
+	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(0, 0, 0), 0, attenuation_radius, 0, 360, 64)
 	gizmo_bounds.end()
 	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
-	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(0, 1, 0), 90, attenuation_radius, 0, 360, 32)
+	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(0, 1, 0), 90, attenuation_radius, 0, 360, 64)
 	gizmo_bounds.end()
 	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
-	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(1, 0, 0), 90, attenuation_radius, 0, 360, 32)
+	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(1, 0, 0), 90, attenuation_radius, 0, 360, 64)
 	gizmo_bounds.end()
 	gizmo_bounds.material_override = selection_box_material
 	add_child(gizmo_bounds)

@@ -245,7 +245,7 @@ margin_right = 1016.0
 margin_bottom = 214.0
 size_flags_horizontal = 3
 
-[node name="UseTemperatureEdit" type="CheckButton" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/UseTemperatureEditContainer"]
+[node name="UseTemperatureEdit" type="CheckBox" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/UseTemperatureEditContainer"]
 anchor_bottom = 1.0
 margin_right = 50.0
 __meta__ = {
@@ -270,10 +270,6 @@ margin_bottom = 238.0
 size_flags_horizontal = 3
 
 [node name="TemperatureEdit" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/TemperatureEditContainer" instance=ExtResource( 4 )]
-margin_left = -1.18921
-margin_top = 1.18921
-margin_right = -1.18921
-margin_bottom = 23.1892
 max_value = 40000.0
 step = 0.001
 
@@ -294,12 +290,9 @@ margin_right = 1016.0
 margin_bottom = 262.0
 size_flags_horizontal = 3
 
-[node name="CastShadowsEdit" type="CheckButton" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/CastShadowsEditContainer"]
+[node name="CastShadowsEdit" type="CheckBox" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/CastShadowsEditContainer"]
 anchor_bottom = 1.0
 margin_right = 50.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="InverseSquaredFalloffLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
 margin_top = 264.0
@@ -318,12 +311,9 @@ margin_right = 1016.0
 margin_bottom = 286.0
 size_flags_horizontal = 3
 
-[node name="InverseSquaredFalloffEdit" type="CheckButton" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/InverseSquaredFalloffEditContainer"]
+[node name="InverseSquaredFalloffEdit" type="CheckBox" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/InverseSquaredFalloffEditContainer"]
 anchor_bottom = 1.0
 margin_right = 50.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="IndirectLightingIntensityLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
 margin_top = 288.0

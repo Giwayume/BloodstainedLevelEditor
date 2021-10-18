@@ -31,9 +31,9 @@ func _ready():
 	menu_button_edit_popup = menu_button_edit.get_popup()
 	
 	menu_button_package_popup.add_item("Test In-Game", POPUP_ITEM_TEST_PACKAGE)
-	menu_button_package_popup.add_item("Open Package Folder", POPUP_ITEM_OPEN_PACKAGE_FOLDER)
-	menu_button_package_popup.add_separator()
 	menu_button_package_popup.add_item("View Map", POPUP_ITEM_OPEN_MAP)
+	menu_button_package_popup.add_separator()
+	menu_button_package_popup.add_item("Open Package Folder", POPUP_ITEM_OPEN_PACKAGE_FOLDER)
 	menu_button_package_popup.add_separator()
 	menu_button_package_popup.add_item("Exit", POPUP_ITEM_EXIT_PACKAGE)
 	
@@ -52,10 +52,10 @@ func _input(event):
 		elif event.scancode == KEY_SHIFT:
 			is_shift_modifier_pressed = event.pressed
 		elif is_control_modifier_pressed and not is_shift_modifier_pressed and event.scancode == KEY_Z:
-			if event.pressed:
+			if event.pressed and not editor.history_shortcuts_disabled:
 				editor.undo_action()
 		elif (is_control_modifier_pressed and event.scancode == KEY_Y) or (is_control_modifier_pressed and is_shift_modifier_pressed and event.scancode == KEY_Z):
-			if event.pressed:
+			if event.pressed and not editor.history_shortcuts_disabled:
 				editor.redo_action()
 
 func on_menu_popup_package_pressed(id: int):
