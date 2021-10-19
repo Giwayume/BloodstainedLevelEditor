@@ -43,7 +43,9 @@ func _input(event):
 					_captured_mouse_position = get_viewport().get_mouse_position()
 				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED if event.pressed else Input.MOUSE_MODE_VISIBLE)
 				if not event.pressed:
-					get_viewport().warp_mouse(viewport_position + _captured_mouse_position)
+					if _captured_mouse_position != null:
+						get_viewport().warp_mouse(viewport_position + _captured_mouse_position)
+						_captured_mouse_position = null
 #			BUTTON_WHEEL_UP: # Increases max velocity
 #				_vel_multiplier = clamp(_vel_multiplier * 1.1, 0.2, 20)
 #			BUTTON_WHEEL_DOWN: # Decereases max velocity
@@ -64,6 +66,11 @@ func _input(event):
 				_q = event.pressed
 			KEY_E:
 				_e = event.pressed
+			KEY_ESCAPE:
+				if _captured_mouse_position != null:
+					Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+					get_viewport().warp_mouse(viewport_position + _captured_mouse_position)
+					_captured_mouse_position = null
 
 # Updates mouselook and movement every frame
 func _process(delta):

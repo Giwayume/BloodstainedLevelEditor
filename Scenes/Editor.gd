@@ -198,7 +198,7 @@ func end_package_and_install_thread(is_run_game: bool, install_finish_callback_t
 	get_tree().get_root().remove_child(loading_screen)
 	loading_screen = null
 	
-	if false and is_run_game:
+	if is_run_game:
 		var game_directory = EditorConfig.read_config()["game_directory"]
 		OS.execute(game_directory + "/BloodstainedRotN/Binaries/Win64/BloodstainedRotN-Win64-Shipping.exe", [], false)
 		var toast = toast_scene.instance()

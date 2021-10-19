@@ -195,7 +195,7 @@ public class UAssetParser : Control {
                                 }
                                 if (packageName.EndsWith("_BG.umap")) {
                                     roomPackageDef["bg"] = packagePath;
-                                } else if (packageName.EndsWith("_BG_BuiltData.umap")) {
+                                } else if (packageName.EndsWith("_BG_BuiltData.uasset")) {
                                     roomPackageDef["bg_built_data"] = packagePath;
                                 } else if (packageName.EndsWith("_Enemy.umap")) {
                                     roomPackageDef["enemy"] = packagePath;
@@ -205,12 +205,18 @@ public class UAssetParser : Control {
                                     roomPackageDef["enemy_hard"] = packagePath;
                                 } else if (packageName.EndsWith("_Gimmick.umap")) {
                                     roomPackageDef["gimmick"] = packagePath;
-                                } else if (packageName.EndsWith("_Gimmick_BuiltData.umap")) {
+                                } else if (packageName.EndsWith("_Gimmick_BuiltData.uasset")) {
                                     roomPackageDef["gimmick_built_data"] = packagePath;
                                 } else if (packageName.EndsWith("_Event.umap")) {
                                     roomPackageDef["event"] = packagePath;
+                                } else if (packageName.EndsWith("_Light.umap") || packageName.EndsWith("_Ljght.umap")) {
+                                    roomPackageDef["light"] = packagePath;
+                                } else if (packageName.EndsWith("_Light_BuiltData.uasset") || packageName.EndsWith("_Ljght_BuiltData.uasset")) {
+                                    roomPackageDef["light_built_data"] = packagePath;
                                 } else if (packageName.EndsWith("_Setting.umap")) {
                                     roomPackageDef["setting"] = packagePath;
+                                } else if (packageName.EndsWith("_Setting_BuiltData.uasset")) {
+                                    roomPackageDef["setting_built_data"] = packagePath;
                                 } else if (packageName.EndsWith("_RV.umap")) {
                                     roomPackageDef["rv"] = packagePath;
                                 }
@@ -598,6 +604,12 @@ public class UAssetParser : Control {
                             { "suffix", "_Enemy_Hard.umap" }
                         }
                     );
+                    assetsToCheck.Add(
+                        new System.Collections.Generic.Dictionary<string, string>{
+                            { "key", "setting" },
+                            { "suffix", "_Setting.umap" }
+                        }
+                    );
                     foreach (System.Collections.Generic.Dictionary<string, string> checkDef in assetsToCheck) {
                         if (editsJson.ContainsKey(checkDef["key"]) && AssetPathToPakFilePathMap.ContainsKey(assetBasePath + checkDef["suffix"])) {
                             if (editsJson[checkDef["key"]]["existing_exports"].Count() > 0 || editsJson[checkDef["key"]]["new_exports"].Count() > 0) {
@@ -703,7 +715,7 @@ public class UAssetParser : Control {
             string outputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
             Godot.Collections.Dictionary<string, object> roomDefinition = new Godot.Collections.Dictionary<string, object>();
             Godot.Collections.Dictionary<string, string> levelAssets = _levelNameToAssetPathMap[levelName];
-            string[] checkKeys = new string[]{ "bg", "enemy", "enemy_hard", "enemy_normal", "gimmick" };
+            string[] checkKeys = new string[]{ "bg", "enemy", "enemy_hard", "enemy_normal", "event", "gimmick", "light", "setting", "rv" };
             foreach (string key in checkKeys) {
                 if (levelAssets.ContainsKey(key)) {
                     roomDefinition[key] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets[key], UE4Version.VER_UE4_18));

@@ -39,3 +39,8 @@ margin_top = 26.0
 margin_right = 1024.0
 margin_bottom = 600.0
 size_flags_vertical = 3
+allow_rmb_select = true
+
+[node name="AssetPopupMenu" type="PopupMenu" parent="."]
+margin_right = 16.0
+margin_bottom = 16.0

@@ -1,4 +1,5 @@
 const light_defaults: Dictionary = {
+	"mobility": "stationary",
 	"intensity": 5000,
 	"light_color": Color(1, 1, 1, 1),
 	"inner_cone_angle": 0,

@@ -4,9 +4,10 @@ var uasset_parser: Node
 
 var main_skeletal_mesh: Spatial = null
 
-func _ready():
+func _init():
 	is_tree_leaf = true
-	
+
+func _ready():
 	uasset_parser = get_node("/root/UAssetParser")
 	
 	if definition.has("children"):

@@ -1,6 +1,6 @@
 extends BaseRoom3dNode
 
-const gizmo_light_icon = preload("res://Icons/Editor/GizmoLight.svg")
+const gizmo_spot_light_icon = preload("res://Icons/Editor/GizmoSpotLight.svg")
 const node_selection_area_script = preload("res://SceneComponents/Room3dNodes/NodeSelectionArea.gd")
 const light_defaults = preload("res://Config/LightDefaults.gd").light_defaults
 const selection_box_material = preload("res://Materials/EditorSelectionBox.tres")
@@ -9,7 +9,7 @@ var camera: Camera = null
 var scale_container: Spatial = null
 var gizmo_sprite: Sprite3D = null
 var gizmo_bounds: ImmediateGeometry = null
-var omni_light: OmniLight = null
+var spot_light: SpotLight = null
 var light_default_overrides: Dictionary = {} # Set from blueprint or dynamic class
 
 func _init():
@@ -42,7 +42,7 @@ func get_light_default(property_name):
 func after_placed():
 	scale_container = Spatial.new()
 	gizmo_sprite = Sprite3D.new()
-	gizmo_sprite.texture = gizmo_light_icon
+	gizmo_sprite.texture = gizmo_spot_light_icon
 	gizmo_sprite.billboard = SpatialMaterial.BILLBOARD_ENABLED
 	gizmo_sprite.shaded = false
 	scale_container.add_child(gizmo_sprite)
@@ -67,10 +67,10 @@ func after_placed():
 	add_child(scale_container)
 	scale_container.name = "LightIconAndCollider"
 	
-	omni_light = OmniLight.new()
+	spot_light = SpotLight.new()
 	set_light_properties(definition, true)
-	add_child(omni_light)
-	omni_light.name = "OmniLight"
+	add_child(spot_light)
+	spot_light.name = "SpotLight"
 
 func set_light_properties(properties: Dictionary, fallback_to_defaults: bool = false):
 	var mobility = get_light_default("mobility")
@@ -92,22 +92,22 @@ func set_light_properties(properties: Dictionary, fallback_to_defaults: bool = f
 		light_falloff_exponent = definition["light_falloff_exponent"]
 	
 	if use_inverse_squared_falloff:
-		omni_light.light_inverse_square = true
-		omni_light.omni_attenuation = 1
+		spot_light.light_inverse_square = true
+		spot_light.spot_attenuation = 1
 	else:
-		omni_light.light_inverse_square = false
-		omni_light.omni_attenuation = light_falloff_exponent
+		spot_light.light_inverse_square = false
+		spot_light.spot_attenuation = light_falloff_exponent
 	
 	if properties.has("intensity"):
 		if use_inverse_squared_falloff:
-			omni_light.light_energy = convert_lumens_to_energy(properties["intensity"])
+			spot_light.light_energy = convert_lumens_to_energy(properties["intensity"])
 		else:
-			omni_light.light_energy = properties["intensity"]
+			spot_light.light_energy = properties["intensity"]
 	elif fallback_to_defaults:
 		if use_inverse_squared_falloff:
-			omni_light.light_energy = convert_lumens_to_energy(get_light_default("intensity"))
+			spot_light.light_energy = convert_lumens_to_energy(get_light_default("intensity"))
 		else:
-			omni_light.light_energy = get_light_default("intensity")
+			spot_light.light_energy = get_light_default("intensity")
 	
 	var light_color = get_light_default("light_color")
 	if properties.has("light_color"):
@@ -115,14 +115,14 @@ func set_light_properties(properties: Dictionary, fallback_to_defaults: bool = f
 	elif definition.has("light_color"):
 		light_color = definition["light_color"]
 	light_color.a = 1
-	omni_light.light_color = light_color
+	spot_light.light_color = light_color
 	
 	if properties.has("attenuation_radius"):
-		omni_light.omni_range = properties["attenuation_radius"]
+		spot_light.spot_range = properties["attenuation_radius"]
 		if is_selected:
 			update_gizmo_bounds()
 	elif fallback_to_defaults:
-		omni_light.omni_range = get_light_default("attenuation_radius")
+		spot_light.spot_range = get_light_default("attenuation_radius")
 	
 	# Not sure if source_radius, soft_source_radius, source_length have an equivalent in Godot.
 	
@@ -141,7 +141,7 @@ func set_light_properties(properties: Dictionary, fallback_to_defaults: bool = f
 		elif definition.has("temperature"):
 			temperature = definition["temperature"]
 		var temperature_color = convert_kelvin_to_color(temperature)
-		omni_light.light_color = Color(
+		spot_light.light_color = Color(
 			light_color.r * temperature_color.r,
 			light_color.g * temperature_color.g,
 			light_color.b * temperature_color.b,
@@ -149,21 +149,20 @@ func set_light_properties(properties: Dictionary, fallback_to_defaults: bool = f
 		)
 	
 #	if properties.has("cast_shadows"):
-#		omni_light.shadow_enabled = properties["cast_shadows"]
+#		spot_light.shadow_enabled = properties["cast_shadows"]
 #	elif fallback_to_defaults:
-#		omni_light.shadow_enabled = get_light_default("cast_shadows")
+#		spot_light.shadow_enabled = get_light_default("cast_shadows")
 	
 	if properties.has("indirect_lighting_intensity"):
-		omni_light.light_indirect_energy = properties["indirect_lighting_intensity"]
+		spot_light.light_indirect_energy = properties["indirect_lighting_intensity"]
 	elif fallback_to_defaults:
-		omni_light.light_indirect_energy = get_light_default("indirect_lighting_intensity")
+		spot_light.light_indirect_energy = get_light_default("indirect_lighting_intensity")
 	
-	omni_light.visible = mobility != "static"
+	spot_light.visible = mobility != "static"
 	
-	gizmo_sprite.modulate = omni_light.light_color
+	gizmo_sprite.modulate = spot_light.light_color
 	if mobility == "static":
 		gizmo_sprite.modulate.a = 0.5
-
 
 func convert_lumens_to_energy(lumens: float):
 	return lumens / 5000
@@ -211,21 +210,21 @@ func convert_kelvin_to_color(kelvin: float):
 func update_gizmo_bounds():
 	remove_gizmo_bounds()
 	
-	var attenuation_radius = omni_light.omni_range
+	var attenuation_radius = spot_light.spot_range
 	
-	gizmo_bounds = ImmediateGeometry.new()
-	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
-	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(0, 0, 0), 0, attenuation_radius, 0, 360, 64)
-	gizmo_bounds.end()
-	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
-	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(0, 1, 0), 90, attenuation_radius, 0, 360, 64)
-	gizmo_bounds.end()
-	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
-	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(1, 0, 0), 90, attenuation_radius, 0, 360, 64)
-	gizmo_bounds.end()
-	gizmo_bounds.material_override = selection_box_material
-	add_child(gizmo_bounds)
-	gizmo_bounds.name = "LightGizmoBounds"
+#	gizmo_bounds = ImmediateGeometry.new()
+#	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
+#	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(0, 0, 0), 0, attenuation_radius, 0, 360, 64)
+#	gizmo_bounds.end()
+#	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
+#	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(0, 1, 0), 90, attenuation_radius, 0, 360, 64)
+#	gizmo_bounds.end()
+#	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
+#	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(1, 0, 0), 90, attenuation_radius, 0, 360, 64)
+#	gizmo_bounds.end()
+#	gizmo_bounds.material_override = selection_box_material
+#	add_child(gizmo_bounds)
+#	gizmo_bounds.name = "LightGizmoBounds"
 
 func remove_gizmo_bounds():
 	if gizmo_bounds != null:

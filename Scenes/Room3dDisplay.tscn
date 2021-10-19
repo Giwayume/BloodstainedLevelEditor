@@ -27,7 +27,15 @@ script = ExtResource( 1 )
 
 [node name="enemy_normal" type="Spatial" parent="AssetTrees"]
 
+[node name="event" type="Spatial" parent="AssetTrees"]
+
 [node name="gimmick" type="Spatial" parent="AssetTrees"]
+
+[node name="light" type="Spatial" parent="AssetTrees"]
+
+[node name="setting" type="Spatial" parent="AssetTrees"]
+
+[node name="rv" type="Spatial" parent="AssetTrees"]
 
 [node name="Camera" type="Camera" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.8, 8.4, 16.3 )

@@ -64,8 +64,12 @@ func on_3d_model_loaded(new_loaded_model):
 
 func select():
 	.select()
-	if loaded_model_mesh_instance != null and not get_node_or_null("SelectionOutline"):
+	if loaded_model_mesh_instance != null:
 		loaded_model_mesh_instance.material_override = null
+		
+		var selection_mesh = get_node_or_null("SelectionMesh")
+		if selection_mesh != null:
+			selection_mesh.get_parent().remove_child(selection_mesh)
 		
 		var selection_overlay_model = loaded_model.duplicate(0)
 		for child_node in selection_overlay_model.get_children():
@@ -77,19 +81,13 @@ func select():
 		
 		model_just_selected_timeout = 0.2
 		loaded_model_mesh_instance.material_override = selection_box_material
-		
-		# loaded_model.hide()
 
 func deselect():
 	.deselect()
 	if loaded_model_mesh_instance != null:
-		var selection_outline = get_node_or_null("SelectionOutline")
-		if selection_outline != null:
-			selection_outline.get_parent().remove_child(selection_outline)
 		var selection_mesh = get_node_or_null("SelectionMesh")
 		if selection_mesh != null:
 			selection_mesh.get_parent().remove_child(selection_mesh)
-		loaded_model.show()
 
 func set_deleted(deleted: bool):
 	.set_deleted(deleted)

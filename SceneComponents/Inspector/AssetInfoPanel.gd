@@ -8,6 +8,7 @@ var editor: Node
 var expand_button: Button
 var expand_section: Control
 var export_number_display: LineEdit
+var class_asset_path_display: LineEdit
 
 var selected_nodes: Array = []
 
@@ -17,6 +18,7 @@ func _ready():
 	expand_button = find_node("ExpandButton", true, true)
 	expand_section = find_node("ExpandSection", true, true)
 	export_number_display = find_node("ExportNumberDisplay", true, true)
+	class_asset_path_display = find_node("ClassAssetPathDisplay", true, true)
 	
 	expand_button.connect("toggled", self, "on_expand_button_toggled")
 	
@@ -29,6 +31,7 @@ func set_selected_nodes(new_selected_nodes):
 func set_edits_from_selected_nodes():
 	if selected_nodes.size() == 1:
 		export_number_display.text = str(selected_nodes[0].definition["export_index"] + 1)
+		class_asset_path_display.text = str(selected_nodes[0].definition["class_asset_path"])
 
 func on_expand_button_toggled(button_pressed: bool):
 	if button_pressed:

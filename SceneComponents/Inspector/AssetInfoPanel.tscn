@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://EditorTheme/ExpandableSectionButtonHeader.tres" type="Theme" id=1]
 [ext_resource path="res://Icons/Editor/GUITreeArrowRight.svg" type="Texture" id=2]
 [ext_resource path="res://SceneComponents/Inspector/AssetInfoPanel.gd" type="Script" id=3]
+[ext_resource path="res://EditorTheme/LabelExpandTreeSectionTitle.tres" type="StyleBox" id=4]
 
 [sub_resource type="StyleBoxEmpty" id=1]
 content_margin_left = 4.0
@@ -30,46 +31,49 @@ align = 0
 [node name="ExpandSection" type="PanelContainer" parent="."]
 margin_top = 22.0
 margin_right = 1024.0
-margin_bottom = 52.0
+margin_bottom = 118.0
 custom_styles/panel = SubResource( 1 )
 
 [node name="VBoxContainer" type="VBoxContainer" parent="ExpandSection"]
 margin_left = 4.0
 margin_right = 1020.0
-margin_bottom = 26.0
+margin_bottom = 92.0
 
-[node name="MarginContainer" type="MarginContainer" parent="ExpandSection/VBoxContainer"]
+[node name="GridContainer" type="VBoxContainer" parent="ExpandSection/VBoxContainer"]
 margin_right = 1016.0
-margin_bottom = 26.0
-custom_constants/margin_top = 4
+margin_bottom = 92.0
+custom_constants/separation = 0
 
-[node name="GridContainer" type="GridContainer" parent="ExpandSection/VBoxContainer/MarginContainer"]
-margin_top = 4.0
+[node name="ExportNumberLabel" type="Label" parent="ExpandSection/VBoxContainer/GridContainer"]
 margin_right = 1016.0
-margin_bottom = 26.0
-custom_constants/vseparation = 2
-custom_constants/hseparation = 4
-columns = 2
-
-[node name="ExportNumberLabel" type="Label" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
-margin_right = 506.0
-margin_bottom = 22.0
+margin_bottom = 24.0
 size_flags_horizontal = 3
+custom_styles/normal = ExtResource( 4 )
 text = "Export Number"
 autowrap = true
 
-[node name="ExportNumberDisplayContainer" type="Control" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer"]
-margin_left = 510.0
+[node name="ExportNumberDisplay" type="LineEdit" parent="ExpandSection/VBoxContainer/GridContainer"]
+margin_top = 24.0
 margin_right = 1016.0
-margin_bottom = 22.0
-size_flags_horizontal = 3
+margin_bottom = 46.0
+editable = false
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
-[node name="ExportNumberDisplay" type="LineEdit" parent="ExpandSection/VBoxContainer/MarginContainer/GridContainer/ExportNumberDisplayContainer"]
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-margin_top = -11.0
-margin_bottom = 11.0
+[node name="ClassAssetPathLabel" type="Label" parent="ExpandSection/VBoxContainer/GridContainer"]
+margin_top = 46.0
+margin_right = 1016.0
+margin_bottom = 70.0
+size_flags_horizontal = 3
+custom_styles/normal = ExtResource( 4 )
+text = "Class Asset Path"
+autowrap = true
+
+[node name="ClassAssetPathDisplay" type="LineEdit" parent="ExpandSection/VBoxContainer/GridContainer"]
+margin_top = 70.0
+margin_right = 1016.0
+margin_bottom = 92.0
 editable = false
 __meta__ = {
 "_edit_use_anchors_": false

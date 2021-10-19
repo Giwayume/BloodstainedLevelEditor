@@ -104,6 +104,7 @@ public class UMapAsDictionaryTree {
         // Get the type of node
         FPackageIndex classIndex = export.ClassIndex;
         string nodeType = "";
+        string classAssetPath = "";
         if (classIndex.IsImport()) {
             Import classImport = classIndex.ToImport(uAsset);
             string className = classImport.ClassName.Value.Value;
@@ -112,8 +113,21 @@ public class UMapAsDictionaryTree {
             } else {
                 nodeType = className;
             }
+            if (classImport.OuterIndex.Index != 0) {
+                Import classPackageImport = classImport.OuterIndex.ToImport(uAsset);
+                string classPackageImportName = classPackageImport.ClassName.Value.Value;
+                if (classPackageImportName == "Package") {
+                    classAssetPath = classPackageImport.ObjectName.Value.Value;
+                    classAssetPath = Regex.Replace(classAssetPath, @"^\/Game/", @"/BloodstainedRotN/Content/");
+                    classAssetPath = Regex.Replace(classAssetPath, @"^[\/]", "");
+                    if (classAssetPath.StartsWith(@"BloodstainedRotN/")) {
+                        classAssetPath = classAssetPath + ".uasset";
+                    }
+                }
+            }
         }
         treeNode["type"] = nodeType;
+        treeNode["class_asset_path"] = classAssetPath;
 
         // Get the name of the node
         treeNode["name"] = export.ObjectName.Value.Value;
@@ -148,43 +162,13 @@ public class UMapAsDictionaryTree {
                     }
                 }
                 /*
-                 * STATIC MESH PROPS
-                 */
-                else if (propertyName == "StaticMesh") {
-                    if (propertyData is ObjectPropertyData objectPropertyData) {
-                        FPackageIndex staticMeshPointer = objectPropertyData.Value;
-                        if (staticMeshPointer.IsImport()) {
-                            Import staticMeshImport = staticMeshPointer.ToImport(uAsset);
-                            int packageArrayIndex = Math.Abs(staticMeshImport.OuterIndex.Index) - 1;
-                            if (packageArrayIndex > -1) {
-                                Import packageImport = uAsset.Imports[packageArrayIndex];
-                                treeNode["static_mesh_name"] = staticMeshImport.ObjectName.Value.Value;
-                                treeNode["static_mesh_name_instance"] = staticMeshImport.ObjectName.Number;
-                                // TODO - check if this actually exists, auto-suffix here for packages that use that...
-                                treeNode["static_mesh_asset_path"] = packageImport.ObjectName.Value.Value.Replace("/Game", "BloodstainedRotN/Content") + ".uasset";
-                            }
-                        }
-                    }
-                }
-                /*
-                 * CAPSULE PROPS
-                 */
-                else if (propertyName == "CapsuleHalfHeight") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["capsule_half_height"] = floatPropertyData.Value * 0.01f;
-                    }
-                }
-                else if (propertyName == "CapsuleRadius") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["capsule_radius"] = floatPropertyData.Value * 0.01f;
-                    }
-                }
-                /*
                  * CHARACTER PROPS
                  */
                 else if (propertyName == "CharacterParamaters") {
                     if (propertyData is StructPropertyData structPropertyData) {
-                        treeNode["type"] = "Character";
+                        if (classAssetPath.StartsWith("BloodstainedRotN/Content/Core/Character/")) {
+                            treeNode["type"] = "Character";
+                        }
                         foreach (PropertyData characterPropertyData in structPropertyData.Value) {
                             propertyName = characterPropertyData.Name.Value.Value;
                             if (propertyName == "CharacterId") {
@@ -197,86 +181,6 @@ public class UMapAsDictionaryTree {
                                 }
                             }
                         }
-                    }
-                }
-                /*
-                 * LIGHT PROPS
-                 */
-                else if (propertyName == "Intensity") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["intensity"] = floatPropertyData.Value;
-                    }
-                }
-                else if (propertyName == "LightColor") {
-                    if (propertyData is StructPropertyData structPropertyData) {
-                        if (structPropertyData.Value[0] is ColorPropertyData colorPropertyData) {
-                            treeNode["light_color"] = new Godot.Color(colorPropertyData.Value.R / 255f, colorPropertyData.Value.G / 255f, colorPropertyData.Value.B / 255f, colorPropertyData.Value.A / 255f);
-                        }
-                    }
-                }
-                else if (propertyName == "InnerConeAngle") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["inner_cone_angle"] = floatPropertyData.Value;
-                    }
-                }
-                else if (propertyName == "OuterConeAngle") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["outer_cone_angle"] = floatPropertyData.Value;
-                    }
-                }
-                else if (propertyName == "AttenuationRadius") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["attenuation_radius"] = floatPropertyData.Value * 0.01f;
-                    }
-                }
-                else if (propertyName == "SourceRadius") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["source_radius"] = floatPropertyData.Value * 0.01f;
-                    }
-                }
-                else if (propertyName == "SoftSourceRadius") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["soft_source_radius"] = floatPropertyData.Value * 0.01f;
-                    }
-                }
-                else if (propertyName == "SourceLength") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["source_length"] = floatPropertyData.Value * 0.01f;
-                    }
-                }
-                else if (propertyName == "Temperature") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["temperature"] = floatPropertyData.Value;
-                    }
-                }
-                else if (propertyName == "bUseTemperature") {
-                    if (propertyData is BoolPropertyData boolPropertyData) {
-                        treeNode["use_temperature"] = boolPropertyData.Value;
-                    }
-                }
-                else if (propertyName == "CastShadows") {
-                    if (propertyData is BoolPropertyData boolPropertyData) {
-                        treeNode["cast_shadows"] = boolPropertyData.Value;
-                    }
-                }
-                else if (propertyName == "bUseInverseSquaredFalloff") {
-                    if (propertyData is BoolPropertyData boolPropertyData) {
-                        treeNode["use_inverse_squared_falloff"] = boolPropertyData.Value;
-                    }
-                }
-                else if (propertyName == "LightFalloffExponent") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["light_falloff_exponent"] = floatPropertyData.Value;
-                    }
-                }
-                else if (propertyName == "IndirectLightingIntensity") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["indirect_lighting_intensity"] = floatPropertyData.Value;
-                    }
-                }
-                else if (propertyName == "VolumetricScatteringIntensity") {
-                    if (propertyData is FloatPropertyData floatPropertyData) {
-                        treeNode["volumetric_scattering_intensity"] = floatPropertyData.Value;
                     }
                 }
                 /*
@@ -300,6 +204,138 @@ public class UMapAsDictionaryTree {
                     if (propertyData is StructPropertyData structPropertyData) {
                         if (structPropertyData.Value[0] is VectorPropertyData vectorPropertyData) {
                             treeNode["scale"] = ConvertScaleFromUnrealToGodot(new float[]{vectorPropertyData.X, vectorPropertyData.Y, vectorPropertyData.Z});
+                        }
+                    }
+                }
+                else {
+                    /*
+                    * STATIC MESH PROPS
+                    */
+                    if (nodeType == "StaticMeshComponent") {
+                        if (propertyName == "StaticMesh") {
+                            if (propertyData is ObjectPropertyData objectPropertyData) {
+                                FPackageIndex staticMeshPointer = objectPropertyData.Value;
+                                if (staticMeshPointer.IsImport()) {
+                                    Import staticMeshImport = staticMeshPointer.ToImport(uAsset);
+                                    int packageArrayIndex = Math.Abs(staticMeshImport.OuterIndex.Index) - 1;
+                                    if (packageArrayIndex > -1) {
+                                        Import packageImport = uAsset.Imports[packageArrayIndex];
+                                        treeNode["static_mesh_name"] = staticMeshImport.ObjectName.Value.Value;
+                                        treeNode["static_mesh_name_instance"] = staticMeshImport.ObjectName.Number;
+                                        // TODO - check if this actually exists, auto-suffix here for packages that use that...
+                                        treeNode["static_mesh_asset_path"] = packageImport.ObjectName.Value.Value.Replace("/Game", "BloodstainedRotN/Content") + ".uasset";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    /*
+                     * CAPSULE PROPS
+                     */
+                    else if (nodeType == "CapsuleComponent") {   
+                        if (propertyName == "CapsuleHalfHeight") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["capsule_half_height"] = floatPropertyData.Value * 0.01f;
+                            }
+                        }
+                        else if (propertyName == "CapsuleRadius") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["capsule_radius"] = floatPropertyData.Value * 0.01f;
+                            }
+                        }
+                    }
+                    /*
+                     * LIGHT PROPS
+                     */
+                    else if (nodeType == "PointLightComponent" || nodeType == "SpotLightComponent") {   
+                        if (propertyName == "Mobility") {
+                            if (propertyData is BytePropertyData byteProperty) {
+                                string mobilityEnumValue = byteProperty.GetEnumFull(uAsset).Value;
+                                if (mobilityEnumValue == "EComponentMobility::Static") {
+                                    treeNode["mobility"] = "static";
+                                } else if (mobilityEnumValue == "EComponentMobility::Stationary") {
+                                    treeNode["mobility"] = "stationary";
+                                } else if (mobilityEnumValue == "EComponentMobility::Movable") {
+                                    treeNode["mobility"] = "movable";
+                                } 
+                            }
+                        }
+                        else if (propertyName == "Intensity") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["intensity"] = floatPropertyData.Value;
+                            }
+                        }
+                        else if (propertyName == "LightColor") {
+                            if (propertyData is StructPropertyData structPropertyData) {
+                                if (structPropertyData.Value[0] is ColorPropertyData colorPropertyData) {
+                                    treeNode["light_color"] = new Godot.Color(colorPropertyData.Value.R / 255f, colorPropertyData.Value.G / 255f, colorPropertyData.Value.B / 255f, colorPropertyData.Value.A / 255f);
+                                }
+                            }
+                        }
+                        else if (propertyName == "InnerConeAngle") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["inner_cone_angle"] = floatPropertyData.Value;
+                            }
+                        }
+                        else if (propertyName == "OuterConeAngle") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["outer_cone_angle"] = floatPropertyData.Value;
+                            }
+                        }
+                        else if (propertyName == "AttenuationRadius") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["attenuation_radius"] = floatPropertyData.Value * 0.01f;
+                            }
+                        }
+                        else if (propertyName == "SourceRadius") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["source_radius"] = floatPropertyData.Value * 0.01f;
+                            }
+                        }
+                        else if (propertyName == "SoftSourceRadius") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["soft_source_radius"] = floatPropertyData.Value * 0.01f;
+                            }
+                        }
+                        else if (propertyName == "SourceLength") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["source_length"] = floatPropertyData.Value * 0.01f;
+                            }
+                        }
+                        else if (propertyName == "Temperature") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["temperature"] = floatPropertyData.Value;
+                            }
+                        }
+                        else if (propertyName == "bUseTemperature") {
+                            if (propertyData is BoolPropertyData boolPropertyData) {
+                                treeNode["use_temperature"] = boolPropertyData.Value;
+                            }
+                        }
+                        else if (propertyName == "CastShadows") {
+                            if (propertyData is BoolPropertyData boolPropertyData) {
+                                treeNode["cast_shadows"] = boolPropertyData.Value;
+                            }
+                        }
+                        else if (propertyName == "bUseInverseSquaredFalloff") {
+                            if (propertyData is BoolPropertyData boolPropertyData) {
+                                treeNode["use_inverse_squared_falloff"] = boolPropertyData.Value;
+                            }
+                        }
+                        else if (propertyName == "LightFalloffExponent") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["light_falloff_exponent"] = floatPropertyData.Value;
+                            }
+                        }
+                        else if (propertyName == "IndirectLightingIntensity") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["indirect_lighting_intensity"] = floatPropertyData.Value;
+                            }
+                        }
+                        else if (propertyName == "VolumetricScatteringIntensity") {
+                            if (propertyData is FloatPropertyData floatPropertyData) {
+                                treeNode["volumetric_scattering_intensity"] = floatPropertyData.Value;
+                            }
                         }
                     }
                 }
@@ -344,6 +380,9 @@ public class UMapAsDictionaryTree {
                             export.OuterIndex = FPackageIndex.FromRawIndex(0);
                         }
                     }
+                    /*
+                     * CAPSULE PROPS
+                     */
                     else if (propName == "capsule_half_height") {
                         uAsset.AddNameReference(new FString("CapsuleHalfHeight"));
                         FloatPropertyData unrealCapsuleHalfHeight = new FloatPropertyData(new FName("CapsuleHalfHeight"));
@@ -356,6 +395,26 @@ public class UMapAsDictionaryTree {
                         unrealCapsuleRadius.Value = propValue.Value<float>() * 100f;
                         SetPropertyDataByName<FloatPropertyData>(export.Data, new FName("CapsuleRadius"), unrealCapsuleRadius);
                     }
+                    /*
+                     * LIGHT PROPS
+                     */
+                    else if (propName == "mobility") {
+                        string enumValue = propValue.Value<string>();
+                        if (enumValue == "static") {
+                            enumValue = "EComponentMobility::Static";
+                        } else if (enumValue == "movable") {
+                            enumValue = "EComponentMobility::Movable";
+                        } else {
+                            enumValue = "EComponentMobility::Stationary";
+                        }
+                        uAsset.AddNameReference(new FString("Mobility"));
+                        int mobilityEnumType = uAsset.AddNameReference(new FString("EComponentMobility"));
+                        int mobilityEnumValue = uAsset.AddNameReference(new FString(enumValue));
+                        BytePropertyData unrealMobility = new BytePropertyData(new FName("Mobility"));
+                        unrealMobility.EnumType = mobilityEnumType;
+                        unrealMobility.Value = mobilityEnumValue;
+                        SetPropertyDataByName<BytePropertyData>(export.Data, new FName("Mobility"), unrealMobility);
+                    }
                     else if (propName == "intensity") {
                         uAsset.AddNameReference(new FString("Intensity"));
                         FloatPropertyData unrealIntensity = new FloatPropertyData(new FName("Intensity"));
@@ -363,7 +422,6 @@ public class UMapAsDictionaryTree {
                         SetPropertyDataByName<FloatPropertyData>(export.Data, new FName("Intensity"), unrealIntensity);
                     }
                     else if (propName == "light_color") {
-                        GD.Print("here");
                         JObject lightColorObject = (JObject)propValue;
                         uAsset.AddNameReference(new FString("LightColor"));
                         uAsset.AddNameReference(new FString("Color"));
@@ -456,6 +514,9 @@ public class UMapAsDictionaryTree {
                         unrealVolumetricScatteringIntensity.Value = propValue.Value<float>();
                         SetPropertyDataByName<FloatPropertyData>(export.Data, new FName("VolumetricScatteringIntensity"), unrealVolumetricScatteringIntensity);
                     }
+                    /*
+                     * TRANSFORM PROPS
+                     */
                     else if (propName == "translation") {
                         JObject translationObject = (JObject)propValue;
                         uAsset.AddNameReference(new FString("RelativeLocation"));

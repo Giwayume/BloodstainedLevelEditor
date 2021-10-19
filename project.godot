@@ -148,5 +148,6 @@ common/enable_pause_aware_picking=true
 
 [rendering]
 
-limits/rendering/max_lights_per_object=128
+quality/shadows/filter_mode=2
+limits/rendering/max_lights_per_object=512
 environment/default_environment="res://default_env.tres"

@@ -20,10 +20,17 @@ var selected_nodes: Array = []
 var focused_edit = null
 var ignore_edit_signals: bool = false
 
+enum { OPTION_MOBILITY_STATIC, OPTION_MOBILITY_STATIONARY, OPTION_MOBILITY_MOVABLE }
+
 func _ready():
 	editor = get_node("/root/Editor")
 
 	edits = {
+		"mobility": {
+			"label": find_node("MobilityLabel", true, true),
+			"edit_container": find_node("MobilityEditContainer", true, true),
+			"edit": find_node("MobilityEdit", true, true)
+		},
 		"intensity": {
 			"label": find_node("IntensityLabel", true, true),
 			"edit_container": find_node("IntensityEditContainer", true, true),
@@ -96,6 +103,10 @@ func _ready():
 		}
 	}
 
+	edits.mobility.edit.add_item("Static", OPTION_MOBILITY_STATIC)
+	edits.mobility.edit.add_item("Stationary", OPTION_MOBILITY_STATIONARY)
+	edits.mobility.edit.add_item("Movable", OPTION_MOBILITY_MOVABLE)
+
 	expand_button = find_node("ExpandButton", true, true)
 	expand_section = find_node("ExpandSection", true, true)
 	
@@ -103,6 +114,8 @@ func _ready():
 	expand_button.connect("toggled", self, "on_expand_button_toggled")
 	
 	for edit in edits:
+		if edits[edit]["edit"] is OptionButton:
+			edits[edit]["edit"].connect("item_selected", self, "on_edit_option_button_item_selected", [edit])
 		if edits[edit]["edit"] is RangeEdit:
 			edits[edit]["edit"].connect("value_changed", self, "on_edit_range_value_changed", [edit])
 			edits[edit]["edit"].connect("value_committed", self, "on_edit_range_value_committed", [edit])
@@ -123,7 +136,22 @@ func _exit_tree():
 func on_history_changed(action: HistoryAction):
 	if action.get_ids().has(HistoryAction.ID.UPDATE_LIGHT):
 		set_edits_from_selected_nodes()
-	
+
+func on_edit_option_button_item_selected(index: int, field: String):
+	if not ignore_edit_signals:
+		var node = selected_nodes[0].selection_light_node
+		var new_value = "stationary";
+		if index == OPTION_MOBILITY_STATIC:
+			new_value = "static"
+		if index == OPTION_MOBILITY_MOVABLE:
+			new_value = "movable"
+		var old_value = null
+		if node.definition.has("field"):
+			old_value = node.definition[field]
+		editor.do_action(
+			UpdateLightAction.new(node, { field: new_value }, { field: old_value })
+		)
+
 func on_edit_range_value_changed(new_value: float, field: String):
 	if not ignore_edit_signals:
 		edit_start_selected_nodes = selected_nodes
@@ -132,7 +160,7 @@ func on_edit_range_value_changed(new_value: float, field: String):
 			if node.definition.has(field):
 				edit_start_values[field] = node.definition[field]
 			else:
-				edit_start_values[field] = light_defaults[field]
+				edit_start_values[field] = null
 		if "radius" in field:
 			new_value = new_value * 0.01
 		node.set_light_properties({
@@ -156,8 +184,11 @@ func on_edit_range_value_committed(new_value: float, field: String):
 func on_edit_check_button_toggled(button_pressed: bool, field: String):
 	if not ignore_edit_signals:
 		var node = selected_nodes[0].selection_light_node
+		var old_value = null
+		if node.definition.has(field):
+			old_value = node.definition[field]
 		editor.do_action(
-			UpdateLightAction.new(node, { field: button_pressed }, { field: !button_pressed })
+			UpdateLightAction.new(node, { field: button_pressed }, { field: old_value })
 		)
 
 func on_edit_color_picker_button_popup_about_to_show(field: String):
@@ -166,7 +197,7 @@ func on_edit_color_picker_button_popup_about_to_show(field: String):
 	if node.definition.has(field):
 		edit_start_values[field] = node.definition[field]
 	else:
-		edit_start_values[field] = light_defaults[field]
+		edit_start_values[field] = null
 	emit_signal("popup_blocking_changed", true)
 
 func on_edit_color_picker_button_color_changed(color: Color, field: String):
@@ -228,76 +259,86 @@ func set_edits_from_selected_nodes():
 			if definition.has("inner_cone_angle"):
 				edits["inner_cone_angle"].edit.value = definition["inner_cone_angle"]
 			else:
-				edits["inner_cone_angle"].edit.value = light_defaults["inner_cone_angle"]
+				edits["inner_cone_angle"].edit.value = node.get_light_default("inner_cone_angle")
 			if definition.has("outer_cone_angle"):
 				edits["outer_cone_angle"].edit.value = definition["outer_cone_angle"]
 			else:
-				edits["outer_cone_angle"].edit.value = light_defaults["outer_cone_angle"]
+				edits["outer_cone_angle"].edit.value = node.get_light_default("outer_cone_angle")
 		else:
 			edits["inner_cone_angle"].label.hide()
 			edits["inner_cone_angle"].edit_container.hide()
 			edits["outer_cone_angle"].label.hide()
 			edits["outer_cone_angle"].edit_container.hide()
 		
+		var mobility = node.get_light_default("mobility")
+		if definition.has("mobility"):
+			mobility = definition["mobility"]
+		if mobility == "static":
+			edits["mobility"].edit.selected = OPTION_MOBILITY_STATIC
+		elif mobility == "movable":
+			edits["mobility"].edit.selected = OPTION_MOBILITY_MOVABLE
+		else:
+			edits["mobility"].edit.selected = OPTION_MOBILITY_STATIONARY
+		
 		if definition.has("intensity"):
 			edits["intensity"].edit.value = definition["intensity"]
 		else:
-			edits["intensity"].edit.value = light_defaults["intensity"]
+			edits["intensity"].edit.value = node.get_light_default("intensity")
 		
 		if definition.has("light_color"):
 			edits["light_color"].edit.color = definition["light_color"]
 		else:
-			edits["light_color"].edit.color = light_defaults["light_color"]
+			edits["light_color"].edit.color = node.get_light_default("light_color")
 		
 		if definition.has("attenuation_radius"):
 			edits["attenuation_radius"].edit.value = stepify(definition["attenuation_radius"] * 100, 0.0001)
 		else:
-			edits["attenuation_radius"].edit.value = stepify(light_defaults["attenuation_radius"] * 100, 0.0001)
+			edits["attenuation_radius"].edit.value = stepify(node.get_light_default("attenuation_radius") * 100, 0.0001)
 		
 		if definition.has("source_radius"):
 			edits["source_radius"].edit.value = stepify(definition["source_radius"] * 100, 0.0001)
 		else:
-			edits["source_radius"].edit.value = stepify(light_defaults["source_radius"] * 100, 0.0001)
+			edits["source_radius"].edit.value = stepify(node.get_light_default("source_radius") * 100, 0.0001)
 		
 		if definition.has("soft_source_radius"):
 			edits["soft_source_radius"].edit.value = stepify(definition["soft_source_radius"] * 100, 0.0001)
 		else:
-			edits["soft_source_radius"].edit.value = stepify(light_defaults["soft_source_radius"] * 100, 0.0001)
+			edits["soft_source_radius"].edit.value = stepify(node.get_light_default("soft_source_radius") * 100, 0.0001)
 		
 		if definition.has("source_length"):
 			edits["source_length"].edit.value = stepify(definition["source_length"] * 100, 0.0001)
 		else:
-			edits["source_length"].edit.value = stepify(light_defaults["source_length"] * 100, 0.0001)
+			edits["source_length"].edit.value = stepify(node.get_light_default("source_length") * 100, 0.0001)
 		
 		if definition.has("use_temperature"):
 			edits["use_temperature"].edit.pressed = definition["use_temperature"]
 		else:
-			edits["use_temperature"].edit.pressed = light_defaults["use_temperature"]
+			edits["use_temperature"].edit.pressed = node.get_light_default("use_temperature")
 		
 		if definition.has("temperature"):
 			edits["temperature"].edit.value = definition["temperature"]
 		else:
-			edits["temperature"].edit.value = light_defaults["temperature"]
+			edits["temperature"].edit.value = node.get_light_default("temperature")
 		
 		if definition.has("cast_shadows"):
 			edits["cast_shadows"].edit.pressed = definition["cast_shadows"]
 		else:
-			edits["cast_shadows"].edit.pressed = light_defaults["cast_shadows"]
+			edits["cast_shadows"].edit.pressed = node.get_light_default("cast_shadows")
 		
 		if definition.has("use_inverse_squared_falloff"):
 			edits["use_inverse_squared_falloff"].edit.pressed = definition["use_inverse_squared_falloff"]
 		else:
-			edits["use_inverse_squared_falloff"].edit.pressed = light_defaults["use_inverse_squared_falloff"]
+			edits["use_inverse_squared_falloff"].edit.pressed = node.get_light_default("use_inverse_squared_falloff")
 		
 		if definition.has("indirect_lighting_intensity"):
 			edits["indirect_lighting_intensity"].edit.value = definition["indirect_lighting_intensity"]
 		else:
-			edits["indirect_lighting_intensity"].edit.value = light_defaults["indirect_lighting_intensity"]
+			edits["indirect_lighting_intensity"].edit.value = node.get_light_default("indirect_lighting_intensity")
 		
 		if definition.has("volumetric_scattering_intensity"):
 			edits["volumetric_scattering_intensity"].edit.value = definition["volumetric_scattering_intensity"]
 		else:
-			edits["volumetric_scattering_intensity"].edit.value = light_defaults["volumetric_scattering_intensity"]
+			edits["volumetric_scattering_intensity"].edit.value = node.get_light_default("volumetric_scattering_intensity")
 	ignore_edit_signals = false
 
 func focused_edit_regrab_focus():

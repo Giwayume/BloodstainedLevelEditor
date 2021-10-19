@@ -31,6 +31,10 @@ var custom_component_scripts = {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/PBMeshParentComponent.gd")
 	},
+	"PointLight": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/PointLight.gd")
+	},
 	"PointLightComponent": {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/PointLightComponent.gd")
@@ -42,6 +46,14 @@ var custom_component_scripts = {
 	"SkeletalMeshComponent": {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/SkeletalMeshComponent.gd")
+	},
+	"SpotLight": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/SpotLight.gd")
+	},
+	"SpotLightComponent": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/SpotLightComponent.gd")
 	},
 	"StaticMeshActor": {
 		"auto_placement": false,
@@ -99,7 +111,11 @@ func _ready():
 		"enemy": $AssetTrees/enemy,
 		"enemy_hard": $AssetTrees/enemy_hard,
 		"enemy_normal": $AssetTrees/enemy_normal,
-		"gimmick": $AssetTrees/gimmick
+		"event": $AssetTrees/event,
+		"gimmick": $AssetTrees/gimmick,
+		"light": $AssetTrees/light,
+		"setting": $AssetTrees/setting,
+		"rv": $AssetTrees/rv
 	}
 	camera = get_node("Camera")
 

@@ -3,9 +3,12 @@ extends Control
 
 var viewport_ui_container_normal_style = preload("res://EditorTheme/ViewportUiContainerNormal.tres")
 var viewport_ui_container_focus_style = preload("res://EditorTheme/ViewportUiContainerFocus.tres")
+var icon_action_copy = preload("res://Icons/Editor/ActionCopy.svg")
 var icon_remove = preload("res://Icons/Editor/Remove.svg")
 var icon_reload = preload("res://Icons/Editor/Reload.svg")
 var selectable_types = ["StaticMeshActor", "StaticMeshComponent"]
+
+var default_level_name = "m02VIL_003"
 
 var editor: Node
 var uasset_parser: Node
@@ -81,6 +84,38 @@ var trees: Dictionary = {
 		"node_id_map": {},
 		"tree_id_map": {},
 		"restore_collapse_state": {}
+	},
+	"setting": {
+		"tab_index": 3,
+		"tree": null,
+		"root_item": null,
+		"node_id_map": {},
+		"tree_id_map": {},
+		"restore_collapse_state": {}
+	},
+	"event": {
+		"tab_index": 4,
+		"tree": null,
+		"root_item": null,
+		"node_id_map": {},
+		"tree_id_map": {},
+		"restore_collapse_state": {}
+	},
+	"light": {
+		"tab_index": 5,
+		"tree": null,
+		"root_item": null,
+		"node_id_map": {},
+		"tree_id_map": {},
+		"restore_collapse_state": {}
+	},
+	"rv": {
+		"tab_index": 6,
+		"tree": null,
+		"root_item": null,
+		"node_id_map": {},
+		"tree_id_map": {},
+		"restore_collapse_state": {}
 	}
 }
 enum { TREE_POPUP_ADD, TREE_POPUP_CLONE, TREE_POPUP_DELETE, TREE_POPUP_UNDELETE }
@@ -122,7 +157,7 @@ func _ready():
 	if not editor.selected_package:
 		editor.selected_package = "MyTest"
 	if not editor.selected_level_name:
-		editor.selected_level_name = "m02VIL_006"
+		editor.selected_level_name = default_level_name
 	
 	asset_explorer = find_node("AssetExplorer", true, true)
 	enemy_difficulty_select_option_button = find_node("EnemyDifficultySelectOptionButton", true, true)
@@ -149,7 +184,11 @@ func _ready():
 	trees["enemy"].tree = find_node("EnemySharedTree", true, true)
 	trees["enemy_hard"].tree = find_node("EnemyHardTree", true, true)
 	trees["enemy_normal"].tree = find_node("EnemyNormalTree", true, true)
+	trees["event"].tree = find_node("EventTree", true, true)
 	trees["gimmick"].tree = find_node("GimmickTree", true, true)
+	trees["light"].tree = find_node("LightTree", true, true)
+	trees["setting"].tree = find_node("SettingTree", true, true)
+	trees["rv"].tree = find_node("RvTree", true, true)
 	tree_popup_menu = find_node("TreePopupMenu", true, true)
 	viewport_toolbar = find_node("RoomEditViewportToolbar", true, true)
 	
@@ -316,27 +355,56 @@ func threads_finished():
 func on_panel_popup_blocking_changed(blocking: bool):
 	is_panel_popup_blocking = blocking
 
+var tree_multi_selection_buffer = null
+
 func on_tree_multi_selected(item: TreeItem, column: int, selected: bool, tree_name: String):
 	if not ignore_tree_multi_selected_signal:
 		ignore_tree_multi_selected_signal = true
-		if selected:
-			for node in room_3d_display.selected_nodes:
-				if node.tree_name != tree_name:
+		if tree_multi_selection_buffer == null:
+			tree_multi_selection_buffer = []
+		tree_multi_selection_buffer.push_back({
+			"item": item,
+			"column": column,
+			"selected": selected,
+			"tree_name": tree_name
+		})
+		call_deferred("on_tree_multi_selected_deferred")
+		ignore_tree_multi_selected_signal = false
+
+func tree_multi_selection_buffer_compare(a, b):
+	if !a.selected && b.selected:
+		return true
+	return false
+
+func on_tree_multi_selected_deferred():
+	if not ignore_tree_multi_selected_signal:
+		ignore_tree_multi_selected_signal = true
+		if tree_multi_selection_buffer != null:
+			tree_multi_selection_buffer.sort_custom(self, "tree_multi_selection_buffer_compare")
+			for multi_selection in tree_multi_selection_buffer:
+				var item = multi_selection["item"]
+				var column = multi_selection["column"]
+				var selected = multi_selection["selected"]
+				var tree_name = multi_selection["tree_name"]
+				if selected:
+					for node in room_3d_display.selected_nodes:
+						if node.tree_name != tree_name:
+							node.deselect()
+							room_3d_display.selected_nodes.erase(node)
+							trees[node.tree_name].tree_id_map[node.definition.export_index].deselect(0)
+				var selected_nodes = room_3d_display.selected_nodes
+				var current_tree: Dictionary = trees[tree_name]
+				var export_index: int = item.get_metadata(0).export_index
+				var node = current_tree.node_id_map[export_index]
+				if selected:
+					node.select()
+					room_3d_display.selected_nodes.push_back(node)
+				else:
 					node.deselect()
 					room_3d_display.selected_nodes.erase(node)
-					trees[node.tree_name].tree_id_map[node.definition.export_index].deselect(0)
-		var selected_nodes = room_3d_display.selected_nodes
-		var current_tree: Dictionary = trees[tree_name]
-		var export_index: int = item.get_metadata(0).export_index
-		var node = current_tree.node_id_map[export_index]
-		if selected:
-			node.select()
-			room_3d_display.selected_nodes.push_back(node)
-		else:
-			node.deselect()
-			room_3d_display.selected_nodes.erase(node)
-		update_panels_after_selection()
-		update_3d_cursor_position()
+			update_panels_after_selection()
+			update_3d_cursor_position()
+			tree_multi_selection_buffer = null
 		ignore_tree_multi_selected_signal = false
 
 func on_tree_rmb_selected(position: Vector2, tree_name: String):
@@ -746,10 +814,13 @@ func build_tree_popup_menu():
 			continue
 		if item.id == TREE_POPUP_UNDELETE and is_delete_option:
 			continue
-		if item.type == "icon":
-			tree_popup_menu.add_icon_item(item.texture, item.label, item.id)
-		elif item.type == "separator":
-			tree_popup_menu.add_separator()
+		build_popup_menu_item(item, tree_popup_menu)
+
+func build_popup_menu_item(item, popup_menu):
+	if item.type == "icon":
+		popup_menu.add_icon_item(item.texture, item.label, item.id)
+	elif item.type == "separator":
+		popup_menu.add_separator()
 
 func build_object_outlines():
 	for tree_name in trees:
@@ -793,7 +864,7 @@ func build_object_outline(tree: Tree, parent_item: TreeItem, tree_id_map: Dictio
 			tree_item.set_suffix(0, "(DELETED)")
 		tree_id_map[export_index] = tree_item
 		node_id_map[export_index] = child_node
-		if not child_node.is_tree_leaf and not is_deleted:
+		if not is_deleted:
 			build_object_outline(tree, tree_item, tree_id_map, node_id_map, restore_collapse_state, child_node)
 
 func tree_uncollapse_from_item(item: TreeItem):
