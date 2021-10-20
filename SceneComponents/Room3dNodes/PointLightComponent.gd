@@ -10,7 +10,10 @@ var scale_container: Spatial = null
 var gizmo_sprite: Sprite3D = null
 var gizmo_bounds: ImmediateGeometry = null
 var omni_light: OmniLight = null
+var collision_area: Area = null
+
 var light_default_overrides: Dictionary = {} # Set from blueprint or dynamic class
+var is_gizmo_hidden: bool = false
 
 func _init():
 	selection_transform_node = self
@@ -25,13 +28,27 @@ func _ready():
 	if definition.has("scale"):
 		scale = definition["scale"]
 	
+	room_3d_display.connect("view_gizmo_toggled", self, "on_view_gizmo_toggled")
+	
 	call_deferred("after_placed")
 
 func _process(_delta):
 	if camera:
-		if scale_container:
+		if scale_container and not is_gizmo_hidden:
 			var fixed_scale = get_global_transform().origin.distance_to(camera.translation) / 12
 			scale_container.scale = Vector3(fixed_scale, fixed_scale, fixed_scale)
+
+func on_view_gizmo_toggled(gizmo_name: String, is_checked: bool):
+	if gizmo_name == "light":
+		is_gizmo_hidden = !is_checked
+		scale_container.visible = is_checked
+		if not is_checked:
+			collision_area.collision_layer = 0
+		elif can_enable_collision_area():
+			collision_area.collision_layer = PhysicsLayers3d.layers.editor_select_light
+
+func can_enable_collision_area():
+	return not is_in_deleted_branch and not is_in_hidden_branch and not is_gizmo_hidden
 
 func get_light_default(property_name):
 	if light_default_overrides.has(property_name):
@@ -48,21 +65,21 @@ func after_placed():
 	scale_container.add_child(gizmo_sprite)
 	gizmo_sprite.name = "LightGizmoSprite"
 	
-	var area = Area.new()
-	area.set_script(node_selection_area_script)
-	area.selectable_parent = self
+	collision_area = Area.new()
+	collision_area.set_script(node_selection_area_script)
+	collision_area.selectable_parent = self
 	var collision_shape = CollisionShape.new()
 	var box_shape = SphereShape.new()
 	box_shape.radius = .6
 	if is_in_deleted_branch or is_in_hidden_branch:
-		area.collision_layer = 0
+		collision_area.collision_layer = 0
 	else:
-		area.collision_layer = PhysicsLayers3d.layers.editor_select_light
-	area.collision_mask = PhysicsLayers3d.layers.none
+		collision_area.collision_layer = PhysicsLayers3d.layers.editor_select_light
+	collision_area.collision_mask = PhysicsLayers3d.layers.none
 	collision_shape.set_shape(box_shape)
-	area.add_child(collision_shape)
-	scale_container.add_child(area)
-	area.name = "CollisionArea"
+	collision_area.add_child(collision_shape)
+	scale_container.add_child(collision_area)
+	collision_area.name = "CollisionArea"
 	
 	add_child(scale_container)
 	scale_container.name = "LightIconAndCollider"
@@ -233,6 +250,28 @@ func remove_gizmo_bounds():
 		if gizmo_bounds_parent:
 			gizmo_bounds_parent.remove_child(gizmo_bounds)
 		gizmo_bounds = null
+
+func set_deleted(deleted: bool):
+	.set_deleted(deleted)
+	var collision_area = get_node_or_null("CollisionArea")
+	if collision_area:
+		if deleted:
+			collision_area.collision_layer = 0
+			hide()
+		elif can_enable_collision_area():
+			collision_area.collision_layer = PhysicsLayers3d.layers.editor_select_light
+			show()
+
+func set_hidden(hidden: bool):
+	.set_hidden(hidden)
+	var collision_area = get_node_or_null("CollisionArea")
+	if collision_area:
+		if hidden:
+			collision_area.collision_layer = 0
+			hide()
+		elif can_enable_collision_area():
+			collision_area.collision_layer = PhysicsLayers3d.layers.editor_select_light
+			show()
 
 func select():
 	.select()

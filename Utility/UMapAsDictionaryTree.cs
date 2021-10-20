@@ -583,11 +583,17 @@ public class UMapAsDictionaryTree {
     }
 
     static Vector3 ConvertRotationFromUnrealToGodot(float[] unrealRotation) {
-        return new Vector3(
-            unrealRotation[2],
-            -unrealRotation[1],
-            unrealRotation[0]
+        Spatial spatial = new Spatial();
+        spatial.RotateX(Mathf.Deg2Rad(unrealRotation[2])); // Roll
+        spatial.RotateZ(Mathf.Deg2Rad(unrealRotation[0])); // Pitch
+        spatial.RotateY(Mathf.Deg2Rad(-unrealRotation[1])); // Yaw
+        Vector3 godotRotation = new Vector3(
+            spatial.RotationDegrees.x,
+            spatial.RotationDegrees.y,
+            spatial.RotationDegrees.z
         );
+        spatial = null;
+        return godotRotation;
     }
 
     static Vector3 ConvertScaleFromUnrealToGodot(float[] unrealScale) {
@@ -608,9 +614,14 @@ public class UMapAsDictionaryTree {
 
     static RotatorPropertyData ConvertRotationFromGodotToUnreal(Vector3 godotRotation) {
         RotatorPropertyData unrealRotation = new RotatorPropertyData(new FName("RelativeRotation"));
-        unrealRotation.Pitch = godotRotation.z;
-        unrealRotation.Yaw = -godotRotation.y;
-        unrealRotation.Roll = godotRotation.x;
+        Spatial spatial = new Spatial();
+        spatial.RotateX(Mathf.Deg2Rad(godotRotation.z));
+        spatial.RotateZ(Mathf.Deg2Rad(godotRotation.x));
+        spatial.RotateY(Mathf.Deg2Rad(-godotRotation.y));
+        unrealRotation.Pitch = spatial.RotationDegrees.x;
+        unrealRotation.Yaw = spatial.RotationDegrees.y;
+        unrealRotation.Roll = spatial.RotationDegrees.z;
+        spatial = null;
         return unrealRotation;
     }
 

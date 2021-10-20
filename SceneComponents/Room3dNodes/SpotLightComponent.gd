@@ -34,7 +34,7 @@ func _ready():
 
 func _process(_delta):
 	if camera:
-		if scale_container:
+		if scale_container and not is_gizmo_hidden:
 			var fixed_scale = get_global_transform().origin.distance_to(camera.translation) / 12
 			scale_container.scale = Vector3(fixed_scale, fixed_scale, fixed_scale)
 
@@ -44,10 +44,8 @@ func on_view_gizmo_toggled(gizmo_name: String, is_checked: bool):
 		scale_container.visible = is_checked
 		if not is_checked:
 			collision_area.collision_layer = 0
-			hide()
 		elif can_enable_collision_area():
 			collision_area.collision_layer = PhysicsLayers3d.layers.editor_select_light
-			show()
 
 func can_enable_collision_area():
 	return not is_in_deleted_branch and not is_in_hidden_branch and not is_gizmo_hidden
