@@ -40,6 +40,10 @@ var custom_component_scripts = {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/PBMeshParentComponent.gd")
 	},
+	"PlayerStart": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/PlayerStart.gd")
+	},
 	"PointLight": {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/PointLight.gd")

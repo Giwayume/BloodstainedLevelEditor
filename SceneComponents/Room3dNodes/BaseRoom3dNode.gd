@@ -16,9 +16,27 @@ var is_selected: bool = false
 
 func select():
 	is_selected = true
+	if is_tree_leaf:
+		select_all_children()
 
 func deselect():
 	is_selected = false
+	if is_tree_leaf:
+		deselect_all_children()
+
+func select_all_children(parent: Spatial = self):
+	for child in parent.get_children():
+		if child.has_method("select"):
+			child.select()
+			if not child.is_tree_leaf:
+				select_all_children(child)
+
+func deselect_all_children(parent: Spatial = self):
+	for child in parent.get_children():
+		if child.has_method("deselect"):
+			child.deselect()
+			if not child.is_tree_leaf:
+				deselect_all_children(child)
 
 func set_deleted(deleted: bool):
 	is_in_deleted_branch = deleted
