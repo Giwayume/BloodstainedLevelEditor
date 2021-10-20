@@ -18,7 +18,15 @@ Target functionality:
     - [ ] Load textures/materials as best as we can
     - [x] Remove meshes
 - [ ] Add any existing 3D model in the game to any room as a static mesh
-- [ ] Add/edit/remove lights
+- [x] Lights
+    - [ ] Add
+    - [x] Edit
+    - [x] Remove
+    - [x] Point lights
+    - [ ] Spot lights
+    - [ ] Directional lights
+    - [ ] Temporary solution: allow deletion of light/shadow maps, auto disable static lights, auto convert stationary to movable
+    - [ ] Permanent solution: figure out how to create light/shadow maps & implement ray traced map baker in editor.
 - [ ] Support "Splines" (used in many levels for the basic level geometry, especially the underground levels)
 - [ ] Add/Remove collision boxes in any room
 - [ ] Disable cutscenes

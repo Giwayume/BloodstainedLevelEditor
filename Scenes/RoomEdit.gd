@@ -8,7 +8,7 @@ var icon_remove = preload("res://Icons/Editor/Remove.svg")
 var icon_reload = preload("res://Icons/Editor/Reload.svg")
 var selectable_types = ["StaticMeshActor", "StaticMeshComponent"]
 
-var default_level_name = "m02VIL_003"
+var default_level_name = "m04GDN_006"
 
 var editor: Node
 var uasset_parser: Node
@@ -230,7 +230,9 @@ func _ready():
 	room_editor_controls_display_cursor.connect("translate_preview", self, "on_translate_preview_selection")
 	room_editor_controls_display_cursor.connect("translate", self, "on_translate_selection")
 	tree_popup_menu.connect("id_pressed", self, "on_tree_popup_menu_id_pressed")
+	viewport_toolbar.connect("popup_visibility_changed", self, "on_menu_bar_popup_visibility_changed")
 	viewport_toolbar.connect("tool_changed", self, "on_tool_changed")
+	viewport_toolbar.connect("view_gizmo_toggled", self, "on_view_gizmo_toggled")
 	
 	start_parse_pak_thread()
 
@@ -537,6 +539,9 @@ func on_tool_changed(new_tool: String):
 		room_editor_controls_display_cursor.set_disabled(selection_count == 0)
 	else:
 		room_editor_controls_display_cursor.set_disabled(true)
+
+func on_view_gizmo_toggled(gizmo_name: String, toggled: bool):
+	room_3d_display.emit_signal("view_gizmo_toggled", gizmo_name, toggled)
 
 func on_rotate_preview_selection(axis: Vector3, phi: float):
 	var rotate_transform = Transform()

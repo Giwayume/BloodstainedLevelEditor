@@ -76,3 +76,13 @@ func start_model_load(meshes: Array):
 				print_debug("DynamicClass load mesh asset not found: ", load_def.mesh)
 		else:
 			print_debug("DynamicClass mesh node not found: ", load_def.object_name, " ", load_def.object_type)
+
+func select():
+	.select()
+	if selection_transform_node != null:
+		selection_transform_node.select()
+
+func deselect():
+	.deselect()
+	if selection_transform_node != null:
+		selection_transform_node.deselect()

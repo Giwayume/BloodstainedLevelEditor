@@ -290,25 +290,49 @@ func set_edits_from_selected_nodes():
 		else:
 			edits["light_color"].edit.color = node.get_light_default("light_color")
 		
-		if definition.has("attenuation_radius"):
-			edits["attenuation_radius"].edit.value = stepify(definition["attenuation_radius"] * 100, 0.0001)
+		if type == "SpotLightComponent" or type == "PointLightComponent":
+			edits["attenuation_radius"].label.show()
+			edits["attenuation_radius"].edit_container.show()
+			if definition.has("attenuation_radius"):
+				edits["attenuation_radius"].edit.value = stepify(definition["attenuation_radius"] * 100, 0.0001)
+			else:
+				edits["attenuation_radius"].edit.value = stepify(node.get_light_default("attenuation_radius") * 100, 0.0001)
 		else:
-			edits["attenuation_radius"].edit.value = stepify(node.get_light_default("attenuation_radius") * 100, 0.0001)
+			edits["attenuation_radius"].label.hide()
+			edits["attenuation_radius"].edit_container.hide()
 		
-		if definition.has("source_radius"):
-			edits["source_radius"].edit.value = stepify(definition["source_radius"] * 100, 0.0001)
+		if type == "SpotLightComponent" or type == "PointLightComponent":
+			edits["source_radius"].label.show()
+			edits["source_radius"].edit_container.show()
+			if definition.has("source_radius"):
+				edits["source_radius"].edit.value = stepify(definition["source_radius"] * 100, 0.0001)
+			else:
+				edits["source_radius"].edit.value = stepify(node.get_light_default("source_radius") * 100, 0.0001)
 		else:
-			edits["source_radius"].edit.value = stepify(node.get_light_default("source_radius") * 100, 0.0001)
+			edits["source_radius"].label.hide()
+			edits["source_radius"].edit_container.hide()
 		
-		if definition.has("soft_source_radius"):
-			edits["soft_source_radius"].edit.value = stepify(definition["soft_source_radius"] * 100, 0.0001)
+		if type == "SpotLightComponent" or type == "PointLightComponent":
+			edits["soft_source_radius"].label.show()
+			edits["soft_source_radius"].edit_container.show()
+			if definition.has("soft_source_radius"):
+				edits["soft_source_radius"].edit.value = stepify(definition["soft_source_radius"] * 100, 0.0001)
+			else:
+				edits["soft_source_radius"].edit.value = stepify(node.get_light_default("soft_source_radius") * 100, 0.0001)
 		else:
-			edits["soft_source_radius"].edit.value = stepify(node.get_light_default("soft_source_radius") * 100, 0.0001)
+			edits["soft_source_radius"].label.hide()
+			edits["soft_source_radius"].edit_container.hide()
 		
-		if definition.has("source_length"):
-			edits["source_length"].edit.value = stepify(definition["source_length"] * 100, 0.0001)
+		if type == "SpotLightComponent" or type == "PointLightComponent":
+			edits["source_length"].label.show()
+			edits["source_length"].edit_container.show()
+			if definition.has("source_length"):
+				edits["source_length"].edit.value = stepify(definition["source_length"] * 100, 0.0001)
+			else:
+				edits["source_length"].edit.value = stepify(node.get_light_default("source_length") * 100, 0.0001)
 		else:
-			edits["source_length"].edit.value = stepify(node.get_light_default("source_length") * 100, 0.0001)
+			edits["source_length"].label.hide()
+			edits["source_length"].edit_container.hide()
 		
 		if definition.has("use_temperature"):
 			edits["use_temperature"].edit.pressed = definition["use_temperature"]
@@ -325,10 +349,16 @@ func set_edits_from_selected_nodes():
 		else:
 			edits["cast_shadows"].edit.pressed = node.get_light_default("cast_shadows")
 		
-		if definition.has("use_inverse_squared_falloff"):
-			edits["use_inverse_squared_falloff"].edit.pressed = definition["use_inverse_squared_falloff"]
+		if type == "SpotLightComponent" or type == "PointLightComponent":
+			edits["use_inverse_squared_falloff"].label.show()
+			edits["use_inverse_squared_falloff"].edit_container.show()
+			if definition.has("use_inverse_squared_falloff"):
+				edits["use_inverse_squared_falloff"].edit.pressed = definition["use_inverse_squared_falloff"]
+			else:
+				edits["use_inverse_squared_falloff"].edit.pressed = node.get_light_default("use_inverse_squared_falloff")
 		else:
-			edits["use_inverse_squared_falloff"].edit.pressed = node.get_light_default("use_inverse_squared_falloff")
+			edits["use_inverse_squared_falloff"].label.hide()
+			edits["use_inverse_squared_falloff"].edit_container.hide()
 		
 		if definition.has("indirect_lighting_intensity"):
 			edits["indirect_lighting_intensity"].edit.value = definition["indirect_lighting_intensity"]

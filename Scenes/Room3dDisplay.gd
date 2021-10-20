@@ -3,6 +3,7 @@ extends Spatial
 signal loading_start
 signal loading_end
 signal selection_changed
+signal view_gizmo_toggled
 
 const light_defaults = preload("res://Config/LightDefaults.gd").light_defaults;
 
@@ -18,6 +19,14 @@ var custom_component_scripts = {
 	"Character": {
 		"auto_placement": false,
 		"script": preload("res://SceneComponents/Room3dNodes/Character.gd")
+	},
+	"DirectionalLight": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/DirectionalLight.gd")
+	},
+	"DirectionalLightComponent": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/DirectionalLightComponent.gd")
 	},
 	"DynamicClass": {
 		"auto_placement": false,
@@ -129,7 +138,7 @@ func _input(event):
 					call_deferred("select_object_at_mouse", is_shift_modifier_pressed)
 			BUTTON_RIGHT:
 				is_mouse_button_right_down = event.pressed
-
+	
 	if event is InputEventKey:
 		if event.scancode == KEY_SHIFT:
 			is_shift_modifier_pressed = event.pressed
@@ -324,32 +333,36 @@ func select_object_at_mouse(is_add: bool = false):
 	var ray_from = camera.project_ray_origin(mouse_pos)
 	var ray_to = ray_from + camera.project_ray_normal(mouse_pos) * ray_length
 	var space_state = get_world().direct_space_state
-	var intersections: Array = []
+	var already_collided: Array = []
+	var collisions: Array = []
 	# Find all intersections on ray
 	var collision_mask = PhysicsLayers3d.layers.editor_select_mesh | PhysicsLayers3d.layers.editor_select_collider | PhysicsLayers3d.layers.editor_select_light
-	var current_intersection = space_state.intersect_ray(ray_from, ray_to, [], collision_mask, true, true)
-	while current_intersection != null and current_intersection.has("collider"):
-		if not intersections.has(current_intersection.collider):
-			intersections.push_back(current_intersection.collider)
-		current_intersection = space_state.intersect_ray(ray_from, ray_to, intersections, collision_mask, false, true)
-	var closest_intersection = null
-	var closest_point = Vector3()
+	var current_collision = space_state.intersect_ray(ray_from, ray_to, [], collision_mask, true, true)
+	while current_collision != null and current_collision.has("collider"):
+		if not already_collided.has(current_collision.collider):
+			already_collided.push_back(current_collision.collider)
+			collisions.push_back(current_collision)
+		current_collision = space_state.intersect_ray(ray_from, ray_to, already_collided, collision_mask, false, true)
+	var closest_collider = null
 	var closest_intersect_distance = INF
-	for intersection in intersections:
-		var collider_parent = intersection.get_parent()
+	for idx in collisions.size():
+		var collision = collisions[idx]
+		var collider = collision.collider
+		var collider_parent = collider.get_parent()
 		if "loaded_model_mesh_instance" in collider_parent:
 			var mesh = collider_parent.loaded_model_mesh_instance
 			var cast_result = MeshRayCast.intersect_ray(mesh, ray_from, ray_to)
 			if cast_result.closest != null:
 				if cast_result.closest_distance < closest_intersect_distance:
 					closest_intersect_distance = cast_result.closest_distance
-					closest_point = cast_result.closest
-					closest_intersection = intersection
+					closest_collider = collider
 		else:
-			closest_intersection = intersection
-			break
-	if closest_intersection != null:
-		var node_to_select = closest_intersection.selectable_parent
+			var distance = ray_from.distance_to(collision.position)
+			if distance < closest_intersect_distance:
+				closest_collider = collider
+				closest_intersect_distance = distance
+	if closest_collider != null:
+		var node_to_select = closest_collider.selectable_parent
 		if node_to_select.leaf_parent != null:
 			node_to_select = node_to_select.leaf_parent
 		if is_add:

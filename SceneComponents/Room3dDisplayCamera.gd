@@ -107,14 +107,19 @@ func _update_movement(delta):
 func _update_mouselook():
 	# Only rotates mouse if the mouse is captured
 	if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
-		_mouse_position *= sensitivity
-		var yaw = _mouse_position.x
-		var pitch = _mouse_position.y
-		_mouse_position = Vector2(0, 0)
+		if can_capture_mouse:
+			_mouse_position *= sensitivity
+			var yaw = _mouse_position.x
+			var pitch = _mouse_position.y
+			_mouse_position = Vector2(0, 0)
+			
+			# Prevents looking up/down too far
+			pitch = clamp(pitch, -90 - _total_pitch, 90 - _total_pitch)
+			_total_pitch += pitch
 		
-		# Prevents looking up/down too far
-		pitch = clamp(pitch, -90 - _total_pitch, 90 - _total_pitch)
-		_total_pitch += pitch
-	
-		rotate_y(deg2rad(-yaw))
-		rotate_object_local(Vector3(1,0,0), deg2rad(-pitch))
+			rotate_y(deg2rad(-yaw))
+			rotate_object_local(Vector3(1,0,0), deg2rad(-pitch))
+		else:
+			if _captured_mouse_position != null:
+				get_viewport().warp_mouse(viewport_position + _captured_mouse_position)
+				_captured_mouse_position = null

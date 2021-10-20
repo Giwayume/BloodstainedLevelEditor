@@ -4,6 +4,11 @@ const blueprint_profiles: Dictionary = {
 			"mobility": "static"
 		}
 	},
+	"BloodstainedRotN/Content/Core/Environment/Common/Blueprint/B_COM_Light_XYZSpot.uasset": {
+		"light_defaults": {
+			"mobility": "static"
+		}
+	},
 	"BloodstainedRotN/Content/Core/Environment/Gimmick/NewGimmicks/04GDN/CarriageStatue/GrabbableGoddessStatue_GDN006.uasset": {
 		"meshes": [
 			{

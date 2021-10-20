@@ -48,3 +48,14 @@ margin_right = 132.0
 margin_bottom = 24.0
 hint_tooltip = "Scale Mode"
 icon = ExtResource( 3 )
+
+[node name="VSeparator2" type="VSeparator" parent="."]
+margin_left = 136.0
+margin_right = 140.0
+margin_bottom = 24.0
+
+[node name="ViewMenuButton" type="MenuButton" parent="."]
+margin_left = 144.0
+margin_right = 186.0
+margin_bottom = 24.0
+text = "View"

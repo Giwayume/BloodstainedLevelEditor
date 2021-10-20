@@ -10,7 +10,10 @@ var scale_container: Spatial = null
 var gizmo_sprite: Sprite3D = null
 var gizmo_bounds: ImmediateGeometry = null
 var spot_light: SpotLight = null
+var collision_area: Area = null
+
 var light_default_overrides: Dictionary = {} # Set from blueprint or dynamic class
+var is_gizmo_hidden: bool = false
 
 func _init():
 	selection_transform_node = self
@@ -25,6 +28,8 @@ func _ready():
 	if definition.has("scale"):
 		scale = definition["scale"]
 	
+	room_3d_display.connect("view_gizmo_toggled", self, "on_view_gizmo_toggled")
+	
 	call_deferred("after_placed")
 
 func _process(_delta):
@@ -32,6 +37,20 @@ func _process(_delta):
 		if scale_container:
 			var fixed_scale = get_global_transform().origin.distance_to(camera.translation) / 12
 			scale_container.scale = Vector3(fixed_scale, fixed_scale, fixed_scale)
+
+func on_view_gizmo_toggled(gizmo_name: String, is_checked: bool):
+	if gizmo_name == "light":
+		is_gizmo_hidden = !is_checked
+		scale_container.visible = is_checked
+		if not is_checked:
+			collision_area.collision_layer = 0
+			hide()
+		elif can_enable_collision_area():
+			collision_area.collision_layer = PhysicsLayers3d.layers.editor_select_light
+			show()
+
+func can_enable_collision_area():
+	return not is_in_deleted_branch and not is_in_hidden_branch and not is_gizmo_hidden
 
 func get_light_default(property_name):
 	if light_default_overrides.has(property_name):
@@ -48,21 +67,21 @@ func after_placed():
 	scale_container.add_child(gizmo_sprite)
 	gizmo_sprite.name = "LightGizmoSprite"
 	
-	var area = Area.new()
-	area.set_script(node_selection_area_script)
-	area.selectable_parent = self
+	collision_area = Area.new()
+	collision_area.set_script(node_selection_area_script)
+	collision_area.selectable_parent = self
 	var collision_shape = CollisionShape.new()
 	var box_shape = SphereShape.new()
 	box_shape.radius = .6
 	if is_in_deleted_branch or is_in_hidden_branch:
-		area.collision_layer = 0
+		collision_area.collision_layer = 0
 	else:
-		area.collision_layer = PhysicsLayers3d.layers.editor_select_light
-	area.collision_mask = PhysicsLayers3d.layers.none
+		collision_area.collision_layer = PhysicsLayers3d.layers.editor_select_light
+	collision_area.collision_mask = PhysicsLayers3d.layers.none
 	collision_shape.set_shape(box_shape)
-	area.add_child(collision_shape)
-	scale_container.add_child(area)
-	area.name = "CollisionArea"
+	collision_area.add_child(collision_shape)
+	scale_container.add_child(collision_area)
+	collision_area.name = "CollisionArea"
 	
 	add_child(scale_container)
 	scale_container.name = "LightIconAndCollider"
@@ -70,6 +89,7 @@ func after_placed():
 	spot_light = SpotLight.new()
 	set_light_properties(definition, true)
 	add_child(spot_light)
+	spot_light.rotation_degrees = Vector3(0, -90, 0)
 	spot_light.name = "SpotLight"
 
 func set_light_properties(properties: Dictionary, fallback_to_defaults: bool = false):
@@ -92,11 +112,16 @@ func set_light_properties(properties: Dictionary, fallback_to_defaults: bool = f
 		light_falloff_exponent = definition["light_falloff_exponent"]
 	
 	if use_inverse_squared_falloff:
-		spot_light.light_inverse_square = true
+		spot_light.light_inverse_square = false # true 
 		spot_light.spot_attenuation = 1
 	else:
 		spot_light.light_inverse_square = false
 		spot_light.spot_attenuation = light_falloff_exponent
+	
+	if properties.has("outer_cone_angle"):
+		spot_light.spot_angle = properties["outer_cone_angle"]
+	else:
+		spot_light.spot_angle = get_light_default("outer_cone_angle")
 	
 	if properties.has("intensity"):
 		if use_inverse_squared_falloff:
@@ -211,20 +236,48 @@ func update_gizmo_bounds():
 	remove_gizmo_bounds()
 	
 	var attenuation_radius = spot_light.spot_range
+	var angle = deg2rad(spot_light.spot_angle)
+	var radius = spot_light.spot_range * tan(angle)
 	
-#	gizmo_bounds = ImmediateGeometry.new()
-#	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
-#	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(0, 0, 0), 0, attenuation_radius, 0, 360, 64)
-#	gizmo_bounds.end()
-#	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
-#	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(0, 1, 0), 90, attenuation_radius, 0, 360, 64)
-#	gizmo_bounds.end()
-#	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
-#	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(0, 0, 0), Vector3(1, 0, 0), 90, attenuation_radius, 0, 360, 64)
-#	gizmo_bounds.end()
-#	gizmo_bounds.material_override = selection_box_material
-#	add_child(gizmo_bounds)
-#	gizmo_bounds.name = "LightGizmoBounds"
+	gizmo_bounds = ImmediateGeometry.new()
+	gizmo_bounds.begin(Mesh.PRIMITIVE_LINE_LOOP)
+	ImmediateGeometryExt.draw_circle_arc(gizmo_bounds, Vector3(spot_light.spot_range, 0, 0), Vector3(0, 1, 0), 90, radius, 0, 360, 64)
+	gizmo_bounds.end()
+	gizmo_bounds.begin(Mesh.PRIMITIVE_LINES)
+	gizmo_bounds.add_vertex(Vector3(0, 0, 0))
+	gizmo_bounds.add_vertex(Vector3(spot_light.spot_range, radius, 0))
+	gizmo_bounds.end()
+	gizmo_bounds.begin(Mesh.PRIMITIVE_LINES)
+	gizmo_bounds.add_vertex(Vector3(0, 0, 0))
+	gizmo_bounds.add_vertex(Vector3(spot_light.spot_range, -radius, 0))
+	gizmo_bounds.end()
+	gizmo_bounds.begin(Mesh.PRIMITIVE_LINES)
+	gizmo_bounds.add_vertex(Vector3(0, 0, 0))
+	gizmo_bounds.add_vertex(Vector3(spot_light.spot_range, 0, radius))
+	gizmo_bounds.end()
+	gizmo_bounds.begin(Mesh.PRIMITIVE_LINES)
+	gizmo_bounds.add_vertex(Vector3(0, 0, 0))
+	gizmo_bounds.add_vertex(Vector3(spot_light.spot_range, 0, -radius))
+	gizmo_bounds.end()
+	gizmo_bounds.begin(Mesh.PRIMITIVE_LINES)
+	gizmo_bounds.add_vertex(Vector3(0, 0, 0))
+	gizmo_bounds.add_vertex(Vector3(spot_light.spot_range, cos(PI/4) * radius, sin(PI/4) * radius))
+	gizmo_bounds.end()
+	gizmo_bounds.begin(Mesh.PRIMITIVE_LINES)
+	gizmo_bounds.add_vertex(Vector3(0, 0, 0))
+	gizmo_bounds.add_vertex(Vector3(spot_light.spot_range, cos(3*PI/4) * radius, sin(3*PI/4) * radius))
+	gizmo_bounds.end()
+	gizmo_bounds.begin(Mesh.PRIMITIVE_LINES)
+	gizmo_bounds.add_vertex(Vector3(0, 0, 0))
+	gizmo_bounds.add_vertex(Vector3(spot_light.spot_range, cos(5*PI/4) * radius, sin(5*PI/4) * radius))
+	gizmo_bounds.end()
+	gizmo_bounds.begin(Mesh.PRIMITIVE_LINES)
+	gizmo_bounds.add_vertex(Vector3(0, 0, 0))
+	gizmo_bounds.add_vertex(Vector3(spot_light.spot_range, cos(7*PI/4) * radius, sin(7*PI/4) * radius))
+	gizmo_bounds.end()
+	gizmo_bounds.material_override = selection_box_material
+	add_child(gizmo_bounds)
+	gizmo_bounds.name = "LightGizmoBounds"
 
 func remove_gizmo_bounds():
 	if gizmo_bounds != null:
@@ -232,6 +285,28 @@ func remove_gizmo_bounds():
 		if gizmo_bounds_parent:
 			gizmo_bounds_parent.remove_child(gizmo_bounds)
 		gizmo_bounds = null
+
+func set_deleted(deleted: bool):
+	.set_deleted(deleted)
+	var collision_area = get_node_or_null("CollisionArea")
+	if collision_area:
+		if deleted:
+			collision_area.collision_layer = 0
+			hide()
+		elif can_enable_collision_area():
+			collision_area.collision_layer = PhysicsLayers3d.layers.editor_select_light
+			show()
+
+func set_hidden(hidden: bool):
+	.set_hidden(hidden)
+	var collision_area = get_node_or_null("CollisionArea")
+	if collision_area:
+		if hidden:
+			collision_area.collision_layer = 0
+			hide()
+		elif can_enable_collision_area():
+			collision_area.collision_layer = PhysicsLayers3d.layers.editor_select_light
+			show()
 
 func select():
 	.select()
