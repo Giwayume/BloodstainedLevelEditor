@@ -40,6 +40,10 @@ var custom_component_scripts = {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/PBMeshParentComponent.gd")
 	},
+	"PBSwingObjectComponent": {
+		"auto_placement": false,
+		"script": preload("res://SceneComponents/Room3dNodes/PBSwingObjectComponent.gd")
+	},
 	"PlayerStart": {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/PlayerStart.gd")
@@ -270,7 +274,7 @@ func load_3d_model(definition: Dictionary, callback_instance: Object, callback_m
 		current_waitlist_item = model_load_waitlist.pop_front()
 		start_extract_3d_model_thread()
 
-func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
+func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary, is_debug: bool = false):
 	var node = Spatial.new()
 	var parent_definition = null
 	if "definition" in parent:
@@ -302,11 +306,14 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary):
 		node.persistent_level_child_ancestor = node
 	elif "persistent_level_child_ancestor" in parent:
 		node.persistent_level_child_ancestor = parent.persistent_level_child_ancestor
-	parent.add_child(node)
+	var placement_node = parent
+	if "alternate_child_placement_node" in parent and parent.alternate_child_placement_node != null:
+		placement_node = parent.alternate_child_placement_node
 	if "is_tree_leaf" in parent and parent.is_tree_leaf:
 		node.leaf_parent = parent
 	elif "leaf_parent" in parent and parent.leaf_parent:
 		node.leaf_parent = parent.leaf_parent
+	placement_node.add_child(node)
 	node.name = definition["type"] + "__" + definition["name"]
 	if is_auto_placement:
 		for child_definition in definition["children"]:
@@ -353,7 +360,7 @@ func select_object_at_mouse(is_add: bool = false):
 		var collision = collisions[idx]
 		var collider = collision.collider
 		var collider_parent = collider.get_parent()
-		if "loaded_model_mesh_instance" in collider_parent:
+		if "loaded_model_mesh_instance" in collider_parent and collider_parent.loaded_model_mesh_instance != null:
 			var mesh = collider_parent.loaded_model_mesh_instance
 			var cast_result = MeshRayCast.intersect_ray(mesh, ray_from, ray_to)
 			if cast_result.closest != null:

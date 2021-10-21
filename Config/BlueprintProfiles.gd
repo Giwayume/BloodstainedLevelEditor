@@ -1,4 +1,7 @@
 const blueprint_profiles: Dictionary = {
+	"BloodstainedRotN/Content/Core/Environment/ACT05_SAN/Blueprint/B_SAN_gimmick_bell01.uasset": {
+		
+	},
 	"BloodstainedRotN/Content/Core/Environment/Common/Blueprint/B_COM_Light_LineSpot.uasset": {
 		"light_defaults": {
 			"mobility": "static"
@@ -61,6 +64,15 @@ const blueprint_profiles: Dictionary = {
 				"object_name": "StaticMesh",
 				"object_type": "StaticMeshComponent",
 				"mesh": "BloodstainedRotN/Content/Core/Environment/Common/Mesh/Props/SM_ReadableBookcase_01.uasset"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Gimmick/NewGimmicks/Mitem_BulletMaxUp/Data/BulletMaxUp.uasset": {
+		"meshes": [
+			{
+				"object_name": "EventSkeletalMesh",
+				"object_type": "SkeletalMeshComponent",
+				"mesh": "BloodstainedRotN/Content/Core/Environment/Gimmick/NewGimmicks/Mitem_BulletMaxUp/Mesh/SK_BulletMaxUp.uasset"
 			}
 		]
 	},

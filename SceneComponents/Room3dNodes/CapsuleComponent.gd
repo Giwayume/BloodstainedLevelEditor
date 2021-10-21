@@ -1,20 +1,12 @@
 extends BaseRoom3dNode
 
 var editor_collider_visualization_material = preload("res://Materials/EditorColliderVisualization.tres")
-var selection_box_material = preload("res://Materials/EditorSelectionBox.tres")
-const node_selection_area_script = preload("res://SceneComponents/Room3dNodes/NodeSelectionArea.gd")
 
 var capsule_half_height = 1
 var capsule_radius = 1
 
 func _ready():
-	selection_transform_node = self
-	if definition.has("translation"):
-		translation = definition["translation"]
-	if definition.has("rotation_degrees"):
-		rotation_degrees = definition["rotation_degrees"]
-	if definition.has("scale"):
-		scale = definition["scale"]
+	_ready_selection_transform_node()
 	if definition.has("capsule_half_height"):
 		capsule_half_height = definition["capsule_half_height"]
 	if definition.has("capsule_radius"):

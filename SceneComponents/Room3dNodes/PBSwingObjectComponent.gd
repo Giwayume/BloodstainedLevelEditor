@@ -1,13 +1,17 @@
 extends BaseRoom3dNode
 
-func _init():
-	is_tree_leaf = true
-
 func _ready():
 	_ready_selection_transform_node()
 	_ready_static_mesh_node()
-	if get_parent().definition["type"] == "StaticMeshActor":
-		use_parent_as_proxy = true
+	
+	if definition.has("children"):
+		var child_offset_spatial = Spatial.new()
+		child_offset_spatial.transform = transform.inverse()
+		add_child(child_offset_spatial)
+		child_offset_spatial.name = "ResetOffsetForAttachChildren"
+		alternate_child_placement_node = child_offset_spatial
+		for child_definition in definition.children:
+			room_3d_display.place_tree_nodes_recursive(self, child_definition, true)
 
 func _process(delta):
 	_process_static_mesh_node(delta)

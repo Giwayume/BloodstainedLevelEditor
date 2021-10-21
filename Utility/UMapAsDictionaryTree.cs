@@ -211,7 +211,7 @@ public class UMapAsDictionaryTree {
                     /*
                     * STATIC MESH PROPS
                     */
-                    if (nodeType == "StaticMeshComponent") {
+                    if (nodeType == "StaticMeshComponent" || nodeType == "PBSwingObjectComponent") {
                         if (propertyName == "StaticMesh") {
                             if (propertyData is ObjectPropertyData objectPropertyData) {
                                 FPackageIndex staticMeshPointer = objectPropertyData.Value;

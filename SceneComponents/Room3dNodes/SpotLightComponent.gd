@@ -1,9 +1,7 @@
 extends BaseRoom3dNode
 
 const gizmo_spot_light_icon = preload("res://Icons/Editor/GizmoSpotLight.svg")
-const node_selection_area_script = preload("res://SceneComponents/Room3dNodes/NodeSelectionArea.gd")
 const light_defaults = preload("res://Config/LightDefaults.gd").light_defaults
-const selection_box_material = preload("res://Materials/EditorSelectionBox.tres")
 
 var camera: Camera = null
 var scale_container: Spatial = null
@@ -16,17 +14,11 @@ var light_default_overrides: Dictionary = {} # Set from blueprint or dynamic cla
 var is_gizmo_hidden: bool = false
 
 func _init():
-	selection_transform_node = self
 	selection_light_node = self
 
 func _ready():
 	camera = room_3d_display.get_node("Camera")
-	if definition.has("translation"):
-		translation = definition["translation"]
-	if definition.has("rotation_degrees"):
-		rotation_degrees = definition["rotation_degrees"]
-	if definition.has("scale"):
-		scale = definition["scale"]
+	_ready_selection_transform_node()
 	
 	room_3d_display.connect("view_gizmo_toggled", self, "on_view_gizmo_toggled")
 	

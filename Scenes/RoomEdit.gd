@@ -8,7 +8,7 @@ var icon_remove = preload("res://Icons/Editor/Remove.svg")
 var icon_reload = preload("res://Icons/Editor/Reload.svg")
 var selectable_types = ["StaticMeshActor", "StaticMeshComponent"]
 
-var default_level_name = "m04GDN_006"
+var default_level_name = "m05SAN_003"
 
 var editor: Node
 var uasset_parser: Node
@@ -845,7 +845,10 @@ func build_object_outlines():
 		trees[tree_name].restore_collapse_state = {}
 
 func build_object_outline(tree: Tree, parent_item: TreeItem, tree_id_map: Dictionary, node_id_map: Dictionary, restore_collapse_state: Dictionary, parent_node: Node):
-	for child_node in parent_node.get_children():
+	var placement_node = parent_node
+	if "alternate_child_placement_node" in parent_node and parent_node.alternate_child_placement_node != null:
+		placement_node = parent_node.alternate_child_placement_node
+	for child_node in placement_node.get_children():
 		if child_node == null or not "definition" in child_node:
 			return
 		var definition = child_node.definition
