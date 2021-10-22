@@ -81,6 +81,16 @@ func after_placed():
 	add_child(directional_light)
 	directional_light.rotation_degrees = Vector3(0, -90, 0)
 	directional_light.name = "DirectionalLight"
+	
+	undo_parent_scale(get_parent(), Vector3(1, 1, 1))
+
+func undo_parent_scale(parent: Spatial, scale_tmp: Vector3):
+	if parent == null:
+		global_scale(Vector3(1 / scale_tmp.x, 1 / scale_tmp.y, 1 / scale_tmp.z))
+	else:
+		if parent.has_method("get_scale"):
+			scale_tmp *= parent.get_scale()
+		undo_parent_scale(parent.get_parent(), scale_tmp)
 
 func set_light_properties(properties: Dictionary, fallback_to_defaults: bool = false):
 	var mobility = get_light_default("mobility")
@@ -90,7 +100,7 @@ func set_light_properties(properties: Dictionary, fallback_to_defaults: bool = f
 		mobility = definition["mobility"]
 	
 	if properties.has("intensity"):
-		directional_light.light_energy = properties["intensity"]
+		directional_light.light_energy = properties["intensity"] * 0.32 # Unreal to godot modifier
 	elif fallback_to_defaults:
 		directional_light.light_energy = 0
 	

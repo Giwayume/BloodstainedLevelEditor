@@ -100,6 +100,8 @@ public class UAssetParser : Control {
         }
     }
 
+    public string UAssetExtractFolder = "";
+
     /**
      * Map of "filename|uassetPath|objectName" key to snippet object for blueprint reuse.
      */
@@ -122,7 +124,7 @@ public class UAssetParser : Control {
      */
 
     public override void _Ready() {
-
+        UAssetExtractFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
     }
 
     public void GuaranteeAssetListFromPakFiles() {
@@ -241,7 +243,7 @@ public class UAssetParser : Control {
 
         // Extract map data to uasset
         string u4pakPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/U4pak/u4pak.exe");
-        string outputPath = ProjectSettings.GlobalizePath(@"user://PakExtract");
+        string outputPath = UAssetExtractFolder;
         string mapDataTablePath = "BloodstainedRotN/Content/Core/DataTable/PB_DT_RoomMaster.uasset";
         using (Process pathList = new Process()) {
             pathList.StartInfo.FileName = u4pakPath;
@@ -321,7 +323,7 @@ public class UAssetParser : Control {
     public void ExtractRoomAssets(string levelName) {
         try {
             Godot.Collections.Dictionary<string, string> levelAssets = _levelNameToAssetPathMap[levelName];
-            string outputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
+            string outputFolder = UAssetExtractFolder;
             foreach (string key in levelAssets.Keys) {
                 if (!System.IO.File.Exists(outputFolder + "/" + levelAssets[key])) {
                     ExtractAssetToFolder(_assetPathToPakFilePathMap[levelAssets[key]], levelAssets[key], outputFolder);
@@ -335,7 +337,7 @@ public class UAssetParser : Control {
     private string EnsureModelCache(string assetPath, string meshName, int meshNameInstance) {
         string newAssetPath = assetPath;
         try {
-            string extractAssetOutputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
+            string extractAssetOutputFolder = UAssetExtractFolder;
             string extractModelOutputFolder = ProjectSettings.GlobalizePath(@"user://ModelCache");
             string ueViewerPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/UEViewer/umodel_64.exe");
 
@@ -422,7 +424,7 @@ public class UAssetParser : Control {
         if (extractedMaterials == default(Godot.Collections.Array<Godot.Collections.Dictionary<string, object>>)) {
             extractedMaterials = new Godot.Collections.Array<Godot.Collections.Dictionary<string, object>>();
         }
-        string extractAssetOutputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
+        string extractAssetOutputFolder = UAssetExtractFolder;
         string assetFileName = assetPath.Split("/").Last();
         try {
             UAsset asset = new UAsset(extractAssetOutputFolder + "/" + assetPath, UE4Version.VER_UE4_18);
@@ -560,7 +562,7 @@ public class UAssetParser : Control {
             string gameDirectory = (string)GetNode("/root/Editor").Call("read_config_prop", "game_directory");
             string selectedPackageName = packageName;
             string unrealPakPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/UnrealPak/UnrealPak.exe");
-            string pakExtractFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
+            string pakExtractFolder = UAssetExtractFolder;
             string filelistPath = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/PackageFileList.txt");
             string modifiedAssetsFolder = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/ModifiedAssets");
             string editsFolder = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName + "/Edits").Replace("\\", "/");
@@ -617,6 +619,8 @@ public class UAssetParser : Control {
                                 UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"], UE4Version.VER_UE4_18);
                                 UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson[checkDef["key"]]);
                                 uAsset.Write(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"]);
+                            } else {
+                                System.IO.File.Delete(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"]);
                             }
                         }
                     }
@@ -641,7 +645,7 @@ public class UAssetParser : Control {
 
     public void ParseBlueprintForReuse(string pakFilePath, string assetPath, string objectName) {
         // Extract uasset
-        string outputPath = ProjectSettings.GlobalizePath(@"user://PakExtract");
+        string outputPath = UAssetExtractFolder;
         if (!System.IO.File.Exists(outputPath + "/" + assetPath)) {
             ExtractAssetToFolder(pakFilePath, assetPath, outputPath);
         }
@@ -712,13 +716,13 @@ public class UAssetParser : Control {
     public Godot.Collections.Dictionary<string, object> GetRoomDefinition(string levelName) {
         try {
             ExtractRoomAssets(levelName);
-            string outputFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
+            string outputFolder = UAssetExtractFolder;
             Godot.Collections.Dictionary<string, object> roomDefinition = new Godot.Collections.Dictionary<string, object>();
             Godot.Collections.Dictionary<string, string> levelAssets = _levelNameToAssetPathMap[levelName];
             string[] checkKeys = new string[]{ "bg", "enemy", "enemy_hard", "enemy_normal", "event", "gimmick", "light", "setting", "rv" };
             foreach (string key in checkKeys) {
                 if (levelAssets.ContainsKey(key)) {
-                    roomDefinition[key] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets[key], UE4Version.VER_UE4_18));
+                    roomDefinition[key] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets[key], UE4Version.VER_UE4_18), this);
                 }
             }
             return roomDefinition;

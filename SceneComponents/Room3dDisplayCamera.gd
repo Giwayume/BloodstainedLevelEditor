@@ -36,13 +36,14 @@ func _input(event):
 		_mouse_position = event.relative
 	
 	# Receives mouse button input
-	if can_capture_mouse and event is InputEventMouseButton:
+	if event is InputEventMouseButton:
 		match event.button_index:
 			BUTTON_RIGHT: # Only allows rotation if right click down
-				if event.pressed:
+				if can_capture_mouse and event.pressed:
 					_captured_mouse_position = get_viewport().get_mouse_position()
-				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED if event.pressed else Input.MOUSE_MODE_VISIBLE)
+					Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 				if not event.pressed:
+					Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 					if _captured_mouse_position != null:
 						get_viewport().warp_mouse(viewport_position + _captured_mouse_position)
 						_captured_mouse_position = null

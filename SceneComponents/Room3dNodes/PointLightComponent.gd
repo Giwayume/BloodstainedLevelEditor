@@ -80,6 +80,16 @@ func after_placed():
 	set_light_properties(definition, true)
 	add_child(omni_light)
 	omni_light.name = "OmniLight"
+	
+	undo_parent_scale(get_parent(), Vector3(1, 1, 1))
+
+func undo_parent_scale(parent: Spatial, scale_tmp: Vector3):
+	if parent == null:
+		global_scale(Vector3(1 / scale_tmp.x, 1 / scale_tmp.y, 1 / scale_tmp.z))
+	else:
+		if parent.has_method("get_scale"):
+			scale_tmp *= parent.get_scale()
+		undo_parent_scale(parent.get_parent(), scale_tmp)
 
 func set_light_properties(properties: Dictionary, fallback_to_defaults: bool = false):
 	var mobility = get_light_default("mobility")

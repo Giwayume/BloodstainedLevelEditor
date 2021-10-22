@@ -71,6 +71,12 @@ func start_model_load(meshes: Array):
 				"static_mesh_asset_path": load_def.mesh
 			}
 			if uasset_parser.AssetPathToPakFilePathMap.has(model_definition.static_mesh_asset_path):
+				if load_def.has("translation"):
+					mesh_load_node.translation = load_def["translation"]
+				if load_def.has("rotation_degrees"):
+					mesh_load_node.rotation_degrees = load_def["rotation_degrees"]
+				if load_def.has("scale"):
+					mesh_load_node.scale = load_def["scale"]
 				room_3d_display.load_3d_model(model_definition, mesh_load_node, "on_3d_model_loaded")
 			else:
 				print_debug("BlueprintGeneratedClass load mesh asset not found: ", load_def.mesh)

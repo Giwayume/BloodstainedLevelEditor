@@ -1,7 +1,4 @@
 const blueprint_profiles: Dictionary = {
-	"BloodstainedRotN/Content/Core/Environment/ACT05_SAN/Blueprint/B_SAN_gimmick_bell01.uasset": {
-		
-	},
 	"BloodstainedRotN/Content/Core/Environment/Common/Blueprint/B_COM_Light_LineSpot.uasset": {
 		"light_defaults": {
 			"mobility": "static"
@@ -11,6 +8,39 @@ const blueprint_profiles: Dictionary = {
 		"light_defaults": {
 			"mobility": "static"
 		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Gimmick/NewGimmicks/03ENT/Chandelier/ChandelierBase_ENT04.uasset": {
+		"meshes": [
+			{
+				"object_name": "Chain1",
+				"object_type": "StaticMeshComponent",
+				"mesh": ""
+			},
+			{
+				"object_name": "Chain2",
+				"object_type": "StaticMeshComponent",
+				"mesh": ""
+			},
+			{
+				"object_name": "Chain3",
+				"object_type": "StaticMeshComponent",
+				"mesh": "BloodstainedRotN/Content/Core/Environment/ACT03_ENT/Mesh/ENT_Chandelier00_01.uasset"
+			},
+			{
+				"object_name": "StaticMeshComponent01",
+				"object_type": "StaticMeshComponent",
+				"mesh": "BloodstainedRotN/Content/Core/Environment/ACT03_ENT/Mesh/ENT_Chandelier01.uasset"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Gimmick/NewGimmicks/03ENT/PiercedWolfman/PiercedWolfman.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMeshWolfMan",
+				"object_type": "StaticMeshComponent",
+				"mesh": "BloodstainedRotN/Content/Core/Environment/Gimmick/NewGimmicks/03ENT/PiercedWolfman/StaticMeshWolfMan.uasset"
+			}
+		]
 	},
 	"BloodstainedRotN/Content/Core/Environment/Gimmick/NewGimmicks/04GDN/CarriageStatue/GrabbableGoddessStatue_GDN006.uasset": {
 		"meshes": [

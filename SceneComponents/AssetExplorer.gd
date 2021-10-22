@@ -42,7 +42,7 @@ func _ready():
 	search_clear_button.connect("pressed", self, "on_search_clear_button_pressed")
 
 func on_asset_popup_menu_id_pressed(id: int):
-	if id == ASSET_POPUP_COPY_PATH and selected_item_index:
+	if id == ASSET_POPUP_COPY_PATH and selected_item_index > -1:
 		OS.set_clipboard(asset_list_filtered[selected_item_index])
 
 func on_asset_list_item_selected(index: int):

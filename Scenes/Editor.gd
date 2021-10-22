@@ -34,7 +34,11 @@ func write_config_prop(prop_name: String, prop_data):
 	return EditorConfig.write_config_prop(prop_name, prop_data)
 	
 func read_config_prop(prop_name: String):
-	return read_config()[prop_name]
+	var config = read_config()
+	if config.has(prop_name):
+		return config[prop_name]
+	else:
+		return null
 
 ###########
 # HISTORY #
@@ -198,7 +202,7 @@ func end_package_and_install_thread(is_run_game: bool, install_finish_callback_t
 	get_tree().get_root().remove_child(loading_screen)
 	loading_screen = null
 	
-	if false and is_run_game:
+	if is_run_game:
 		var game_directory = EditorConfig.read_config()["game_directory"]
 		OS.execute(game_directory + "/BloodstainedRotN/Binaries/Win64/BloodstainedRotN-Win64-Shipping.exe", [], false)
 		var toast = toast_scene.instance()

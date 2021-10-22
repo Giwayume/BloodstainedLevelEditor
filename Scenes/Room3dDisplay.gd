@@ -91,6 +91,7 @@ var uasset_parser: Node
 
 var extract_3d_model_thread: Thread = null
 var is_extracting_3d_models: bool = false
+var is_initial_thread_load_complete: bool = false
 
 var asset_roots: Dictionary = {}
 var camera: Camera
@@ -270,9 +271,14 @@ func load_3d_model(definition: Dictionary, callback_instance: Object, callback_m
 		"callback_instance": callback_instance,
 		"callback_method": callback_method
 	})
+	if is_initial_thread_load_complete:
+		start_3d_model_extraction()
+
+func start_3d_model_extraction():
 	if not is_extracting_3d_models:
-		current_waitlist_item = model_load_waitlist.pop_front()
-		start_extract_3d_model_thread()
+		if model_load_waitlist.size() > 0:
+			current_waitlist_item = model_load_waitlist.pop_front()
+			start_extract_3d_model_thread()
 
 func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary, is_debug: bool = false):
 	var node = Spatial.new()

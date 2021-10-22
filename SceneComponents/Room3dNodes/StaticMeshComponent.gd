@@ -1,8 +1,5 @@
 extends BaseRoom3dNode
 
-func _init():
-	is_tree_leaf = true
-
 func _ready():
 	_ready_selection_transform_node()
 	_ready_static_mesh_node()

@@ -19,31 +19,26 @@ using UAssetAPI.StructTypes;
 
 public class UMapAsDictionaryTree {
 
+    public class EncounteredBlueprintInstance {
+        public string ClassAssetPath = "";
+        public Export Export = default(Export);
+    }
+
     public class ParseInfo {
         // Mapping of export index to the export indices of other exports that reference that export as outer index.
-        private System.Collections.Generic.Dictionary<int, List<int>> _exportDependencyMap = null;
-        public System.Collections.Generic.Dictionary<int, List<int>> ExportDependencyMap {
-            get {
-                return _exportDependencyMap;
-            }
-            set {
-                _exportDependencyMap = value;
-            }
-        }
-        // Mapping of export index to the export index of the parent it wants to attach to.
-        private System.Collections.Generic.Dictionary<int, Godot.Collections.Dictionary<string, object>> _exportIndexDefinitionMap = null;
-        public System.Collections.Generic.Dictionary<int, Godot.Collections.Dictionary<string, object>> ExportIndexDefinitionMap {
-            get {
-                return _exportIndexDefinitionMap;
-            }
-            set {
-                _exportIndexDefinitionMap = value;
-            }
-        }
+        public System.Collections.Generic.Dictionary<int, List<int>> ExportDependencyMap = null;
+        // Mapping of export index to the treeNode generated in the ParseExportsRecursive method.
+        public System.Collections.Generic.Dictionary<int, Godot.Collections.Dictionary<string, object>> ExportIndexDefinitionMap = null;
+        public UAssetParser Parser = default(UAssetParser);
+        // Mapping of ClassAssetPath to Export ObjectName to the list of properties in that export (for a Blueprint _GEN_VARIABLE export).
+        public System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, List<PropertyData>>> BlueprintDefaultSettings = default(System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, List<PropertyData>>>);
+        public System.Collections.Generic.Dictionary<string, UAsset> BlueprintAssets = default(System.Collections.Generic.Dictionary<string, UAsset>);
+        // Mapping of export index to to EncounteredBlueprintInstance, list populated as exports parsed.
+        public System.Collections.Generic.Dictionary<int, EncounteredBlueprintInstance> EncounteredBlueprintInstances = default(System.Collections.Generic.Dictionary<int, EncounteredBlueprintInstance>);
         public int CurrentParentExportIndex = 0;
     }
 
-    public static Godot.Collections.Dictionary<string, object> ToDictionaryTree(UAsset uAsset) {
+    public static Godot.Collections.Dictionary<string, object> ToDictionaryTree(UAsset uAsset, UAssetParser parser) {
         System.Collections.Generic.Dictionary<int, List<int>> exportDependencyMap = new System.Collections.Generic.Dictionary<int, List<int>>();
         int mainExportIndex = -1;
         int exportIndex = 0;
@@ -66,8 +61,32 @@ public class UMapAsDictionaryTree {
         ParseInfo parseInfo = new ParseInfo();
         parseInfo.ExportDependencyMap = exportDependencyMap;
         parseInfo.ExportIndexDefinitionMap = new System.Collections.Generic.Dictionary<int, Godot.Collections.Dictionary<string, object>>();
+        parseInfo.Parser = parser;
+        parseInfo.BlueprintDefaultSettings = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, List<PropertyData>>>();
+        parseInfo.BlueprintAssets = new System.Collections.Generic.Dictionary<string, UAsset>();
+        parseInfo.EncounteredBlueprintInstances = new System.Collections.Generic.Dictionary<int, EncounteredBlueprintInstance>();
 
         Godot.Collections.Dictionary<string, object> parsedExports = ParseExportsRecursive(uAsset, mainExportIndex, parseInfo);
+
+        // Fill in default property data parsed from blueprints
+        foreach (var blueprintInstanceLoop in parseInfo.EncounteredBlueprintInstances) {
+            int blueprintExportIndex = blueprintInstanceLoop.Key;
+            EncounteredBlueprintInstance blueprintInstance = blueprintInstanceLoop.Value;
+            if (parseInfo.BlueprintAssets.ContainsKey(blueprintInstance.ClassAssetPath)) {
+                System.Collections.Generic.Dictionary<string, List<PropertyData>> objectNameToPropertyDataMap = parseInfo.BlueprintDefaultSettings[blueprintInstance.ClassAssetPath];
+                if (blueprintInstance.Export is NormalExport export) {
+                    foreach (PropertyData propertyData in export.Data) {
+                        if (propertyData is ObjectPropertyData objectPropertyData) {
+                            string propertyName = objectPropertyData.Name.Value.Value;
+                            int objectRefIndex = objectPropertyData.Value.Index - 1;
+                            if (objectNameToPropertyDataMap.ContainsKey(propertyName) && parseInfo.ExportIndexDefinitionMap.ContainsKey(objectRefIndex)) {
+                                MapPropertyDataList(parseInfo.BlueprintAssets[blueprintInstance.ClassAssetPath], objectNameToPropertyDataMap[propertyName], parseInfo.ExportIndexDefinitionMap[objectRefIndex], true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         // Reorganize children by attach parent if property exists
         foreach (var exportDefinition in parseInfo.ExportIndexDefinitionMap) {
@@ -92,6 +111,32 @@ public class UMapAsDictionaryTree {
 
         parseInfo = null;
         return parsedExports;
+    }
+
+    public static void ParseBlueprintDefaultSettings(string classAssetPath, ParseInfo parseInfo) {
+        if (parseInfo.BlueprintDefaultSettings.ContainsKey(classAssetPath)) {
+            return;
+        }
+        System.Collections.Generic.Dictionary<string, List<PropertyData>> blueprintDefaultSettings = new System.Collections.Generic.Dictionary<string, List<PropertyData>>();
+        string classAssetExtractPath = parseInfo.Parser.UAssetExtractFolder + "/" + classAssetPath;
+        if (parseInfo.Parser.AssetPathToPakFilePathMap.ContainsKey(classAssetPath)) {
+            if (!System.IO.File.Exists(classAssetExtractPath)) {
+                parseInfo.Parser.ExtractAssetToFolder(parseInfo.Parser.AssetPathToPakFilePathMap[classAssetPath], classAssetPath, parseInfo.Parser.UAssetExtractFolder);
+            }
+        }
+        if (System.IO.File.Exists(classAssetExtractPath)) {
+            UAsset blueprintAsset = new UAsset(classAssetExtractPath, UE4Version.VER_UE4_18);
+            foreach (Export baseExport in blueprintAsset.Exports) {
+                if (baseExport is NormalExport export) {
+                    string objectName = export.ObjectName.Value.Value;
+                    if (objectName.EndsWith("_GEN_VARIABLE")) {
+                        blueprintDefaultSettings[objectName.Replace("_GEN_VARIABLE", "")] = export.Data;
+                    }
+                }
+            }
+            parseInfo.BlueprintAssets[classAssetPath] = blueprintAsset;
+        }
+        parseInfo.BlueprintDefaultSettings[classAssetPath] = blueprintDefaultSettings;
     }
 
     public static Godot.Collections.Dictionary<string, object> ParseExportsRecursive(UAsset uAsset, int exportIndex, ParseInfo parseInfo) {
@@ -134,212 +179,17 @@ public class UMapAsDictionaryTree {
 
         // Read property data for params we can edit
         if (export is NormalExport normalExport) {
-            foreach (PropertyData propertyData in normalExport.Data) {
-                string propertyName = propertyData.Name.Value.Value;
-                if (propertyName == "RootComponent") {
-                    if (propertyData is ObjectPropertyData objectPropertyData) {
-                        if (objectPropertyData.Value.Index > 0) {
-                            treeNode["root_component_export_index"] = Math.Abs(objectPropertyData.Value.Index) - 1;
-                        }
-                    }
-                }
-                else if (propertyName == "AttachParent") {
-                    if (propertyData is ObjectPropertyData objectPropertyData) {
-                        if (objectPropertyData.Value.Index > 0) {
-                            treeNode["attach_parent_export_index"] = Math.Abs(objectPropertyData.Value.Index) - 1;
-                        }
-                    }
-                }
-                /*
-                 * BLUEPRINT/DYNAMIC CLASS PROPS
-                 */
-                else if (propertyName == "Mesh") {
-                    if (propertyData is ObjectPropertyData objectPropertyData) {
-                        FPackageIndex staticMeshPointer = objectPropertyData.Value;
-                        if (staticMeshPointer.IsExport()) {
-                            treeNode["mesh_export_index"] = Math.Abs(objectPropertyData.Value.Index) - 1;
-                        }
-                    }
-                }
-                /*
-                 * CHARACTER PROPS
-                 */
-                else if (propertyName == "CharacterParamaters") {
-                    if (propertyData is StructPropertyData structPropertyData) {
-                        if (classAssetPath.StartsWith("BloodstainedRotN/Content/Core/Character/")) {
-                            treeNode["type"] = "Character";
-                        }
-                        foreach (PropertyData characterPropertyData in structPropertyData.Value) {
-                            propertyName = characterPropertyData.Name.Value.Value;
-                            if (propertyName == "CharacterId") {
-                                if (characterPropertyData is NamePropertyData namePropertyData) {
-                                    string characterId = namePropertyData.Value.Value.Value;
-                                    if (characterId == null) {
-                                        characterId = "N/A";
-                                    }
-                                    treeNode["character_id"] = characterId;
-                                }
-                            }
-                        }
-                    }
-                }
-                /*
-                 * TRANSFORM PROPS
-                 */
-                else if (propertyName == "RelativeLocation") {
-                    if (propertyData is StructPropertyData structPropertyData) {
-                        if (structPropertyData.Value[0] is VectorPropertyData vectorPropertyData) {
-                            treeNode["translation"] = ConvertLocationFromUnrealToGodot(new float[]{vectorPropertyData.X, vectorPropertyData.Y, vectorPropertyData.Z});
-                        }
-                    }
-                }
-                else if (propertyName == "RelativeRotation") {
-                    if (propertyData is StructPropertyData structPropertyData) {
-                        if (structPropertyData.Value[0] is RotatorPropertyData rotatorPropertyData) {
-                            treeNode["rotation_degrees"] = ConvertRotationFromUnrealToGodot(new float[]{rotatorPropertyData.Pitch, rotatorPropertyData.Yaw, rotatorPropertyData.Roll});
-                        }
-                    }
-                }
-                else if (propertyName == "RelativeScale3D") {
-                    if (propertyData is StructPropertyData structPropertyData) {
-                        if (structPropertyData.Value[0] is VectorPropertyData vectorPropertyData) {
-                            treeNode["scale"] = ConvertScaleFromUnrealToGodot(new float[]{vectorPropertyData.X, vectorPropertyData.Y, vectorPropertyData.Z});
-                        }
-                    }
-                }
-                else {
-                    /*
-                    * STATIC MESH PROPS
-                    */
-                    if (nodeType == "StaticMeshComponent" || nodeType == "PBSwingObjectComponent") {
-                        if (propertyName == "StaticMesh") {
-                            if (propertyData is ObjectPropertyData objectPropertyData) {
-                                FPackageIndex staticMeshPointer = objectPropertyData.Value;
-                                if (staticMeshPointer.IsImport()) {
-                                    Import staticMeshImport = staticMeshPointer.ToImport(uAsset);
-                                    int packageArrayIndex = Math.Abs(staticMeshImport.OuterIndex.Index) - 1;
-                                    if (packageArrayIndex > -1) {
-                                        Import packageImport = uAsset.Imports[packageArrayIndex];
-                                        treeNode["static_mesh_name"] = staticMeshImport.ObjectName.Value.Value;
-                                        treeNode["static_mesh_name_instance"] = staticMeshImport.ObjectName.Number;
-                                        // TODO - check if this actually exists, auto-suffix here for packages that use that...
-                                        treeNode["static_mesh_asset_path"] = packageImport.ObjectName.Value.Value.Replace("/Game", "BloodstainedRotN/Content") + ".uasset";
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    /*
-                     * CAPSULE PROPS
-                     */
-                    else if (nodeType == "CapsuleComponent") {   
-                        if (propertyName == "CapsuleHalfHeight") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["capsule_half_height"] = floatPropertyData.Value * 0.01f;
-                            }
-                        }
-                        else if (propertyName == "CapsuleRadius") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["capsule_radius"] = floatPropertyData.Value * 0.01f;
-                            }
-                        }
-                    }
-                    /*
-                     * LIGHT PROPS
-                     */
-                    else if (nodeType == "PointLightComponent" || nodeType == "SpotLightComponent") {   
-                        if (propertyName == "Mobility") {
-                            if (propertyData is BytePropertyData byteProperty) {
-                                string mobilityEnumValue = byteProperty.GetEnumFull(uAsset).Value;
-                                if (mobilityEnumValue == "EComponentMobility::Static") {
-                                    treeNode["mobility"] = "static";
-                                } else if (mobilityEnumValue == "EComponentMobility::Stationary") {
-                                    treeNode["mobility"] = "stationary";
-                                } else if (mobilityEnumValue == "EComponentMobility::Movable") {
-                                    treeNode["mobility"] = "movable";
-                                } 
-                            }
-                        }
-                        else if (propertyName == "Intensity") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["intensity"] = floatPropertyData.Value;
-                            }
-                        }
-                        else if (propertyName == "LightColor") {
-                            if (propertyData is StructPropertyData structPropertyData) {
-                                if (structPropertyData.Value[0] is ColorPropertyData colorPropertyData) {
-                                    treeNode["light_color"] = new Godot.Color(colorPropertyData.Value.R / 255f, colorPropertyData.Value.G / 255f, colorPropertyData.Value.B / 255f, colorPropertyData.Value.A / 255f);
-                                }
-                            }
-                        }
-                        else if (propertyName == "InnerConeAngle") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["inner_cone_angle"] = floatPropertyData.Value;
-                            }
-                        }
-                        else if (propertyName == "OuterConeAngle") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["outer_cone_angle"] = floatPropertyData.Value;
-                            }
-                        }
-                        else if (propertyName == "AttenuationRadius") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["attenuation_radius"] = floatPropertyData.Value * 0.01f;
-                            }
-                        }
-                        else if (propertyName == "SourceRadius") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["source_radius"] = floatPropertyData.Value * 0.01f;
-                            }
-                        }
-                        else if (propertyName == "SoftSourceRadius") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["soft_source_radius"] = floatPropertyData.Value * 0.01f;
-                            }
-                        }
-                        else if (propertyName == "SourceLength") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["source_length"] = floatPropertyData.Value * 0.01f;
-                            }
-                        }
-                        else if (propertyName == "Temperature") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["temperature"] = floatPropertyData.Value;
-                            }
-                        }
-                        else if (propertyName == "bUseTemperature") {
-                            if (propertyData is BoolPropertyData boolPropertyData) {
-                                treeNode["use_temperature"] = boolPropertyData.Value;
-                            }
-                        }
-                        else if (propertyName == "CastShadows") {
-                            if (propertyData is BoolPropertyData boolPropertyData) {
-                                treeNode["cast_shadows"] = boolPropertyData.Value;
-                            }
-                        }
-                        else if (propertyName == "bUseInverseSquaredFalloff") {
-                            if (propertyData is BoolPropertyData boolPropertyData) {
-                                treeNode["use_inverse_squared_falloff"] = boolPropertyData.Value;
-                            }
-                        }
-                        else if (propertyName == "LightFalloffExponent") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["light_falloff_exponent"] = floatPropertyData.Value;
-                            }
-                        }
-                        else if (propertyName == "IndirectLightingIntensity") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["indirect_lighting_intensity"] = floatPropertyData.Value;
-                            }
-                        }
-                        else if (propertyName == "VolumetricScatteringIntensity") {
-                            if (propertyData is FloatPropertyData floatPropertyData) {
-                                treeNode["volumetric_scattering_intensity"] = floatPropertyData.Value;
-                            }
-                        }
-                    }
-                }
+
+            if (nodeType == "BlueprintGeneratedClass" && classAssetPath != "") {
+                ParseBlueprintDefaultSettings(classAssetPath, parseInfo);
+                EncounteredBlueprintInstance instance = new EncounteredBlueprintInstance();
+                instance.ClassAssetPath = classAssetPath;
+                instance.Export = normalExport;
+                parseInfo.EncounteredBlueprintInstances[exportIndex] = instance;
             }
+
+            MapPropertyDataList(uAsset, normalExport.Data, treeNode);
+
         }
 
         // Parse children
@@ -356,6 +206,230 @@ public class UMapAsDictionaryTree {
         parseInfo.ExportIndexDefinitionMap[exportIndex] = treeNode;
 
         return treeNode;
+    }
+
+    public static void MapPropertyDataList(UAsset uAsset, List<PropertyData> propertyDataList, Godot.Collections.Dictionary<string, object> treeNode, bool noOverride = false) {
+        string nodeType = (string)treeNode["type"];
+        string classAssetPath = (string)treeNode["class_asset_path"];
+
+        Godot.Collections.Dictionary<string, object> newProperties = new Godot.Collections.Dictionary<string, object>();
+
+        foreach (PropertyData propertyData in propertyDataList) {
+            string propertyName = propertyData.Name.Value.Value;
+            if (propertyName == "RootComponent") {
+                if (propertyData is ObjectPropertyData objectPropertyData) {
+                    if (objectPropertyData.Value.Index > 0) {
+                        newProperties["root_component_export_index"] = Math.Abs(objectPropertyData.Value.Index) - 1;
+                    }
+                }
+            }
+            else if (propertyName == "AttachParent") {
+                if (propertyData is ObjectPropertyData objectPropertyData) {
+                    if (objectPropertyData.Value.Index > 0) {
+                        newProperties["attach_parent_export_index"] = Math.Abs(objectPropertyData.Value.Index) - 1;
+                    }
+                }
+            }
+            /*
+            * BLUEPRINT/DYNAMIC CLASS PROPS
+            */
+            else if (propertyName == "Mesh") {
+                if (propertyData is ObjectPropertyData objectPropertyData) {
+                    FPackageIndex staticMeshPointer = objectPropertyData.Value;
+                    if (staticMeshPointer.IsExport()) {
+                        newProperties["mesh_export_index"] = Math.Abs(objectPropertyData.Value.Index) - 1;
+                    }
+                }
+            }
+            /*
+            * CHARACTER PROPS
+            */
+            else if (propertyName == "CharacterParamaters") {
+                if (propertyData is StructPropertyData structPropertyData) {
+                    if (classAssetPath.StartsWith("BloodstainedRotN/Content/Core/Character/")) {
+                        newProperties["type"] = "Character";
+                    }
+                    foreach (PropertyData characterPropertyData in structPropertyData.Value) {
+                        propertyName = characterPropertyData.Name.Value.Value;
+                        if (propertyName == "CharacterId") {
+                            if (characterPropertyData is NamePropertyData namePropertyData) {
+                                string characterId = namePropertyData.Value.Value.Value;
+                                if (characterId == null) {
+                                    characterId = "N/A";
+                                }
+                                newProperties["character_id"] = characterId;
+                            }
+                        }
+                    }
+                }
+            }
+            /*
+            * TRANSFORM PROPS
+            */
+            else if (propertyName == "RelativeLocation") {
+                if (propertyData is StructPropertyData structPropertyData) {
+                    if (structPropertyData.Value[0] is VectorPropertyData vectorPropertyData) {
+                        newProperties["translation"] = ConvertLocationFromUnrealToGodot(new float[]{vectorPropertyData.X, vectorPropertyData.Y, vectorPropertyData.Z});
+                    }
+                }
+            }
+            else if (propertyName == "RelativeRotation") {
+                if (propertyData is StructPropertyData structPropertyData) {
+                    if (structPropertyData.Value[0] is RotatorPropertyData rotatorPropertyData) {
+                        newProperties["rotation_degrees"] = ConvertRotationFromUnrealToGodot(new float[]{rotatorPropertyData.Pitch, rotatorPropertyData.Yaw, rotatorPropertyData.Roll});
+                    }
+                }
+            }
+            else if (propertyName == "RelativeScale3D") {
+                if (propertyData is StructPropertyData structPropertyData) {
+                    if (structPropertyData.Value[0] is VectorPropertyData vectorPropertyData) {
+                        newProperties["scale"] = ConvertScaleFromUnrealToGodot(new float[]{vectorPropertyData.X, vectorPropertyData.Y, vectorPropertyData.Z});
+                    }
+                }
+            }
+            else {
+                /*
+                * STATIC MESH PROPS
+                */
+                if (nodeType == "StaticMeshComponent" || nodeType == "PBSwingObjectComponent") {
+                    if (propertyName == "StaticMesh") {
+                        if (propertyData is ObjectPropertyData objectPropertyData) {
+                            FPackageIndex staticMeshPointer = objectPropertyData.Value;
+                            if (staticMeshPointer.IsImport()) {
+                                Import staticMeshImport = staticMeshPointer.ToImport(uAsset);
+                                int packageArrayIndex = Math.Abs(staticMeshImport.OuterIndex.Index) - 1;
+                                if (packageArrayIndex > -1) {
+                                    Import packageImport = uAsset.Imports[packageArrayIndex];
+                                    newProperties["static_mesh_name"] = staticMeshImport.ObjectName.Value.Value;
+                                    newProperties["static_mesh_name_instance"] = staticMeshImport.ObjectName.Number;
+                                    // TODO - check if this actually exists, auto-suffix here for packages that use that...
+                                    newProperties["static_mesh_asset_path"] = packageImport.ObjectName.Value.Value.Replace("/Game", "BloodstainedRotN/Content") + ".uasset";
+                                }
+                            }
+                        }
+                    }
+                }
+                /*
+                * CAPSULE PROPS
+                */
+                else if (nodeType == "CapsuleComponent") {   
+                    if (propertyName == "CapsuleHalfHeight") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["capsule_half_height"] = floatPropertyData.Value * 0.01f;
+                        }
+                    }
+                    else if (propertyName == "CapsuleRadius") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["capsule_radius"] = floatPropertyData.Value * 0.01f;
+                        }
+                    }
+                }
+                /*
+                * LIGHT PROPS
+                */
+                else if (nodeType == "PointLightComponent" || nodeType == "SpotLightComponent" || nodeType == "DirectionalLightComponent") {   
+                    if (propertyName == "Mobility") {
+                        if (propertyData is BytePropertyData byteProperty) {
+                            string mobilityEnumValue = byteProperty.GetEnumFull(uAsset).Value;
+                            if (mobilityEnumValue == "EComponentMobility::Static") {
+                                newProperties["mobility"] = "static";
+                            } else if (mobilityEnumValue == "EComponentMobility::Stationary") {
+                                newProperties["mobility"] = "stationary";
+                            } else if (mobilityEnumValue == "EComponentMobility::Movable") {
+                                newProperties["mobility"] = "movable";
+                            } 
+                        }
+                    }
+                    else if (propertyName == "Intensity") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["intensity"] = floatPropertyData.Value;
+                        }
+                    }
+                    else if (propertyName == "LightColor") {
+                        if (propertyData is StructPropertyData structPropertyData) {
+                            if (structPropertyData.Value[0] is ColorPropertyData colorPropertyData) {
+                                newProperties["light_color"] = new Godot.Color(colorPropertyData.Value.R / 255f, colorPropertyData.Value.G / 255f, colorPropertyData.Value.B / 255f, colorPropertyData.Value.A / 255f);
+                            }
+                        }
+                    }
+                    else if (propertyName == "InnerConeAngle") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["inner_cone_angle"] = floatPropertyData.Value;
+                        }
+                    }
+                    else if (propertyName == "OuterConeAngle") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["outer_cone_angle"] = floatPropertyData.Value;
+                        }
+                    }
+                    else if (propertyName == "AttenuationRadius") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["attenuation_radius"] = floatPropertyData.Value * 0.01f;
+                        }
+                    }
+                    else if (propertyName == "SourceRadius") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["source_radius"] = floatPropertyData.Value * 0.01f;
+                        }
+                    }
+                    else if (propertyName == "SoftSourceRadius") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["soft_source_radius"] = floatPropertyData.Value * 0.01f;
+                        }
+                    }
+                    else if (propertyName == "SourceLength") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["source_length"] = floatPropertyData.Value * 0.01f;
+                        }
+                    }
+                    else if (propertyName == "Temperature") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["temperature"] = floatPropertyData.Value;
+                        }
+                    }
+                    else if (propertyName == "bUseTemperature") {
+                        if (propertyData is BoolPropertyData boolPropertyData) {
+                            newProperties["use_temperature"] = boolPropertyData.Value;
+                        }
+                    }
+                    else if (propertyName == "CastShadows") {
+                        if (propertyData is BoolPropertyData boolPropertyData) {
+                            newProperties["cast_shadows"] = boolPropertyData.Value;
+                        }
+                    }
+                    else if (propertyName == "bUseInverseSquaredFalloff") {
+                        if (propertyData is BoolPropertyData boolPropertyData) {
+                            newProperties["use_inverse_squared_falloff"] = boolPropertyData.Value;
+                        }
+                    }
+                    else if (propertyName == "LightFalloffExponent") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["light_falloff_exponent"] = floatPropertyData.Value;
+                        }
+                    }
+                    else if (propertyName == "IndirectLightingIntensity") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["indirect_lighting_intensity"] = floatPropertyData.Value;
+                        }
+                    }
+                    else if (propertyName == "VolumetricScatteringIntensity") {
+                        if (propertyData is FloatPropertyData floatPropertyData) {
+                            newProperties["volumetric_scattering_intensity"] = floatPropertyData.Value;
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach (var property in newProperties) {
+            if (noOverride) {
+                if (!treeNode.ContainsKey(property.Key)) {
+                    treeNode[property.Key] = property.Value;
+                }
+            } else {
+                treeNode[property.Key] = property.Value;
+            }
+        }
     }
 
     public static void ModifyAssetFromEditsJson(UAsset uAsset, JObject editsJson) {

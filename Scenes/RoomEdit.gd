@@ -8,13 +8,15 @@ var icon_remove = preload("res://Icons/Editor/Remove.svg")
 var icon_reload = preload("res://Icons/Editor/Reload.svg")
 var selectable_types = ["StaticMeshActor", "StaticMeshComponent"]
 
-var default_level_name = "m05SAN_003"
+var default_level_name = "m02VIL_003"
 
 var editor: Node
 var uasset_parser: Node
 
 var parse_pak_thread: Thread
 var get_room_definition_thread: Thread
+var place_nodes_thread: Thread
+
 var parse_enemy_blueprint_thread: Thread
 
 var asset_explorer: Control
@@ -143,6 +145,7 @@ var is_mouse_in_3d_viewport_range: bool = false
 var is_panel_popup_blocking: bool = false
 var is_3d_viewport_focused: bool = false
 var is_3d_editor_control_active: bool = false
+var is_window_focused: bool = true
 var selected_node_initial_transforms: Array = []
 var ignore_tree_multi_selected_signal: bool = false
 
@@ -157,7 +160,12 @@ func _ready():
 	if not editor.selected_package:
 		editor.selected_package = "MyTest"
 	if not editor.selected_level_name:
-		editor.selected_level_name = default_level_name
+		var last_edited_level_name = editor.read_config_prop("last_edited_level_name")
+		if last_edited_level_name != null:
+			editor.selected_level_name = last_edited_level_name
+		else:
+			editor.selected_level_name = default_level_name
+	editor.write_config_prop("last_edited_level_name", editor.selected_level_name)
 	
 	asset_explorer = find_node("AssetExplorer", true, true)
 	enemy_difficulty_select_option_button = find_node("EnemyDifficultySelectOptionButton", true, true)
@@ -236,6 +244,13 @@ func _ready():
 	
 	start_parse_pak_thread()
 
+func _notification(what):
+	if what == MainLoop.NOTIFICATION_WM_FOCUS_IN:
+		call_deferred("notify_window_focused_deferred")
+	elif what == MainLoop.NOTIFICATION_WM_FOCUS_OUT:
+		is_window_focused = false
+		update_3d_viewport_input_tracking()
+
 func _input(event):
 	# Tell Room3dDisplay if it should capture mouse events
 	var parent = get_parent()
@@ -307,8 +322,23 @@ func get_room_definition_thread_function(_noop):
 func end_get_room_definition_thread():
 	get_room_definition_thread.wait_to_finish()
 	print_debug("get room def complete")
-	threads_finished()
+	start_place_nodes_thread()
 
+func start_place_nodes_thread():
+	place_nodes_thread = Thread.new()
+	place_nodes_thread.start(self, "place_nodes_thread_function")
+	loading_status_label.text = "Placing the room's assets..."
+
+func place_nodes_thread_function(_noop):
+	editor.load_room_edits()
+	setup_3d_view()
+	build_object_outlines()
+	call_deferred("end_place_nodes_thread")
+
+func end_place_nodes_thread():
+	place_nodes_thread.wait_to_finish()
+	print_debug("place nodes complete")
+	threads_finished()
 
 #func start_parse_enemy_blueprint_thread():
 #	parse_enemy_blueprint_thread = Thread.new()
@@ -346,6 +376,8 @@ func end_get_room_definition_thread():
 
 
 func threads_finished():
+	room_3d_display.is_initial_thread_load_complete = true
+	room_3d_display.start_3d_model_extraction()
 	editor_container.show()
 	loading_status_container.hide()
 	setup_after_load()
@@ -410,6 +442,9 @@ func on_tree_multi_selected_deferred():
 		ignore_tree_multi_selected_signal = false
 
 func on_tree_rmb_selected(position: Vector2, tree_name: String):
+	call_deferred("on_tree_rmb_selected_deferred", position, tree_name)
+
+func on_tree_rmb_selected_deferred(position: Vector2, tree_name: String):
 	build_tree_popup_menu()
 	var viewport_size = get_viewport().size
 	var popup_position: Vector2 = trees[tree_name].tree.rect_global_position + position
@@ -489,9 +524,11 @@ func on_room_3d_display_selection_changed(selected_nodes):
 			selected_nodes_by_tree_name[node.tree_name] = []
 		selected_nodes_by_tree_name[node.tree_name].push_back(node)
 	var last_tree_name = ""
-	for tree_name in selected_nodes_by_tree_name:
+	for tree_name in trees:
 		var current_tree: Dictionary = trees[tree_name]
-		var remaining_selected_nodes: Array = selected_nodes_by_tree_name[tree_name].duplicate(false)
+		var remaining_selected_nodes: Array = []
+		if selected_nodes_by_tree_name.has(tree_name):
+			remaining_selected_nodes = selected_nodes_by_tree_name[tree_name].duplicate(false)
 		var items_to_deselect: Array = []
 		var selected_item: TreeItem = current_tree.tree.get_next_selected(null)
 		while selected_item != null:
@@ -509,7 +546,8 @@ func on_room_3d_display_selection_changed(selected_nodes):
 			tree_uncollapse_from_item(current_tree.tree_id_map[export_index])
 			current_tree.tree_id_map[export_index].select(0)
 		current_tree.tree.ensure_cursor_is_visible()
-		last_tree_name = tree_name
+		if selected_nodes_by_tree_name.has(tree_name):
+			last_tree_name = tree_name
 	if last_tree_name:
 		level_outline_tab_container.current_tab = trees[last_tree_name].tab_index
 		if trees[last_tree_name].has("tab_section_index"):
@@ -724,8 +762,8 @@ func clear_selection():
 	update_3d_cursor_position()
 
 func update_3d_viewport_input_tracking():
-	var can_capture_mouse = is_mouse_in_3d_viewport_range and not is_any_menu_popup_visible and not is_panel_popup_blocking
-	var can_capture_keyboard = is_3d_viewport_focused and not is_any_menu_popup_visible
+	var can_capture_mouse = is_mouse_in_3d_viewport_range and not is_any_menu_popup_visible and not is_panel_popup_blocking and is_window_focused
+	var can_capture_keyboard = is_3d_viewport_focused and not is_any_menu_popup_visible and is_window_focused
 	room_3d_display.can_capture_mouse = can_capture_mouse and not is_3d_editor_control_active
 	room_3d_display.can_capture_keyboard = can_capture_keyboard
 	room_3d_display.can_select = not is_3d_editor_control_active
@@ -798,9 +836,6 @@ func update_panels_after_selection():
 		panel_asset_info.hide()
 
 func setup_after_load():
-	editor.load_room_edits()
-	setup_3d_view()
-	build_object_outlines()
 	update_panels_after_selection()
 	asset_explorer.load_asset_list()
 	on_enemy_difficulty_item_selected(0)
@@ -880,3 +915,7 @@ func tree_uncollapse_from_item(item: TreeItem):
 	var parent = item.get_parent()
 	if parent != null:
 		tree_uncollapse_from_item(parent)
+
+func notify_window_focused_deferred():
+	is_window_focused = true
+	update_3d_viewport_input_tracking()
