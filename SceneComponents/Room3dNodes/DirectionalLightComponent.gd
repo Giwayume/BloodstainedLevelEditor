@@ -202,7 +202,6 @@ func remove_gizmo_bounds():
 
 func set_deleted(deleted: bool):
 	.set_deleted(deleted)
-	var collision_area = get_node_or_null("CollisionArea")
 	if collision_area:
 		if deleted:
 			collision_area.collision_layer = 0
@@ -213,7 +212,6 @@ func set_deleted(deleted: bool):
 
 func set_hidden(hidden: bool):
 	.set_hidden(hidden)
-	var collision_area = get_node_or_null("CollisionArea")
 	if collision_area:
 		if hidden:
 			collision_area.collision_layer = 0

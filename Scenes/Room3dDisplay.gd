@@ -36,6 +36,10 @@ var custom_component_scripts = {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/EventRootComponent.gd")
 	},
+	"InstancedStaticMeshComponent": {
+		"auto_placement": true,
+		"script": preload("res://SceneComponents/Room3dNodes/InstancedStaticMeshComponent.gd")
+	},
 	"PBMeshParentComponent": {
 		"auto_placement": true,
 		"script": preload("res://SceneComponents/Room3dNodes/PBMeshParentComponent.gd")

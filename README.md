@@ -23,7 +23,7 @@ Target functionality:
     - [x] Edit
     - [x] Remove
     - [x] Point lights
-    - [ ] Spot lights
+    - [x] Spot lights
     - [ ] Directional lights
     - [ ] Temporary solution: allow deletion of light/shadow maps, auto disable static lights, auto convert stationary to movable
     - [ ] Permanent solution: figure out how to create light/shadow maps & implement ray traced map baker in editor.

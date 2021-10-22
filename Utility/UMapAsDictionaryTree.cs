@@ -32,6 +32,8 @@ public class UMapAsDictionaryTree {
         public UAssetParser Parser = default(UAssetParser);
         // Mapping of ClassAssetPath to Export ObjectName to the list of properties in that export (for a Blueprint _GEN_VARIABLE export).
         public System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, List<PropertyData>>> BlueprintDefaultSettings = default(System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, List<PropertyData>>>);
+        // Mapping of blueprint asset path to its parent asset path.
+        public System.Collections.Generic.Dictionary<string, string> BlueprintParents = default(System.Collections.Generic.Dictionary<string, string>);
         public System.Collections.Generic.Dictionary<string, UAsset> BlueprintAssets = default(System.Collections.Generic.Dictionary<string, UAsset>);
         // Mapping of export index to to EncounteredBlueprintInstance, list populated as exports parsed.
         public System.Collections.Generic.Dictionary<int, EncounteredBlueprintInstance> EncounteredBlueprintInstances = default(System.Collections.Generic.Dictionary<int, EncounteredBlueprintInstance>);
@@ -63,6 +65,7 @@ public class UMapAsDictionaryTree {
         parseInfo.ExportIndexDefinitionMap = new System.Collections.Generic.Dictionary<int, Godot.Collections.Dictionary<string, object>>();
         parseInfo.Parser = parser;
         parseInfo.BlueprintDefaultSettings = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, List<PropertyData>>>();
+        parseInfo.BlueprintParents = new System.Collections.Generic.Dictionary<string, string>();
         parseInfo.BlueprintAssets = new System.Collections.Generic.Dictionary<string, UAsset>();
         parseInfo.EncounteredBlueprintInstances = new System.Collections.Generic.Dictionary<int, EncounteredBlueprintInstance>();
 
@@ -72,18 +75,27 @@ public class UMapAsDictionaryTree {
         foreach (var blueprintInstanceLoop in parseInfo.EncounteredBlueprintInstances) {
             int blueprintExportIndex = blueprintInstanceLoop.Key;
             EncounteredBlueprintInstance blueprintInstance = blueprintInstanceLoop.Value;
-            if (parseInfo.BlueprintAssets.ContainsKey(blueprintInstance.ClassAssetPath)) {
-                System.Collections.Generic.Dictionary<string, List<PropertyData>> objectNameToPropertyDataMap = parseInfo.BlueprintDefaultSettings[blueprintInstance.ClassAssetPath];
-                if (blueprintInstance.Export is NormalExport export) {
-                    foreach (PropertyData propertyData in export.Data) {
-                        if (propertyData is ObjectPropertyData objectPropertyData) {
-                            string propertyName = objectPropertyData.Name.Value.Value;
-                            int objectRefIndex = objectPropertyData.Value.Index - 1;
-                            if (objectNameToPropertyDataMap.ContainsKey(propertyName) && parseInfo.ExportIndexDefinitionMap.ContainsKey(objectRefIndex)) {
-                                MapPropertyDataList(parseInfo.BlueprintAssets[blueprintInstance.ClassAssetPath], objectNameToPropertyDataMap[propertyName], parseInfo.ExportIndexDefinitionMap[objectRefIndex], true);
+            string currentBlueprintLoadAssetPath = blueprintInstance.ClassAssetPath;
+            
+            while (currentBlueprintLoadAssetPath != "") {
+                if (parseInfo.BlueprintAssets.ContainsKey(currentBlueprintLoadAssetPath)) {
+                    System.Collections.Generic.Dictionary<string, List<PropertyData>> objectNameToPropertyDataMap = parseInfo.BlueprintDefaultSettings[currentBlueprintLoadAssetPath];
+                    if (blueprintInstance.Export is NormalExport export) {
+                        foreach (PropertyData propertyData in export.Data) {
+                            if (propertyData is ObjectPropertyData objectPropertyData) {
+                                string propertyName = objectPropertyData.Name.Value.Value;
+                                int objectRefIndex = objectPropertyData.Value.Index - 1;
+                                if (objectNameToPropertyDataMap.ContainsKey(propertyName) && parseInfo.ExportIndexDefinitionMap.ContainsKey(objectRefIndex)) {
+                                    MapPropertyDataList(parseInfo.BlueprintAssets[currentBlueprintLoadAssetPath], objectNameToPropertyDataMap[propertyName], parseInfo.ExportIndexDefinitionMap[objectRefIndex], true);
+                                }
                             }
                         }
                     }
+                }
+                if (parseInfo.BlueprintParents.ContainsKey(currentBlueprintLoadAssetPath)) {
+                    currentBlueprintLoadAssetPath = parseInfo.BlueprintParents[currentBlueprintLoadAssetPath];
+                } else {
+                    currentBlueprintLoadAssetPath = "";
                 }
             }
         }
@@ -126,7 +138,26 @@ public class UMapAsDictionaryTree {
         }
         if (System.IO.File.Exists(classAssetExtractPath)) {
             UAsset blueprintAsset = new UAsset(classAssetExtractPath, UE4Version.VER_UE4_18);
+            string parentBlueprintAssetPath = "";
+
             foreach (Export baseExport in blueprintAsset.Exports) {
+                if (baseExport.OuterIndex.Index == 0 && baseExport.SuperIndex.IsImport()) {
+                    Import classImport = baseExport.SuperIndex.ToImport(blueprintAsset);
+                    if (classImport.ClassName.Value.Value == "BlueprintGeneratedClass" && classImport.OuterIndex.IsImport()) {
+                        Import packageImport = classImport.OuterIndex.ToImport(blueprintAsset);
+                        if (packageImport.ClassName.Value.Value == "Package") {
+                            parentBlueprintAssetPath = packageImport.ObjectName.Value.Value;
+                            parentBlueprintAssetPath = Regex.Replace(parentBlueprintAssetPath, @"^\/Game/", @"/BloodstainedRotN/Content/");
+                            parentBlueprintAssetPath = Regex.Replace(parentBlueprintAssetPath, @"^[\/]", "");
+                            if (parentBlueprintAssetPath.StartsWith(@"BloodstainedRotN/")) {
+                                parentBlueprintAssetPath = parentBlueprintAssetPath + ".uasset";
+                            } else {
+                                parentBlueprintAssetPath = "";
+                            }
+                        }
+                    }
+                }
+
                 if (baseExport is NormalExport export) {
                     string objectName = export.ObjectName.Value.Value;
                     if (objectName.EndsWith("_GEN_VARIABLE")) {
@@ -135,6 +166,11 @@ public class UMapAsDictionaryTree {
                 }
             }
             parseInfo.BlueprintAssets[classAssetPath] = blueprintAsset;
+
+            if (parentBlueprintAssetPath != "") {
+                ParseBlueprintDefaultSettings(parentBlueprintAssetPath, parseInfo);
+                parseInfo.BlueprintParents[classAssetPath] = parentBlueprintAssetPath;
+            }
         }
         parseInfo.BlueprintDefaultSettings[classAssetPath] = blueprintDefaultSettings;
     }
@@ -291,7 +327,7 @@ public class UMapAsDictionaryTree {
                 /*
                 * STATIC MESH PROPS
                 */
-                if (nodeType == "StaticMeshComponent" || nodeType == "PBSwingObjectComponent") {
+                if (nodeType == "InstancedStaticMeshComponent" || nodeType == "StaticMeshComponent" || nodeType == "PBSwingObjectComponent") {
                     if (propertyName == "StaticMesh") {
                         if (propertyData is ObjectPropertyData objectPropertyData) {
                             FPackageIndex staticMeshPointer = objectPropertyData.Value;

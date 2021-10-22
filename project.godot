@@ -109,6 +109,7 @@ run/main_scene="res://Scenes/Startup.tscn"
 boot_splash/image="res://SplashScreen.png"
 boot_splash/bg_color=Color( 0, 0, 0, 1 )
 config/icon="res://Icon.png"
+config/auto_accept_quit=false
 
 [autoload]
 

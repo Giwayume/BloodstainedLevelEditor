@@ -23,6 +23,12 @@ func _ready():
 	PhysicsLayers3d.read_layers()
 	uasset_parser = get_node("/root/UAssetParser")
 
+func _notification(what):
+	if what == MainLoop.NOTIFICATION_WM_QUIT_REQUEST:
+		save_room_edits()
+		room_edits = null
+		get_tree().quit()
+
 ##########
 # CONFIG #
 ##########
@@ -138,6 +144,7 @@ func get_room_edit_export_prop(asset_type: String, export_index, prop_name: Stri
 	return prop_value
 
 func set_room_edit_export_prop(asset_type: String, export_index, prop_name: String, prop_value):
+	room_edits["has_changes"] = true;
 	export_index = str(export_index)
 	if prop_value == null:
 		remove_room_edit_export_prop(asset_type, export_index, prop_name)
@@ -167,6 +174,7 @@ func set_room_edit_export_prop(asset_type: String, export_index, prop_name: Stri
 		room_edits[asset_type]["existing_exports"][export_index][prop_name] = prop_value
 
 func remove_room_edit_export_prop(asset_type: String, export_index, prop_name: String):
+	room_edits["has_changes"] = true;
 	export_index = str(export_index)
 	if room_edits.has(asset_type):
 		if room_edits[asset_type]["existing_exports"].has(export_index):

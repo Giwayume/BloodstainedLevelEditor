@@ -573,56 +573,72 @@ public class UAssetParser : Control {
             foreach (string file in FileExt.GetFilesRecursive(editsFolder)) {
                 string filePath = file.Replace("\\", "/");
                 string assetBasePath = filePath.Replace(editsFolder + "/", "").Replace(".json", "");
+                bool editsJsonHasChanges = false;
+                JObject editsJson;
                 using (StreamReader reader = System.IO.File.OpenText(filePath)) {
-                    JObject editsJson = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
-                    List<System.Collections.Generic.Dictionary<string, string>> assetsToCheck = new List<System.Collections.Generic.Dictionary<string, string>>();
-                    assetsToCheck.Add(
-                        new System.Collections.Generic.Dictionary<string, string>{
-                            { "key", "bg" },
-                            { "suffix", "_BG.umap" }
-                        }
-                    );
-                    assetsToCheck.Add(
-                        new System.Collections.Generic.Dictionary<string, string>{
-                            { "key", "gimmick" },
-                            { "suffix", "_Gimmick.umap" }
-                        }
-                    );
-                    assetsToCheck.Add(
-                        new System.Collections.Generic.Dictionary<string, string>{
-                            { "key", "enemy" },
-                            { "suffix", "_Enemy.umap" }
-                        }
-                    );
-                    assetsToCheck.Add(
-                        new System.Collections.Generic.Dictionary<string, string>{
-                            { "key", "enemy_normal" },
-                            { "suffix", "_Enemy_Normal.umap" }
-                        }
-                    );
-                    assetsToCheck.Add(
-                        new System.Collections.Generic.Dictionary<string, string>{
-                            { "key", "enemy_hard" },
-                            { "suffix", "_Enemy_Hard.umap" }
-                        }
-                    );
-                    assetsToCheck.Add(
-                        new System.Collections.Generic.Dictionary<string, string>{
-                            { "key", "setting" },
-                            { "suffix", "_Setting.umap" }
-                        }
-                    );
-                    foreach (System.Collections.Generic.Dictionary<string, string> checkDef in assetsToCheck) {
-                        if (editsJson.ContainsKey(checkDef["key"]) && AssetPathToPakFilePathMap.ContainsKey(assetBasePath + checkDef["suffix"])) {
-                            if (editsJson[checkDef["key"]]["existing_exports"].Count() > 0 || editsJson[checkDef["key"]]["new_exports"].Count() > 0) {
-                                ExtractAssetToFolder(AssetPathToPakFilePathMap[assetBasePath + checkDef["suffix"]], assetBasePath + checkDef["suffix"], modifiedAssetsFolder);
-                                UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"], UE4Version.VER_UE4_18);
-                                UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson[checkDef["key"]]);
-                                uAsset.Write(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"]);
-                            } else {
-                                System.IO.File.Delete(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"]);
+                    editsJson = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
+                    editsJsonHasChanges = editsJson.ContainsKey("has_changes") && editsJson["has_changes"].Value<bool>() == true;
+                    if (editsJsonHasChanges) {
+                        GD.Print("Applying modifications from ", filePath);
+                        List<System.Collections.Generic.Dictionary<string, string>> assetsToCheck = new List<System.Collections.Generic.Dictionary<string, string>>();
+                        assetsToCheck.Add(
+                            new System.Collections.Generic.Dictionary<string, string>{
+                                { "key", "bg" },
+                                { "suffix", "_BG.umap" }
+                            }
+                        );
+                        assetsToCheck.Add(
+                            new System.Collections.Generic.Dictionary<string, string>{
+                                { "key", "gimmick" },
+                                { "suffix", "_Gimmick.umap" }
+                            }
+                        );
+                        assetsToCheck.Add(
+                            new System.Collections.Generic.Dictionary<string, string>{
+                                { "key", "enemy" },
+                                { "suffix", "_Enemy.umap" }
+                            }
+                        );
+                        assetsToCheck.Add(
+                            new System.Collections.Generic.Dictionary<string, string>{
+                                { "key", "enemy_normal" },
+                                { "suffix", "_Enemy_Normal.umap" }
+                            }
+                        );
+                        assetsToCheck.Add(
+                            new System.Collections.Generic.Dictionary<string, string>{
+                                { "key", "enemy_hard" },
+                                { "suffix", "_Enemy_Hard.umap" }
+                            }
+                        );
+                        assetsToCheck.Add(
+                            new System.Collections.Generic.Dictionary<string, string>{
+                                { "key", "setting" },
+                                { "suffix", "_Setting.umap" }
+                            }
+                        );
+                        foreach (System.Collections.Generic.Dictionary<string, string> checkDef in assetsToCheck) {
+                            if (editsJson.ContainsKey(checkDef["key"]) && AssetPathToPakFilePathMap.ContainsKey(assetBasePath + checkDef["suffix"])) {
+                                if (editsJson[checkDef["key"]]["existing_exports"].Count() > 0 || editsJson[checkDef["key"]]["new_exports"].Count() > 0) {
+                                    ExtractAssetToFolder(AssetPathToPakFilePathMap[assetBasePath + checkDef["suffix"]], assetBasePath + checkDef["suffix"], modifiedAssetsFolder);
+                                    UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"], UE4Version.VER_UE4_18);
+                                    UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson[checkDef["key"]]);
+                                    uAsset.Write(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"]);
+                                } else {
+                                    if (System.IO.File.Exists(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"])) {
+                                        System.IO.File.Delete(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"]);
+                                    }
+                                }
                             }
                         }
+                    }
+                }
+                if (editsJsonHasChanges) {
+                    try {
+                        editsJson.Remove("has_changes");
+                        System.IO.File.WriteAllText(filePath, editsJson.ToString());
+                    } catch (Exception e) {
+                        GD.Print(e);
                     }
                 }
             }

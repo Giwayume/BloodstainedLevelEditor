@@ -1,3 +1,8 @@
+# We can load BlueprintGeneratedClass automatically for the most part.
+# But nativized blueprints in the form of "DynamicClass" are generally missing a lot of
+# information that's stored in the executable. These are a list of assumptions
+# based on observations in-game of how these missing properties work.
+
 const blueprint_profiles: Dictionary = {
 	"BloodstainedRotN/Content/Core/Environment/Common/Blueprint/B_COM_Light_LineSpot.uasset": {
 		"light_defaults": {
@@ -8,6 +13,33 @@ const blueprint_profiles: Dictionary = {
 		"light_defaults": {
 			"mobility": "static"
 		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Gimmick/B_SIP_2ndFloor01.uasset": {
+		"meshes": [
+			{
+				"object_name": "Floor",
+				"object_type": "StaticMeshComponent",
+				"mesh": "BloodstainedRotN/Content/Core/Environment/ACT01_SIP/Mesh/SIP_Rope11.uasset"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Gimmick/B_SIP_2ndFloor02.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMeshComponent0",
+				"object_type": "StaticMeshComponent",
+				"mesh": "BloodstainedRotN/Content/Core/Environment/ACT01_SIP/Mesh/SIP_Scaffolding01.uasset"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Gimmick/NewGimmicks/01SIP/Gm_SIP_03/Gimmick/Gm_SIP_03/SIP_Break_Window.uasset": {
+		"meshes": [
+			{
+				"object_name": "BeforeWall",
+				"object_type": "StaticMeshComponent",
+				"mesh": "BloodstainedRotN/Content/Core/Environment/ACT01_SIP/Mesh/SIP_WallBreak01_before.uasset"
+			}
+		]
 	},
 	"BloodstainedRotN/Content/Core/Environment/Gimmick/NewGimmicks/03ENT/Chandelier/ChandelierBase_ENT04.uasset": {
 		"meshes": [
