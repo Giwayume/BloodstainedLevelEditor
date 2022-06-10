@@ -137,7 +137,7 @@ public class UMapAsDictionaryTree {
             }
         }
         if (System.IO.File.Exists(classAssetExtractPath)) {
-            UAsset blueprintAsset = new UAsset(classAssetExtractPath, UE4Version.VER_UE4_18);
+            UAsset blueprintAsset = new UAsset(classAssetExtractPath, UE4Version.VER_UE4_22);
             string parentBlueprintAssetPath = "";
 
             foreach (Export baseExport in blueprintAsset.Exports) {

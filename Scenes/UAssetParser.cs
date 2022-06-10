@@ -138,95 +138,104 @@ public class UAssetParser : Control {
             // Find all files in the game's "Paks" directory
             string gameDirectory = (string)GetNode("/root/Editor").Call("read_config_prop", "game_directory");
             string gamePakFilePath = gameDirectory + "/BloodstainedRotN/Content/Paks";
-            string u4pakPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/U4pak/u4pak.exe");
-            string[] filesInPakDirectory = System.IO.Directory.GetFiles(gamePakFilePath);
+            string ueViewerPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/UEViewer/umodel_64.exe");
+            // string[] filesInPakDirectory = System.IO.Directory.GetFiles(gamePakFilePath);
             _assetPathToPakFilePathMap = new Godot.Collections.Dictionary<string, string>();
 
             // Loop through each file, check if it is a .pak file
-            foreach (string filePath in filesInPakDirectory) {
-                string fileName = Regex.Split(filePath, @"[\\/]").Last();
-                if (fileName.StartsWith("pakchunk")) {
-                    using (Process pathList = new Process()) {
-                        pathList.StartInfo.FileName = u4pakPath;
-                        pathList.StartInfo.Arguments = @" list -n " + "\"" + filePath + "\"";
-                        pathList.StartInfo.UseShellExecute = false;
-                        pathList.StartInfo.RedirectStandardOutput = true;
-                        pathList.Start();
-                        string output = pathList.StandardOutput.ReadToEnd();
-                        pathList.WaitForExit();
-                        string[] packagePaths = output.Split("\n");
+            // foreach (string filePath in filesInPakDirectory) {
+            //     string fileName = Regex.Split(filePath, @"[\\/]").Last();
+            //     if (fileName.StartsWith("pakchunk")) {
+            using (Process pathList = new Process()) {
+                pathList.StartInfo.FileName = ueViewerPath;
+                pathList.StartInfo.Arguments = " -path=\"" + gamePakFilePath + "\" -game=ue4.22 -pkginfo *";
+                pathList.StartInfo.UseShellExecute = false;
+                pathList.StartInfo.RedirectStandardOutput = true;
+                pathList.Start();
+                string output = pathList.StandardOutput.ReadToEnd();
+                pathList.WaitForExit();
+                string[] packageInfoLines = output.Split("\n");
 
-                        // For each package path found in the .pak file, store in a dictionary in memory that specifies which .pak file it was found in
-                        foreach (string packagePath in packagePaths) {
-                            _assetPathToPakFilePathMap[packagePath] = filePath;
+                // For each package path found in the .pak file, store in a dictionary in memory that specifies which .pak file it was found in
+                foreach (string packageInfoLine in packageInfoLines) {
+                    if (!packageInfoLine.StartsWith("Loading package:")) continue;
+                    string packagePath = packageInfoLine.Replace("Loading package: /Game/", "BloodstainedRotN/Content/");
+                    if (packagePath.IndexOf(".uasset") > -1) {
+                        packagePath = packagePath.Substring(0, packagePath.IndexOf(".uasset") + 7); 
+                    }
+                    if (packagePath.IndexOf(".umap") > -1) {
+                        packagePath = packagePath.Substring(0, packagePath.IndexOf(".umap") + 5);
+                    }
 
-                            // Add any character model assets we find to a separate list for easy reading
-                            if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Character/[^/]*?/Mesh/").Success) {
-                                string[] pathSplit = packagePath.Split("/");
-                                string characterId = "";
-                                bool hasFoundCharacterFolder = false;
-                                foreach (string folderName in pathSplit) {
-                                    if (hasFoundCharacterFolder) {
-                                        characterId = folderName;
-                                        break;
-                                    }
-                                    if (folderName == "Character") {
-                                        hasFoundCharacterFolder = true;
-                                    }
-                                }
-                                Godot.Collections.Array<string> characterMeshAssets = default(Godot.Collections.Array<string>);
-                                if (_characterMeshAssetPathMap.ContainsKey(characterId)) {
-                                    characterMeshAssets = _characterMeshAssetPathMap[characterId];
-                                } else {
-                                    characterMeshAssets = new Godot.Collections.Array<string>();
-                                    _characterMeshAssetPathMap[characterId] = characterMeshAssets;
-                                }
-                                characterMeshAssets.Add(packagePath);
+                    _assetPathToPakFilePathMap[packagePath] = "pakchunk0-WindowsNoEditor.pak"; // filePath;
+
+                    // Add any character model assets we find to a separate list for easy reading
+                    if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Character/[^/]*?/Mesh/").Success) {
+                        string[] pathSplit = packagePath.Split("/");
+                        string characterId = "";
+                        bool hasFoundCharacterFolder = false;
+                        foreach (string folderName in pathSplit) {
+                            if (hasFoundCharacterFolder) {
+                                characterId = folderName;
+                                break;
                             }
-
-                            // Add any room/level assets we find to a separate list for easy reading
-                            if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Environment/[^/]*?/Level/m[0-9]{2}[A-Z]{3}_[0-9]{3}").Success) {
-                                string packageName = packagePath.Split("/").Last();
-                                string levelName = packageName.Substring(0, 10);
-                                Godot.Collections.Dictionary<string, string> roomPackageDef = default(Godot.Collections.Dictionary<string, string>);
-                                if (_levelNameToAssetPathMap.ContainsKey(levelName)) {
-                                    roomPackageDef = _levelNameToAssetPathMap[levelName];
-                                } else {
-                                    roomPackageDef = new Godot.Collections.Dictionary<string, string>();
-                                    _levelNameToAssetPathMap[levelName] = roomPackageDef;
-                                }
-                                if (packageName.EndsWith("_BG.umap")) {
-                                    roomPackageDef["bg"] = packagePath;
-                                } else if (packageName.EndsWith("_BG_BuiltData.uasset")) {
-                                    roomPackageDef["bg_built_data"] = packagePath;
-                                } else if (packageName.EndsWith("_Enemy.umap")) {
-                                    roomPackageDef["enemy"] = packagePath;
-                                } else if (packageName.EndsWith("_Enemy_Normal.umap")) {
-                                    roomPackageDef["enemy_normal"] = packagePath;
-                                } else if (packageName.EndsWith("_Enemy_Hard.umap")) {
-                                    roomPackageDef["enemy_hard"] = packagePath;
-                                } else if (packageName.EndsWith("_Gimmick.umap")) {
-                                    roomPackageDef["gimmick"] = packagePath;
-                                } else if (packageName.EndsWith("_Gimmick_BuiltData.uasset")) {
-                                    roomPackageDef["gimmick_built_data"] = packagePath;
-                                } else if (packageName.EndsWith("_Event.umap")) {
-                                    roomPackageDef["event"] = packagePath;
-                                } else if (packageName.EndsWith("_Light.umap") || packageName.EndsWith("_Ljght.umap")) {
-                                    roomPackageDef["light"] = packagePath;
-                                } else if (packageName.EndsWith("_Light_BuiltData.uasset") || packageName.EndsWith("_Ljght_BuiltData.uasset")) {
-                                    roomPackageDef["light_built_data"] = packagePath;
-                                } else if (packageName.EndsWith("_Setting.umap")) {
-                                    roomPackageDef["setting"] = packagePath;
-                                } else if (packageName.EndsWith("_Setting_BuiltData.uasset")) {
-                                    roomPackageDef["setting_built_data"] = packagePath;
-                                } else if (packageName.EndsWith("_RV.umap")) {
-                                    roomPackageDef["rv"] = packagePath;
-                                }
+                            if (folderName == "Character") {
+                                hasFoundCharacterFolder = true;
                             }
+                        }
+                        Godot.Collections.Array<string> characterMeshAssets = default(Godot.Collections.Array<string>);
+                        if (_characterMeshAssetPathMap.ContainsKey(characterId)) {
+                            characterMeshAssets = _characterMeshAssetPathMap[characterId];
+                        } else {
+                            characterMeshAssets = new Godot.Collections.Array<string>();
+                            _characterMeshAssetPathMap[characterId] = characterMeshAssets;
+                        }
+                        characterMeshAssets.Add(packagePath);
+                    }
+
+                    // Add any room/level assets we find to a separate list for easy reading
+                    if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Environment/[^/]*?/Level/m[0-9]{2}[A-Z]{3}_[0-9]{3}").Success) {
+                        string packageName = packagePath.Split("/").Last();
+                        string levelName = packageName.Substring(0, 10);
+                        Godot.Collections.Dictionary<string, string> roomPackageDef = default(Godot.Collections.Dictionary<string, string>);
+                        if (_levelNameToAssetPathMap.ContainsKey(levelName)) {
+                            roomPackageDef = _levelNameToAssetPathMap[levelName];
+                        } else {
+                            roomPackageDef = new Godot.Collections.Dictionary<string, string>();
+                            _levelNameToAssetPathMap[levelName] = roomPackageDef;
+                        }
+                        if (packageName.EndsWith("_BG.umap")) {
+                            roomPackageDef["bg"] = packagePath;
+                        } else if (packageName.EndsWith("_BG_BuiltData.uasset")) {
+                            roomPackageDef["bg_built_data"] = packagePath;
+                        } else if (packageName.EndsWith("_Enemy.umap")) {
+                            roomPackageDef["enemy"] = packagePath;
+                        } else if (packageName.EndsWith("_Enemy_Normal.umap")) {
+                            roomPackageDef["enemy_normal"] = packagePath;
+                        } else if (packageName.EndsWith("_Enemy_Hard.umap")) {
+                            roomPackageDef["enemy_hard"] = packagePath;
+                        } else if (packageName.EndsWith("_Gimmick.umap")) {
+                            roomPackageDef["gimmick"] = packagePath;
+                        } else if (packageName.EndsWith("_Gimmick_BuiltData.uasset")) {
+                            roomPackageDef["gimmick_built_data"] = packagePath;
+                        } else if (packageName.EndsWith("_Event.umap")) {
+                            roomPackageDef["event"] = packagePath;
+                        } else if (packageName.EndsWith("_Light.umap") || packageName.EndsWith("_Ljght.umap")) {
+                            roomPackageDef["light"] = packagePath;
+                        } else if (packageName.EndsWith("_Light_BuiltData.uasset") || packageName.EndsWith("_Ljght_BuiltData.uasset")) {
+                            roomPackageDef["light_built_data"] = packagePath;
+                        } else if (packageName.EndsWith("_Setting.umap")) {
+                            roomPackageDef["setting"] = packagePath;
+                        } else if (packageName.EndsWith("_Setting_BuiltData.uasset")) {
+                            roomPackageDef["setting_built_data"] = packagePath;
+                        } else if (packageName.EndsWith("_RV.umap")) {
+                            roomPackageDef["rv"] = packagePath;
                         }
                     }
                 }
             }
+        //         }
+        //     }
         } catch (Exception e) {
             GD.Print(e);
         }
@@ -239,84 +248,99 @@ public class UAssetParser : Control {
     }
 
     public void ReadMapData() {
-        _mapRooms = new Godot.Collections.Array();
+        try {
+            _mapRooms = new Godot.Collections.Array();
 
-        // Extract map data to uasset
-        string u4pakPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/U4pak/u4pak.exe");
-        string outputPath = UAssetExtractFolder;
-        string mapDataTablePath = "BloodstainedRotN/Content/Core/DataTable/PB_DT_RoomMaster.uasset";
-        using (Process pathList = new Process()) {
-            pathList.StartInfo.FileName = u4pakPath;
-            pathList.StartInfo.Arguments = @" unpack -o " + "\"" + outputPath + "\" \"" + _assetPathToPakFilePathMap[mapDataTablePath] + "\" \"" + mapDataTablePath + "\"";
-            pathList.StartInfo.UseShellExecute = false;
-            pathList.StartInfo.RedirectStandardOutput = true;
-            pathList.Start();
-            string output = pathList.StandardOutput.ReadToEnd();
-            pathList.WaitForExit();
-        }
+            // Extract map data to uasset
+            string outputPath = UAssetExtractFolder;
+            string mapDataTablePath = "BloodstainedRotN/Content/Core/DataTable/PB_DT_RoomMaster.uasset";
 
-        // Parse map data uasset
-        UAsset uAsset = new UAsset(outputPath + "/" + mapDataTablePath, UE4Version.VER_UE4_18);
-        foreach (Export baseExport in uAsset.Exports) {
-            // Data table
-            if (baseExport is DataTableExport export) {
-                if (export.ObjectName.Value.ToString() == "PB_DT_RoomMaster") {
-                    // Loop through table rows
-                    foreach (StructPropertyData structPropertyData in export.Table.Data) {
-                        Godot.Collections.Dictionary<string, object> mapRoom = new Godot.Collections.Dictionary<string, object>();
-                        foreach (PropertyData propertyData in structPropertyData.Value) {
-                            string propertyName = propertyData.Name.Value.ToString();
-                            string propertyNameSnakeCase = CamelCaseToSnakeCase(propertyName);
-                            try {
-                                if (propertyData is NamePropertyData namePropertyData) {
-                                    mapRoom[propertyNameSnakeCase] = namePropertyData.Value.Value.ToString();
-                                } else if (propertyData is StrPropertyData strPropertyData) {
-                                    FString strPropertyValue = strPropertyData.Value;
-                                    mapRoom[propertyNameSnakeCase] = (strPropertyValue == null) ? null : strPropertyValue.Value;
-                                } else if (propertyData is BytePropertyData bytePropertyData) {
-                                    mapRoom[propertyNameSnakeCase] = bytePropertyData.Value.ToString();
-                                } else if (propertyData is BoolPropertyData boolPropertyData) {
-                                    mapRoom[propertyNameSnakeCase] = boolPropertyData.Value;
-                                } else if (propertyData is IntPropertyData intPropertyData) {
-                                    mapRoom[propertyNameSnakeCase] = intPropertyData.Value;
-                                } else if (propertyData is FloatPropertyData floatPropertyData) {
-                                    mapRoom[propertyNameSnakeCase] = floatPropertyData.Value;
-                                } else if (propertyData is EnumPropertyData enumPropertyData) {
-                                    mapRoom[propertyNameSnakeCase] = enumPropertyData.Value.Value.ToString();
-                                } else if (propertyData is ArrayPropertyData arrayPropertyData) {
-                                    Godot.Collections.Array refArray = new Godot.Collections.Array();
-                                    foreach (PropertyData arrayItem in arrayPropertyData.Value) {
-                                        if (arrayItem is NamePropertyData arrayNamePropertyData) {
-                                            refArray.Add(arrayNamePropertyData.Value.Value.ToString());
-                                        } else if (arrayItem is IntPropertyData arrayIntPropertyData) {
-                                            refArray.Add(arrayIntPropertyData.Value);
+            if (!_assetPathToPakFilePathMap.ContainsKey(mapDataTablePath)) {
+                GD.Print("Unable to find map data package in AssetPathToPakFilePathMap");
+                return;
+            }
+
+            ExtractAssetToFolder(_assetPathToPakFilePathMap[mapDataTablePath], mapDataTablePath, outputPath);
+
+            // Parse map data uasset
+            UAsset uAsset = new UAsset(outputPath + "/" + mapDataTablePath, UE4Version.VER_UE4_22);
+            foreach (Export baseExport in uAsset.Exports) {
+                // Data table
+                if (baseExport is DataTableExport export) {
+                    if (export.ObjectName.Value.ToString() == "PB_DT_RoomMaster") {
+                        // Loop through table rows
+                        foreach (StructPropertyData structPropertyData in export.Table.Data) {
+                            Godot.Collections.Dictionary<string, object> mapRoom = new Godot.Collections.Dictionary<string, object>();
+                            foreach (PropertyData propertyData in structPropertyData.Value) {
+                                string propertyName = propertyData.Name.Value.ToString();
+                                string propertyNameSnakeCase = CamelCaseToSnakeCase(propertyName);
+                                try {
+                                    if (propertyData is NamePropertyData namePropertyData) {
+                                        mapRoom[propertyNameSnakeCase] = namePropertyData.Value.Value.ToString();
+                                    } else if (propertyData is StrPropertyData strPropertyData) {
+                                        FString strPropertyValue = strPropertyData.Value;
+                                        mapRoom[propertyNameSnakeCase] = (strPropertyValue == null) ? null : strPropertyValue.Value;
+                                    } else if (propertyData is BytePropertyData bytePropertyData) {
+                                        mapRoom[propertyNameSnakeCase] = bytePropertyData.Value.ToString();
+                                    } else if (propertyData is BoolPropertyData boolPropertyData) {
+                                        mapRoom[propertyNameSnakeCase] = boolPropertyData.Value;
+                                    } else if (propertyData is IntPropertyData intPropertyData) {
+                                        mapRoom[propertyNameSnakeCase] = intPropertyData.Value;
+                                    } else if (propertyData is FloatPropertyData floatPropertyData) {
+                                        mapRoom[propertyNameSnakeCase] = floatPropertyData.Value;
+                                    } else if (propertyData is EnumPropertyData enumPropertyData) {
+                                        mapRoom[propertyNameSnakeCase] = enumPropertyData.Value.Value.ToString();
+                                    } else if (propertyData is ArrayPropertyData arrayPropertyData) {
+                                        Godot.Collections.Array refArray = new Godot.Collections.Array();
+                                        foreach (PropertyData arrayItem in arrayPropertyData.Value) {
+                                            if (arrayItem is NamePropertyData arrayNamePropertyData) {
+                                                refArray.Add(arrayNamePropertyData.Value.Value.ToString());
+                                            } else if (arrayItem is IntPropertyData arrayIntPropertyData) {
+                                                refArray.Add(arrayIntPropertyData.Value);
+                                            }
                                         }
+                                        mapRoom[propertyNameSnakeCase] = refArray;
                                     }
-                                    mapRoom[propertyNameSnakeCase] = refArray;
+                                } catch (Exception e) {
+                                    GD.Print(propertyName);
+                                    GD.Print(e);
                                 }
-                            } catch (Exception e) {
-                                GD.Print(propertyName);
-                                GD.Print(e);
                             }
+                            _mapRooms.Add(mapRoom);
                         }
-                        _mapRooms.Add(mapRoom);
                     }
                 }
             }
+        } catch (Exception e) {
+            GD.Print(e);
         }
     }
 
     public void ExtractAssetToFolder(string pakFilePath, string assetPath, string outputFolderPath) {
         // Extract uasset
-        string u4pakPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/U4pak/u4pak.exe");
+        string gameDirectory = (string)GetNode("/root/Editor").Call("read_config_prop", "game_directory");
+        string gamePakFilePath = gameDirectory + "/BloodstainedRotN/Content/Paks";
+        string ueViewerPath = ProjectSettings.GlobalizePath(@"res://VendorBinary/UEViewer/umodel_64.exe");
         using (Process unpack = new Process()) {
-            unpack.StartInfo.FileName = u4pakPath;
-            unpack.StartInfo.Arguments = @" unpack -o " + "\"" + outputFolderPath.Replace("/", "\\") + "\" \"" + pakFilePath.Replace("/", "\\") + "\" \"" + assetPath.Replace("\\", "/") + "\"";
+            unpack.StartInfo.FileName = ueViewerPath;
+            unpack.StartInfo.Arguments = " -path=\"" + gamePakFilePath + "\" -out=\"" + outputFolderPath.Replace("/", "\\") + "\" -save -keepdirectorystructure \"" + assetPath.Replace("\\", "/").Replace(".uasset", "").Replace("BloodstainedRotN/Content/", "Game/") + "\"";
+            // unpack.StartInfo.Arguments = " unpack -o " + "\"" + outputFolderPath.Replace("/", "\\") + "\" \"" + pakFilePath.Replace("/", "\\") + "\" \"" + assetPath.Replace("\\", "/") + "\"";
             unpack.StartInfo.UseShellExecute = false;
             unpack.StartInfo.RedirectStandardOutput = true;
             unpack.Start();
             string output = unpack.StandardOutput.ReadToEnd();
             unpack.WaitForExit();
+            string[] outputLines = output.Split("\n");
+            foreach (string line in outputLines) {
+                if (line.StartsWith("Saving: ")) {
+                    string filePath = line.Replace("Saving: ", "").Trim();
+                    string copyFrom = filePath.Replace("//", "/").Replace("/", @"\");
+                    string copyTo = filePath.Replace("//", "/").Replace("/Game/", "/BloodstainedRotN/Content/").Replace("/", @"\");
+                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(copyTo));
+                    System.IO.File.Delete(copyTo);
+                    System.IO.File.Move(copyFrom, copyTo);
+                }
+            }
         }
     }
 
@@ -356,7 +380,7 @@ public class UAssetParser : Control {
                             ExtractAssetToFolder(_assetPathToPakFilePathMap[assetPathWithSuffix], assetPathWithSuffix, extractAssetOutputFolder);
                         }
                         if (i > -1 && System.IO.File.Exists(extractAssetOutputFolder + "/" + assetPathWithSuffix)) {
-                            uAsset = new UAsset(extractAssetOutputFolder + '/' + assetPathWithSuffix, UE4Version.VER_UE4_18);
+                            uAsset = new UAsset(extractAssetOutputFolder + '/' + assetPathWithSuffix, UE4Version.VER_UE4_22);
                             foreach (Export export in uAsset.Exports) {
                                 if (export.bIsAsset && export.ObjectName.Value.Value == meshName && export.ObjectName.Number == meshNameInstance) {
                                     newAssetPath = assetPathWithSuffix;
@@ -386,7 +410,7 @@ public class UAssetParser : Control {
                 if (!System.IO.File.Exists(gltfOutputPath)) {
                     using (Process ueExtract = new Process()) {
                         ueExtract.StartInfo.FileName = ueViewerPath;
-                        ueExtract.StartInfo.Arguments = @" -export -path=" + "\"" + extractAssetOutputFolder + "\"" + @" -out=" + "\"" + extractModelOutputFolder + "/BloodstainedRotN/Content/\"" + @" -game=ue4.18 -gltf -png " + newAssetPath;
+                        ueExtract.StartInfo.Arguments = @" -export -path=" + "\"" + extractAssetOutputFolder + "\"" + @" -out=" + "\"" + extractModelOutputFolder + "/BloodstainedRotN/Content/\"" + @" -game=ue4.22 -gltf -png " + newAssetPath;
                         ueExtract.StartInfo.UseShellExecute = false;
                         ueExtract.StartInfo.RedirectStandardOutput = true;
                         ueExtract.StartInfo.RedirectStandardError = true;
@@ -427,7 +451,7 @@ public class UAssetParser : Control {
         string extractAssetOutputFolder = UAssetExtractFolder;
         string assetFileName = assetPath.Split("/").Last();
         try {
-            UAsset asset = new UAsset(extractAssetOutputFolder + "/" + assetPath, UE4Version.VER_UE4_18);
+            UAsset asset = new UAsset(extractAssetOutputFolder + "/" + assetPath, UE4Version.VER_UE4_22);
             string assetType = "mesh";
             if (assetFileName.StartsWith("MI_") || assetFileName.StartsWith("M_") || assetFileName.StartsWith("MIP_")) {
                 assetType = "material";
@@ -621,7 +645,7 @@ public class UAssetParser : Control {
                             if (editsJson.ContainsKey(checkDef["key"]) && AssetPathToPakFilePathMap.ContainsKey(assetBasePath + checkDef["suffix"])) {
                                 if (editsJson[checkDef["key"]]["existing_exports"].Count() > 0 || editsJson[checkDef["key"]]["new_exports"].Count() > 0) {
                                     ExtractAssetToFolder(AssetPathToPakFilePathMap[assetBasePath + checkDef["suffix"]], assetBasePath + checkDef["suffix"], modifiedAssetsFolder);
-                                    UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"], UE4Version.VER_UE4_18);
+                                    UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"], UE4Version.VER_UE4_22);
                                     UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson[checkDef["key"]]);
                                     uAsset.Write(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"]);
                                 } else {
@@ -669,7 +693,7 @@ public class UAssetParser : Control {
         // Parse uasset
         try {
             GD.Print("Parsing UAsset ", assetPath);
-            UAsset uAsset = new UAsset(outputPath + "/" + assetPath, UE4Version.VER_UE4_18);
+            UAsset uAsset = new UAsset(outputPath + "/" + assetPath, UE4Version.VER_UE4_22);
             GD.Print("Data preserved: " + (uAsset.VerifyBinaryEquality() ? "YES" : "NO"));
 
             int blueprintExportIndex = -1;
@@ -720,7 +744,7 @@ public class UAssetParser : Control {
         if (_blueprintSnippets.ContainsKey(dictionaryKey)) {
             UAssetSnippet snippet = _blueprintSnippets[dictionaryKey];
             GD.Print("Parsing UAsset ", targetAssetFilePath);
-            UAsset uAsset = new UAsset(targetAssetFilePath, UE4Version.VER_UE4_18);
+            UAsset uAsset = new UAsset(targetAssetFilePath, UE4Version.VER_UE4_22);
             GD.Print("Data preserved: " + (uAsset.VerifyBinaryEquality() ? "YES" : "NO"));
             snippet.AddToUAsset(uAsset);
             uAsset.Write(targetAssetFilePath);
@@ -738,7 +762,7 @@ public class UAssetParser : Control {
             string[] checkKeys = new string[]{ "bg", "enemy", "enemy_hard", "enemy_normal", "event", "gimmick", "light", "setting", "rv" };
             foreach (string key in checkKeys) {
                 if (levelAssets.ContainsKey(key)) {
-                    roomDefinition[key] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets[key], UE4Version.VER_UE4_18), this);
+                    roomDefinition[key] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets[key], UE4Version.VER_UE4_22), this);
                 }
             }
             return roomDefinition;
