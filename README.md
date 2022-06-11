@@ -2,7 +2,48 @@
 
 An WORK IN PROGRESS level editor for Bloodstained: Ritual of the Night.
 
-Target functionality:
+![Editor Preview](https://raw.githubusercontent.com/giwayume/BloodstainedLevelEditor/master/Screenshots/EditorDemoCollisionBoxes.png)
+
+While making changes to a level, changes are automatically saved. Use the "Package -> Test In-Game" option in the menu to test your changes.
+
+## Mouse/Keyboard Controls:
+
+**General:**
+
+| Key                          | Description                 |
+|------------------------------|-----------------------------|
+| Ctrl + Z                     | Undo the last action        |
+| Ctrl + Y or Ctrl + Shift + Z | Redo the last undone action |
+
+**In menus:**
+
+| Key                | Description                         |
+|--------------------|-------------------------------------|
+| Left Mouse Button  | Select an item                      |
+| Right Mouse Button | Context menu for additional options |
+| Mouse Wheel        | Scroll when a scrollbar is visible  |
+| Delete             | Delete the selected item            |
+
+**When focused on the 3D room preview:**
+
+| Key                       | Description                                                                       |
+|---------------------------|-----------------------------------------------------------------------------------|
+| Left Mouse Button         | Select an object                                                                  |
+| Shift + Left Mouse Button | Select multiple objects                                                           |
+| Right Mouse Button        | Click and hold to rotate camera view                                              |
+| W/A/S/D                   | Move the camera view in the walking plane, similar to video game walking controls |
+| Q/E                       | Move the camera view up/down                                                      |
+| Delete                    | Delete the selected object(s)                                                     |
+
+**When focused on the map preview:**
+
+| Key                | Description                            |
+|--------------------|----------------------------------------|
+| Left Mouse Button  | Select a room. Double click to edit it |
+| Right Mouse Button | Hold and drag to pan the view          |
+| Mouse Wheel        | Zoom in/out                            |
+
+## Target functionality:
 - [ ] Add/Remove enemies from any room
 - [x] Edit the placement of any 3D static mesh in any room or remove them
     - [x] Undo/redo history
@@ -28,7 +69,10 @@ Target functionality:
     - [ ] Temporary solution: allow deletion of light/shadow maps, auto disable static lights, auto convert stationary to movable
     - [ ] Permanent solution: figure out how to create light/shadow maps & implement ray traced map baker in editor.
 - [ ] Support "Splines" (used in many levels for the basic level geometry, especially the underground levels)
-- [ ] Add/Remove collision boxes in any room
+- [ ] Collision boxes
+    - [ ] Add
+    - [x] Remove
+    - [x] Transform
 - [ ] Disable cutscenes
 - [ ] Add/Remove NPCs from any room
 - [ ] Simulate game camera perspective
