@@ -1,6 +1,6 @@
 # Bloodstained Level Editor
 
-An WORK IN PROGRESS level editor for Bloodstained: Ritual of the Night.
+A WORK IN PROGRESS level editor for Bloodstained: Ritual of the Night.
 
 ![Editor Preview](https://raw.githubusercontent.com/giwayume/BloodstainedLevelEditor/master/Screenshots/EditorDemoCollisionBoxes.png)
 
