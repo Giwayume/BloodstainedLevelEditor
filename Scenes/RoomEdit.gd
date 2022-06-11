@@ -136,6 +136,9 @@ var tree_popup_menu_items: Array = [
 	}
 ]
 
+# {
+#	"bg": 
+# }
 var room_definition: Dictionary
 
 var current_tool: String = "move"
@@ -219,6 +222,7 @@ func _ready():
 	editor.connect("history_changed", self, "on_history_changed")
 	enemy_difficulty_select_option_button.connect("item_selected", self, "on_enemy_difficulty_item_selected")
 	menu_bar.connect("popup_visibility_changed", self, "on_menu_bar_popup_visibility_changed")
+	panel_asset_info.connect("open_uassetgui", self, "on_open_uasset_gui")
 	panel_light.connect("popup_blocking_changed", self, "on_panel_popup_blocking_changed")
 	room_3d_display.connect("loading_start", self, "on_room_3d_display_loading_start")
 	room_3d_display.connect("loading_end", self, "on_room_3d_display_loading_end")
@@ -425,7 +429,8 @@ func on_tree_multi_selected_deferred():
 						if node.tree_name != tree_name:
 							node.deselect()
 							room_3d_display.selected_nodes.erase(node)
-							trees[node.tree_name].tree_id_map[node.definition.export_index].deselect(0)
+							if trees[node.tree_name].tree_id_map.has(node.definition.export_index):
+								trees[node.tree_name].tree_id_map[node.definition.export_index].deselect(0)
 				var selected_nodes = room_3d_display.selected_nodes
 				var current_tree: Dictionary = trees[tree_name]
 				var export_index: int = item.get_metadata(0).export_index
@@ -726,6 +731,16 @@ func on_translate_selection(offset: Vector3):
 		)
 		selected_node_initial_transforms = []
 
+func on_open_uasset_gui():
+	var current_tree_name
+	for tree_name in trees:
+		if level_outline_tab_container.current_tab == trees[tree_name].tab_index:
+			current_tree_name = tree_name
+	OS.execute(ProjectSettings.globalize_path("res://VendorBinary/UAssetGUI/UAssetGUI.exe"), [
+		# ProjectSettings.globalize_path("user://PakExtract/" + room_definition.level_assets[current_tree_name]),
+		# "VER_UE4_22"
+	], false)
+
 ###########
 # METHODS #
 ###########
@@ -796,6 +811,8 @@ func update_panels_after_selection():
 	if selection_count == 1:
 		var definition = room_3d_display.selected_nodes[0].definition
 		panel_selection_type_label.text = definition.type
+		if definition.type == "DynamicClass":
+			panel_selection_type_label.text += "\n" + definition.class_constructor
 	elif selection_count > 1:
 		panel_selection_type_label.text = "Multiple Selection (" + str(selection_count) + ")"
 	else:

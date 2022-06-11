@@ -64,22 +64,39 @@ func start_model_load(meshes: Array):
 	for load_def in meshes:
 		var mesh_load_node = find_child_by_name_and_type(self, load_def.object_name, load_def.object_type)
 		if mesh_load_node:
-			var filename = Array(load_def.mesh.rsplit("/")).pop_back().replace(".uasset", "")
-			var model_definition = {
-				"static_mesh_name": filename,
-				"static_mesh_name_instance": 0,
-				"static_mesh_asset_path": load_def.mesh
-			}
-			if uasset_parser.AssetPathToPakFilePathMap.has(model_definition.static_mesh_asset_path):
+			var mesh_load_node_parent = mesh_load_node.get_parent()
+			var model_definition = {}
+			if load_def.has("mesh"):
+				var filename = Array(load_def.mesh.rsplit("/")).pop_back().replace(".uasset", "")
+				model_definition = {
+					"static_mesh_name": filename,
+					"static_mesh_name_instance": 0,
+					"static_mesh_asset_path": load_def.mesh
+				}
+			if load_def.has("custom_mesh"):
+				var custom_mesh_scene = load("res://SceneComponents/CustomMesh/" + load_def.custom_mesh)
+				var custom_mesh = custom_mesh_scene.instance()
+				custom_mesh.clone_config_from(mesh_load_node)
+				if selection_transform_node == mesh_load_node:
+					selection_transform_node = custom_mesh
+				mesh_load_node_parent.remove_child(mesh_load_node)
+				mesh_load_node = custom_mesh
+			if load_def.has("custom_mesh") or uasset_parser.AssetPathToPakFilePathMap.has(model_definition.static_mesh_asset_path):
 				if load_def.has("translation"):
 					mesh_load_node.translation = load_def["translation"]
 				if load_def.has("rotation_degrees"):
 					mesh_load_node.rotation_degrees = load_def["rotation_degrees"]
 				if load_def.has("scale"):
 					mesh_load_node.scale = load_def["scale"]
-				room_3d_display.load_3d_model(model_definition, mesh_load_node, "on_3d_model_loaded")
+				if load_def.has("custom_mesh"):
+					mesh_load_node_parent.add_child(mesh_load_node)
+				else:
+					room_3d_display.load_3d_model(model_definition, mesh_load_node, "on_3d_model_loaded")
 			else:
-				print_debug("BlueprintGeneratedClass load mesh asset not found: ", load_def.mesh)
+				if load_def.has("custom_mesh"):
+					print_debug("BlueprintGeneratedClass load mesh asset not found: ", load_def.custom_mesh)
+				else:
+					print_debug("BlueprintGeneratedClass load mesh asset not found: ", load_def.mesh)
 		else:
 			print_debug("BlueprintGeneratedClass mesh node not found: ", load_def.object_name, " ", load_def.object_type)
 

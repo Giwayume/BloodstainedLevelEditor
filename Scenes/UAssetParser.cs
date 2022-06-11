@@ -128,8 +128,27 @@ public class UAssetParser : Control {
     }
 
     public void GuaranteeAssetListFromPakFiles() {
-        if (_assetPathToPakFilePathMap == default(Godot.Collections.Dictionary<string, string>)) {
-            ReadAssetListFromPakFiles();
+        try {
+            if (_assetPathToPakFilePathMap == default(Godot.Collections.Dictionary<string, string>)) {
+                _assetPathToPakFilePathMap = new Godot.Collections.Dictionary<string, string>();
+                string assetListCacheFile = ProjectSettings.GlobalizePath(@"user://PackageListCache.json");
+                if (System.IO.File.Exists(assetListCacheFile)) {
+                    using (StreamReader reader = System.IO.File.OpenText(assetListCacheFile)) {
+                        JObject parsedMap = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
+                        foreach (var entry in parsedMap) {
+                            if (entry.Value != null && entry.Value.Value<object>() != null) {
+                                _assetPathToPakFilePathMap.Add(entry.Key, entry.Value.Value<string>());
+                                ProcessPackageAfterRead(entry.Key);
+                            }
+                        }
+                    }
+                } else {
+                    ReadAssetListFromPakFiles();
+                    System.IO.File.WriteAllText(assetListCacheFile, JSON.Print(_assetPathToPakFilePathMap));
+                }
+            }
+        } catch (Exception e) {
+            GD.Print(e);
         }
     }
 
@@ -169,75 +188,79 @@ public class UAssetParser : Control {
 
                     _assetPathToPakFilePathMap[packagePath] = "pakchunk0-WindowsNoEditor.pak"; // filePath;
 
-                    // Add any character model assets we find to a separate list for easy reading
-                    if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Character/[^/]*?/Mesh/").Success) {
-                        string[] pathSplit = packagePath.Split("/");
-                        string characterId = "";
-                        bool hasFoundCharacterFolder = false;
-                        foreach (string folderName in pathSplit) {
-                            if (hasFoundCharacterFolder) {
-                                characterId = folderName;
-                                break;
-                            }
-                            if (folderName == "Character") {
-                                hasFoundCharacterFolder = true;
-                            }
-                        }
-                        Godot.Collections.Array<string> characterMeshAssets = default(Godot.Collections.Array<string>);
-                        if (_characterMeshAssetPathMap.ContainsKey(characterId)) {
-                            characterMeshAssets = _characterMeshAssetPathMap[characterId];
-                        } else {
-                            characterMeshAssets = new Godot.Collections.Array<string>();
-                            _characterMeshAssetPathMap[characterId] = characterMeshAssets;
-                        }
-                        characterMeshAssets.Add(packagePath);
-                    }
-
-                    // Add any room/level assets we find to a separate list for easy reading
-                    if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Environment/[^/]*?/Level/m[0-9]{2}[A-Z]{3}_[0-9]{3}").Success) {
-                        string packageName = packagePath.Split("/").Last();
-                        string levelName = packageName.Substring(0, 10);
-                        Godot.Collections.Dictionary<string, string> roomPackageDef = default(Godot.Collections.Dictionary<string, string>);
-                        if (_levelNameToAssetPathMap.ContainsKey(levelName)) {
-                            roomPackageDef = _levelNameToAssetPathMap[levelName];
-                        } else {
-                            roomPackageDef = new Godot.Collections.Dictionary<string, string>();
-                            _levelNameToAssetPathMap[levelName] = roomPackageDef;
-                        }
-                        if (packageName.EndsWith("_BG.umap")) {
-                            roomPackageDef["bg"] = packagePath;
-                        } else if (packageName.EndsWith("_BG_BuiltData.uasset")) {
-                            roomPackageDef["bg_built_data"] = packagePath;
-                        } else if (packageName.EndsWith("_Enemy.umap")) {
-                            roomPackageDef["enemy"] = packagePath;
-                        } else if (packageName.EndsWith("_Enemy_Normal.umap")) {
-                            roomPackageDef["enemy_normal"] = packagePath;
-                        } else if (packageName.EndsWith("_Enemy_Hard.umap")) {
-                            roomPackageDef["enemy_hard"] = packagePath;
-                        } else if (packageName.EndsWith("_Gimmick.umap")) {
-                            roomPackageDef["gimmick"] = packagePath;
-                        } else if (packageName.EndsWith("_Gimmick_BuiltData.uasset")) {
-                            roomPackageDef["gimmick_built_data"] = packagePath;
-                        } else if (packageName.EndsWith("_Event.umap")) {
-                            roomPackageDef["event"] = packagePath;
-                        } else if (packageName.EndsWith("_Light.umap") || packageName.EndsWith("_Ljght.umap")) {
-                            roomPackageDef["light"] = packagePath;
-                        } else if (packageName.EndsWith("_Light_BuiltData.uasset") || packageName.EndsWith("_Ljght_BuiltData.uasset")) {
-                            roomPackageDef["light_built_data"] = packagePath;
-                        } else if (packageName.EndsWith("_Setting.umap")) {
-                            roomPackageDef["setting"] = packagePath;
-                        } else if (packageName.EndsWith("_Setting_BuiltData.uasset")) {
-                            roomPackageDef["setting_built_data"] = packagePath;
-                        } else if (packageName.EndsWith("_RV.umap")) {
-                            roomPackageDef["rv"] = packagePath;
-                        }
-                    }
+                    ProcessPackageAfterRead(packagePath);
                 }
             }
         //         }
         //     }
         } catch (Exception e) {
             GD.Print(e);
+        }
+    }
+
+    public void ProcessPackageAfterRead(string packagePath) {
+        // Add any character model assets we find to a separate list for easy reading
+        if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Character/[^/]*?/Mesh/").Success) {
+            string[] pathSplit = packagePath.Split("/");
+            string characterId = "";
+            bool hasFoundCharacterFolder = false;
+            foreach (string folderName in pathSplit) {
+                if (hasFoundCharacterFolder) {
+                    characterId = folderName;
+                    break;
+                }
+                if (folderName == "Character") {
+                    hasFoundCharacterFolder = true;
+                }
+            }
+            Godot.Collections.Array<string> characterMeshAssets = default(Godot.Collections.Array<string>);
+            if (_characterMeshAssetPathMap.ContainsKey(characterId)) {
+                characterMeshAssets = _characterMeshAssetPathMap[characterId];
+            } else {
+                characterMeshAssets = new Godot.Collections.Array<string>();
+                _characterMeshAssetPathMap[characterId] = characterMeshAssets;
+            }
+            characterMeshAssets.Add(packagePath);
+        }
+
+        // Add any room/level assets we find to a separate list for easy reading
+        if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Environment/[^/]*?/Level/m[0-9]{2}[A-Z]{3}_[0-9]{3}").Success) {
+            string packageName = packagePath.Split("/").Last();
+            string levelName = packageName.Substring(0, 10);
+            Godot.Collections.Dictionary<string, string> roomPackageDef = default(Godot.Collections.Dictionary<string, string>);
+            if (_levelNameToAssetPathMap.ContainsKey(levelName)) {
+                roomPackageDef = _levelNameToAssetPathMap[levelName];
+            } else {
+                roomPackageDef = new Godot.Collections.Dictionary<string, string>();
+                _levelNameToAssetPathMap[levelName] = roomPackageDef;
+            }
+            if (packageName.EndsWith("_BG.umap")) {
+                roomPackageDef["bg"] = packagePath;
+            } else if (packageName.EndsWith("_BG_BuiltData.uasset")) {
+                roomPackageDef["bg_built_data"] = packagePath;
+            } else if (packageName.EndsWith("_Enemy.umap")) {
+                roomPackageDef["enemy"] = packagePath;
+            } else if (packageName.EndsWith("_Enemy_Normal.umap")) {
+                roomPackageDef["enemy_normal"] = packagePath;
+            } else if (packageName.EndsWith("_Enemy_Hard.umap")) {
+                roomPackageDef["enemy_hard"] = packagePath;
+            } else if (packageName.EndsWith("_Gimmick.umap")) {
+                roomPackageDef["gimmick"] = packagePath;
+            } else if (packageName.EndsWith("_Gimmick_BuiltData.uasset")) {
+                roomPackageDef["gimmick_built_data"] = packagePath;
+            } else if (packageName.EndsWith("_Event.umap")) {
+                roomPackageDef["event"] = packagePath;
+            } else if (packageName.EndsWith("_Light.umap") || packageName.EndsWith("_Ljght.umap")) {
+                roomPackageDef["light"] = packagePath;
+            } else if (packageName.EndsWith("_Light_BuiltData.uasset") || packageName.EndsWith("_Ljght_BuiltData.uasset")) {
+                roomPackageDef["light_built_data"] = packagePath;
+            } else if (packageName.EndsWith("_Setting.umap")) {
+                roomPackageDef["setting"] = packagePath;
+            } else if (packageName.EndsWith("_Setting_BuiltData.uasset")) {
+                roomPackageDef["setting_built_data"] = packagePath;
+            } else if (packageName.EndsWith("_RV.umap")) {
+                roomPackageDef["rv"] = packagePath;
+            }
         }
     }
 
@@ -765,6 +788,7 @@ public class UAssetParser : Control {
                     roomDefinition[key] = UMapAsDictionaryTree.ToDictionaryTree(new UAsset(outputFolder + "/" + levelAssets[key], UE4Version.VER_UE4_22), this);
                 }
             }
+            roomDefinition["level_assets"] = levelAssets;
             return roomDefinition;
         } catch (Exception e) {
             GD.Print(e);

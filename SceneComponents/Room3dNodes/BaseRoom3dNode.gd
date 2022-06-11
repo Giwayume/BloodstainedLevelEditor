@@ -178,3 +178,24 @@ func set_hidden(hidden: bool):
 	for child in child_placement_node.get_children():
 		if child.has_method("set_hidden"):
 			child.set_hidden(hidden)
+
+func clone_config_from(node):
+	room_3d_display = node.room_3d_display
+	tree_name = node.tree_name
+	definition = node.definition
+	use_parent_as_proxy = node.use_parent_as_proxy
+	leaf_parent = node.leaf_parent
+	alternate_child_placement_node = node.alternate_child_placement_node
+	selection_transform_node = node.selection_transform_node
+	selection_light_node = node.selection_light_node
+	persistent_level_child_ancestor = node.persistent_level_child_ancestor
+	is_tree_leaf = node.is_tree_leaf
+	is_in_deleted_branch = node.is_in_deleted_branch
+	is_in_hidden_branch = node.is_in_hidden_branch
+	is_selected = node.is_selected
+
+	# For static mesh model
+	loaded_model = node.loaded_model
+	loaded_model_mesh_instance = node.loaded_model_mesh_instance
+	loaded_model_mesh = node.loaded_model_mesh
+	model_just_selected_timeout = node.model_just_selected_timeout

@@ -14,6 +14,15 @@ const blueprint_profiles: Dictionary = {
 			"mobility": "static"
 		}
 	},
+	"BloodstainedRotN/Content/Core/Environment/Common/Blueprint/CPratform.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMeshComponent0",
+				"object_type": "StaticMeshComponent",
+				"custom_mesh": "CPratform.tscn"
+			}
+		]
+	},
 	"BloodstainedRotN/Content/Core/Environment/Gimmick/B_SIP_2ndFloor01.uasset": {
 		"meshes": [
 			{

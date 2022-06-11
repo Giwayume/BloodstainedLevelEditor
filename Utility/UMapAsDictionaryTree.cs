@@ -185,10 +185,12 @@ public class UMapAsDictionaryTree {
         // Get the type of node
         FPackageIndex classIndex = export.ClassIndex;
         string nodeType = "";
+        string classConstructor = "";
         string classAssetPath = "";
         if (classIndex.IsImport()) {
             Import classImport = classIndex.ToImport(uAsset);
             string className = classImport.ClassName.Value.Value;
+            classConstructor = classImport.ObjectName.Value.Value;
             if (className == "Class") {
                 nodeType = classImport.ObjectName.Value.Value;
             } else {
@@ -199,6 +201,11 @@ public class UMapAsDictionaryTree {
                 string classPackageImportName = classPackageImport.ClassName.Value.Value;
                 if (classPackageImportName == "Package") {
                     classAssetPath = classPackageImport.ObjectName.Value.Value;
+                    // TODO - PB_Slope_4_4
+                    // if (classAssetPath.IndexOf("Slope") > -1) {
+                    //     GD.Print(classPackageImport.ClassName.Value.Value);
+                    //     GD.Print(classPackageImport.ObjectName.Value, classPackageImport.ObjectName.Number);
+                    // }
                     classAssetPath = Regex.Replace(classAssetPath, @"^\/Game/", @"/BloodstainedRotN/Content/");
                     classAssetPath = Regex.Replace(classAssetPath, @"^[\/]", "");
                     if (classAssetPath.StartsWith(@"BloodstainedRotN/")) {
@@ -208,6 +215,7 @@ public class UMapAsDictionaryTree {
             }
         }
         treeNode["type"] = nodeType;
+        treeNode["class_constructor"] = classConstructor;
         treeNode["class_asset_path"] = classAssetPath;
 
         // Get the name of the node
