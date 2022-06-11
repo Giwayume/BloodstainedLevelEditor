@@ -19,6 +19,16 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://SceneComponents/Room3dNodes/BaseRoom3dNode.gd"
 }, {
+"base": "BaseRoom3dNode",
+"class": "BlueprintGeneratedClass",
+"language": "GDScript",
+"path": "res://SceneComponents/Room3dNodes/BlueprintGeneratedClass.gd"
+}, {
+"base": "BaseRoom3dNode",
+"class": "CustomCollisionMesh",
+"language": "GDScript",
+"path": "res://SceneComponents/CustomMesh/CustomCollisionMesh.gd"
+}, {
 "base": "HistoryAction",
 "class": "DeleteComponentAction",
 "language": "GDScript",
@@ -87,6 +97,8 @@ _global_script_classes=[ {
 _global_script_class_icons={
 "ArrayExt": "",
 "BaseRoom3dNode": "",
+"BlueprintGeneratedClass": "",
+"CustomCollisionMesh": "",
 "DeleteComponentAction": "",
 "DirectoryExt": "",
 "EditorConfig": "",

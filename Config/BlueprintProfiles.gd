@@ -14,6 +14,139 @@ const blueprint_profiles: Dictionary = {
 			"mobility": "static"
 		}
 	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNum/Mr_MultiBlock_New.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMesh",
+				"object_type": "StaticMeshComponent",
+				"custom_mesh": "WorldCollisionCubeMesh.tscn"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNum/Mr_MultiBlock_New2.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMesh",
+				"object_type": "StaticMeshComponent",
+				"custom_mesh": "WorldCollisionCubeMesh.tscn"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNum/Mr_MultiBlock_New2_half.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMesh",
+				"object_type": "StaticMeshComponent",
+				"custom_mesh": "WorldCollisionCubeMesh.tscn"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrSlope/PB_Slope_1.uasset": {
+		"class_edits": {
+			"PB_Slope_1_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBSlope_1_1.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrSlope/PB_Slope_2.uasset": {
+		"class_edits": {
+			"PB_Slope_2_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBSlope_2_1.tscn"
+					}
+				]
+			},
+			"PB_Slope_2_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBSlope_2_2.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrSlope/PB_Slope_3.uasset": {
+		"class_edits": {
+			"PB_Slope_3_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBSlope_3_1.tscn"
+					}
+				]
+			},
+			"PB_Slope_3_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBSlope_3_2.tscn"
+					}
+				]
+			},
+			"PB_Slope_3_3_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBSlope_3_3.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrSlope/PB_Slope_4.uasset": {
+		"class_edits": {
+			"PB_Slope_4_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBSlope_4_1.tscn"
+					}
+				]
+			},
+			"PB_Slope_4_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBSlope_4_2.tscn"
+					}
+				]
+			},
+			"PB_Slope_4_3_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBSlope_4_3.tscn"
+					}
+				]
+			},
+			"PB_Slope_4_4_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBSlope_4_4.tscn"
+					}
+				]
+			}
+		}
+	},
 	"BloodstainedRotN/Content/Core/Environment/Common/Blueprint/CPratform.uasset": {
 		"meshes": [
 			{

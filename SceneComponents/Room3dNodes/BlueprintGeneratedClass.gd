@@ -1,3 +1,4 @@
+class_name BlueprintGeneratedClass
 extends BaseRoom3dNode
 
 const blueprint_profiles = preload("res://Config/BlueprintProfiles.gd").blueprint_profiles
@@ -34,6 +35,12 @@ func _ready():
 	var class_asset_file = definition["class_asset_path"]
 	if blueprint_profiles.has(class_asset_file):
 		var profile = blueprint_profiles[class_asset_file]
+		if profile.has("class_edits"):
+			for class_constructor in profile["class_edits"]:
+				if class_constructor == definition["class_constructor"]:
+					for class_prop in profile["class_edits"][class_constructor]:
+						profile[class_prop] = profile["class_edits"][class_constructor][class_prop]
+					break;
 		if profile.has("meshes"):
 			call_deferred("start_model_load", profile.meshes)
 		if profile.has("light_defaults"):

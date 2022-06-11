@@ -294,15 +294,20 @@ public class UMapAsDictionaryTree {
                     if (classAssetPath.StartsWith("BloodstainedRotN/Content/Core/Character/")) {
                         newProperties["type"] = "Character";
                     }
-                    foreach (PropertyData characterPropertyData in structPropertyData.Value) {
-                        propertyName = characterPropertyData.Name.Value.Value;
-                        if (propertyName == "CharacterId") {
-                            if (characterPropertyData is NamePropertyData namePropertyData) {
-                                string characterId = namePropertyData.Value.Value.Value;
-                                if (characterId == null) {
-                                    characterId = "N/A";
+                    string classConstructor = (string)treeNode["class_constructor"];
+                    if (classConstructor.StartsWith("Chr_")) {
+                        newProperties["character_id"] = classConstructor.Split("_")[1];
+                    } else {
+                        foreach (PropertyData characterPropertyData in structPropertyData.Value) {
+                            propertyName = characterPropertyData.Name.Value.Value;
+                            if (propertyName == "CharacterId") {
+                                if (characterPropertyData is NamePropertyData namePropertyData) {
+                                    string characterId = namePropertyData.Value.Value.Value;
+                                    if (characterId == null) {
+                                        characterId = "N/A";
+                                    }
+                                    newProperties["character_id"] = characterId;
                                 }
-                                newProperties["character_id"] = characterId;
                             }
                         }
                     }
