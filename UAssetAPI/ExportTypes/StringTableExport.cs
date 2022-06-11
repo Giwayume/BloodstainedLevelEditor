@@ -1,33 +1,44 @@
-using System.Collections.Generic;
-using System.IO;
+using Newtonsoft.Json;
+using System.Linq;
+using UAssetAPI.UnrealTypes;
 
 namespace UAssetAPI
 {
-    public class StringTable : List<FString>
+    /// <summary>
+    /// A string table. Holds Key->SourceString pairs of text.
+    /// </summary>
+    public class FStringTable : TMap<FString, FString>
     {
-        public FString Name;
+        [JsonProperty]
+        public FString TableNamespace;
 
-        public StringTable(FString name) : base()
+        public FStringTable(FString tableNamespace) : base()
         {
-            Name = name;
+            TableNamespace = tableNamespace;
+        }
+
+        public FStringTable() : base()
+        {
+
         }
     }
 
     /// <summary>
-    /// A string table. Holds Key->SourceString pairs of text.
+    /// Export data for a string table. See <see cref="FStringTable"/>.
     /// </summary>
     public class StringTableExport : NormalExport
     {
-        public StringTable Data2;
+        [JsonProperty]
+        public FStringTable Table;
 
         public StringTableExport(Export super) : base(super)
         {
 
         }
 
-        public StringTableExport(StringTable data, UAsset asset, byte[] extras) : base(asset, extras)
+        public StringTableExport(FStringTable data, UAsset asset, byte[] extras) : base(asset, extras)
         {
-            Data2 = data;
+            Table = data;
         }
 
         public StringTableExport()
@@ -38,32 +49,28 @@ namespace UAssetAPI
         public override void Read(AssetBinaryReader reader, int nextStarting)
         {
             base.Read(reader, nextStarting);
-
             reader.ReadInt32();
 
-            Data2 = new StringTable(reader.ReadFString());
+            Table = new FStringTable(reader.ReadFString());
 
-            int numEntries = reader.ReadInt32() * 2;
+            int numEntries = reader.ReadInt32();
             for (int i = 0; i < numEntries; i++)
             {
-                FString x = reader.ReadFString();
-                Data2.Add(x);
+                Table.Add(reader.ReadFString(), reader.ReadFString());
             }
         }
 
         public override void Write(AssetBinaryWriter writer)
         {
             base.Write(writer);
-
             writer.Write((int)0);
 
-            writer.Write(Data2.Name);
-
-            writer.Write(Data2.Count / 2);
-            int lenData = (Data2.Count / 2) * 2;
-            for (int i = 0; i < lenData; i++)
+            writer.Write(Table.TableNamespace);
+            writer.Write(Table.Count);
+            for (int i = 0; i < Table.Count; i++)
             {
-                writer.Write(Data2[i]);
+                writer.Write(Table.Keys.ElementAt(i));
+                writer.Write(Table[i]);
             }
         }
     }

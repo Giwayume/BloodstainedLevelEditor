@@ -12,7 +12,9 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using UAssetAPI;
 using UAssetAPI.PropertyTypes;
-using UAssetAPI.StructTypes;
+using UAssetAPI.UnrealTypes;
+using UAssetAPI.PropertyTypes.Objects;
+using UAssetAPI.PropertyTypes.Structs;
 
 public class UAssetSnippet {
     public class UAssetExportTreeItem {
@@ -27,8 +29,8 @@ public class UAssetSnippet {
     }
     public class DetachedObjectPropertyData : PropertyData<int> {
         public List<int> UsedExports = default(List<int>);
-        private static readonly FName CurrentPropertyType = new FName("DetachedObjectProperty");
-        public override FName PropertyType { get { return CurrentPropertyType; } }
+        private static readonly FString CurrentPropertyType = new FString("DetachedObjectProperty");
+        public override FString PropertyType { get { return CurrentPropertyType; } }
         public DetachedObjectPropertyData(FName name, List<int> usedExports) : base(name) {
             UsedExports = usedExports;
         }
@@ -250,7 +252,7 @@ public class UAssetSnippet {
         try {
             FString newName = new FString("TEST_ADD_SNIPPET");
             attachToAsset.AddNameReference(newName);
-            attachToAsset.Exports[exportStartIndex].ObjectName = new FName("TEST_ADD_SNIPPET", 0);
+            attachToAsset.Exports[exportStartIndex].ObjectName = new FName(attachToAsset, "TEST_ADD_SNIPPET", 0);
         } catch (Exception e) {
             GD.Print(e);
         }
@@ -286,9 +288,9 @@ public class UAssetSnippet {
         attachToAsset.AddNameReference(originalImport.ClassPackage.Value);
         attachToAsset.AddNameReference(originalImport.ClassName.Value);
         attachToAsset.AddNameReference(originalImport.ObjectName.Value);
-        FName classPackage = new FName(originalImport.ClassPackage.Value, originalImport.ClassPackage.Number);
-        FName className = new FName(originalImport.ClassName.Value, originalImport.ClassName.Number);
-        FName objectName = new FName(originalImport.ObjectName.Value, originalImport.ObjectName.Number);
+        FName classPackage = new FName(attachToAsset, originalImport.ClassPackage.Value, originalImport.ClassPackage.Number);
+        FName className = new FName(attachToAsset, originalImport.ClassName.Value, originalImport.ClassName.Number);
+        FName objectName = new FName(attachToAsset, originalImport.ObjectName.Value, originalImport.ObjectName.Number);
         Import clonedImport = new Import(classPackage, className, originalImport.OuterIndex, objectName);
         return clonedImport;
     }
@@ -321,7 +323,6 @@ public class UAssetSnippet {
         newExport.PackageFlags = export.PackageFlags;
         newExport.bNotAlwaysLoadedForEditorGame = export.bNotAlwaysLoadedForEditorGame;
         newExport.bIsAsset = export.bIsAsset;
-        newExport.FirstExportDependency = export.FirstExportDependency;
         newExport.SerializationBeforeSerializationDependencies = export.SerializationBeforeSerializationDependencies;
         newExport.CreateBeforeSerializationDependencies = export.CreateBeforeSerializationDependencies;
         newExport.SerializationBeforeCreateDependencies = export.SerializationBeforeCreateDependencies;
@@ -350,7 +351,7 @@ public class UAssetSnippet {
     public List<PropertyData> ClonePropertyData(List<PropertyData> propertyDataList, UAsset attachToAsset, int exportStartIndex) {
         List<PropertyData> newPropertyDataList = new List<PropertyData>();
         foreach (PropertyData propertyData in propertyDataList) {
-            FName newPropertyName = new FName(propertyData.Name.Value.Value, propertyData.Name.Number);
+            FName newPropertyName = new FName(attachToAsset, propertyData.Name.Value.Value, propertyData.Name.Number);
             attachToAsset.AddNameReference(newPropertyName.Value);
             if (propertyData is ArrayPropertyData arrayPropertyData) {
                 ArrayPropertyData newArrayPropertyData = new ArrayPropertyData(newPropertyName);
@@ -365,18 +366,24 @@ public class UAssetSnippet {
             else if (propertyData is BytePropertyData bytePropertyData) {
                 BytePropertyData newBytePropertyData = new BytePropertyData(newPropertyName);
                 newBytePropertyData.ByteType = bytePropertyData.ByteType;
-                FString byteValueName = OriginalUAsset.GetNameReference(bytePropertyData.Value);
-                attachToAsset.AddNameReference(byteValueName);
-                newBytePropertyData.Value = attachToAsset.SearchNameReference(byteValueName);
-                FString byteEnumTypeName = OriginalUAsset.GetNameReference(bytePropertyData.EnumType);
+                if (newBytePropertyData.ByteType == BytePropertyType.Byte) {
+                    newBytePropertyData.Value = bytePropertyData.Value;
+                } else {
+                    FString byteValueName = OriginalUAsset.GetNameReference(bytePropertyData.Value);
+                    attachToAsset.AddNameReference(byteValueName);
+                    newBytePropertyData.EnumValue = FName.FromString(attachToAsset, bytePropertyData.EnumValue.ToString());
+                }
+                FString byteEnumTypeName = OriginalUAsset.GetNameReference(
+                    OriginalUAsset.SearchNameReference(bytePropertyData.EnumType.Value)
+                );
                 attachToAsset.AddNameReference(byteEnumTypeName);
-                newBytePropertyData.EnumType = attachToAsset.SearchNameReference(byteEnumTypeName);
+                newBytePropertyData.EnumType = FName.FromString(attachToAsset, byteEnumTypeName.ToString());
                 newPropertyDataList.Add(newBytePropertyData);
             }
             else if (propertyData is EnumPropertyData enumPropertyData) {
                 EnumPropertyData newEnumPropertyData = new EnumPropertyData(newPropertyName);
-                FName newEnumValue = new FName(enumPropertyData.Value.Value.Value, enumPropertyData.Value.Number);
-                FName newEnumType = new FName(enumPropertyData.EnumType.Value.Value, enumPropertyData.EnumType.Number);
+                FName newEnumValue = new FName(attachToAsset, enumPropertyData.Value.Value.Value, enumPropertyData.Value.Number);
+                FName newEnumType = new FName(attachToAsset, enumPropertyData.EnumType.Value.Value, enumPropertyData.EnumType.Number);
                 attachToAsset.AddNameReference(newEnumValue.Value);
                 attachToAsset.AddNameReference(newEnumType.Value);
                 newEnumPropertyData.Value = newEnumValue;
@@ -418,7 +425,7 @@ public class UAssetSnippet {
                     attachToAsset.AddNameReference(multicastDelegatePropertyData.Value[i].Delegate.Value);
                     newValue[i] = new FMulticastDelegate(
                         multicastDelegatePropertyData.Value[i].Number,
-                        new FName(multicastDelegatePropertyData.Value[i].Delegate.Value.Value, multicastDelegatePropertyData.Value[i].Delegate.Number)
+                        new FName(attachToAsset, multicastDelegatePropertyData.Value[i].Delegate.Value.Value, multicastDelegatePropertyData.Value[i].Delegate.Number)
                     );
                 }
                 newMulticastDelegatePropertyData.Value = newValue;
@@ -427,7 +434,7 @@ public class UAssetSnippet {
             else if (propertyData is NamePropertyData namePropertyData) {
                 NamePropertyData newNamePropertyData = new NamePropertyData(newPropertyName);
                 attachToAsset.AddNameReference(namePropertyData.Value.Value);
-                newNamePropertyData.Value = new FName(namePropertyData.Value.Value.Value, namePropertyData.Value.Number);
+                newNamePropertyData.Value = new FName(attachToAsset, namePropertyData.Value.Value.Value, namePropertyData.Value.Number);
                 newPropertyDataList.Add(newNamePropertyData);
             }
             else if (propertyData is ObjectPropertyData objectPropertyData) {
@@ -444,8 +451,6 @@ public class UAssetSnippet {
             else if (propertyData is SetPropertyData setPropertyData) {
                 SetPropertyData newSetPropertyData = new SetPropertyData(newPropertyName);
                 newSetPropertyData.Value = ClonePropertyData(setPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex).ToArray();
-                newSetPropertyData.RemovedItems = ClonePropertyData(setPropertyData.RemovedItems.ToList<PropertyData>(), attachToAsset, exportStartIndex).ToArray();
-                newSetPropertyData.RemovedItemsDummyStruct = setPropertyData.RemovedItemsDummyStruct; // TODO - Need new object?
                 newPropertyDataList.Add(newSetPropertyData);
             }
             else if (propertyData is SoftAssetPathPropertyData softAssetPathPropertyData) {
@@ -469,7 +474,7 @@ public class UAssetSnippet {
                 newTextPropertyData.HistoryType = textPropertyData.HistoryType;
                 if (textPropertyData.TableId != null) {
                     attachToAsset.AddNameReference(textPropertyData.TableId.Value);
-                    newTextPropertyData.TableId = new FName(textPropertyData.TableId.Value.Value, textPropertyData.TableId.Number);
+                    newTextPropertyData.TableId = new FName(attachToAsset, textPropertyData.TableId.Value.Value, textPropertyData.TableId.Number);
                 }
                 if (textPropertyData.Namespace != null) {
                     attachToAsset.AddNameReference(textPropertyData.Namespace);
@@ -519,7 +524,11 @@ public class UAssetSnippet {
             }
             else if (propertyData is GameplayTagContainerPropertyData gameplayTagContainerPropertyData) {
                 GameplayTagContainerPropertyData newGameplayTagContainerPropertyData = new GameplayTagContainerPropertyData(newPropertyName);
-                newGameplayTagContainerPropertyData.Value = (NamePropertyData[])ClonePropertyData(gameplayTagContainerPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex).ToArray();
+                FName[] newData = new FName[gameplayTagContainerPropertyData.Value.Length];
+                for (int i = 0; i < gameplayTagContainerPropertyData.Value.Length; i++) {
+                    newData[i] = FName.FromString(attachToAsset, gameplayTagContainerPropertyData.Value[i].ToString());
+                }
+                newGameplayTagContainerPropertyData.Value = newData;
                 newPropertyDataList.Add(newGameplayTagContainerPropertyData);
             }
             else if (propertyData is GuidPropertyData guidPropertyData) {

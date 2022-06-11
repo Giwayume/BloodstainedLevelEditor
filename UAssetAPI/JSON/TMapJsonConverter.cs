@@ -29,8 +29,9 @@ using System.Collections.Specialized;
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 */
+using UAssetAPI.UnrealTypes;
 
-namespace UAssetAPI
+namespace UAssetAPI.JSON
 {
     public class TMapJsonConverter<TKey, TValue> : JsonConverter
     {

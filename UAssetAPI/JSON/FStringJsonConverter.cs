@@ -1,7 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
+using UAssetAPI.UnrealTypes;
 
-namespace UAssetAPI
+namespace UAssetAPI.JSON
 {
     public class FStringJsonConverter : JsonConverter
     {

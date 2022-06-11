@@ -1,43 +1,8 @@
 ﻿using System.IO;
+using UAssetAPI.UnrealTypes;
 
 namespace UAssetAPI.FieldTypes
 {
-    /// <summary>Secondary condition to check before considering the replication of a lifetime property.</summary>
-    public enum ELifetimeCondition : byte
-    {
-        /// <summary>This property has no condition, and will send anytime it changes</summary>
-        COND_None = 0,
-        /// <summary>This property will only attempt to send on the initial bunch</summary>
-        COND_InitialOnly = 1,
-        /// <summary>This property will only send to the actor's owner</summary>
-        COND_OwnerOnly = 2,
-        /// <summary>This property send to every connection EXCEPT the owner</summary>
-        COND_SkipOwner = 3,
-        /// <summary>This property will only send to simulated actors</summary>
-        COND_SimulatedOnly = 4,
-        /// <summary>This property will only send to autonomous actors</summary>
-        COND_AutonomousOnly = 5,
-        /// <summary>This property will send to simulated OR bRepPhysics actors</summary>
-        COND_SimulatedOrPhysics = 6,
-        /// <summary>This property will send on the initial packet, or to the actors owner</summary>
-        COND_InitialOrOwner = 7,
-        /// <summary>This property has no particular condition, but wants the ability to toggle on/off via SetCustomIsActiveOverride</summary>
-        COND_Custom = 8,
-        /// <summary>This property will only send to the replay connection, or to the actors owner</summary>
-        COND_ReplayOrOwner = 9,
-        /// <summary>This property will only send to the replay connection</summary>
-        COND_ReplayOnly = 10,
-        /// <summary>This property will send to actors only, but not to replay connections</summary>
-        COND_SimulatedOnlyNoReplay = 11,
-        /// <summary>This property will send to simulated Or bRepPhysics actors, but not to replay connections</summary>
-        COND_SimulatedOrPhysicsNoReplay = 12,
-        /// <summary>This property will not send to the replay connection</summary>
-        COND_SkipReplay = 13,
-        /// <summary>This property will never be replicated</summary>
-        COND_Never = 15,
-        COND_Max = 16
-    };
-
     /// <summary>
     /// Base class of reflection data objects.
     /// </summary>
@@ -47,13 +12,13 @@ namespace UAssetAPI.FieldTypes
         public FName Name;
         public EObjectFlags Flags;
 
-        public virtual void Read(AssetBinaryReader reader, UAsset asset)
+        public virtual void Read(AssetBinaryReader reader)
         {
             Name = reader.ReadFName();
             Flags = (EObjectFlags)reader.ReadUInt32();
         }
 
-        public virtual void Write(AssetBinaryWriter writer, UAsset asset)
+        public virtual void Write(AssetBinaryWriter writer)
         {
             writer.Write(Name);
             writer.Write((uint)Flags);
@@ -70,7 +35,7 @@ namespace UAssetAPI.FieldTypes
     /// </summary>
     public abstract class FProperty : FField
     {
-        public int ArrayDim;
+        public EArrayDim ArrayDim;
         public int ElementSize;
         public EPropertyFlags PropertyFlags;
         public ushort RepIndex;
@@ -89,10 +54,10 @@ namespace UAssetAPI.FieldTypes
             return (T)RawValue;
         }
 
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
-            ArrayDim = reader.ReadInt32();
+            base.Read(reader);
+            ArrayDim = (EArrayDim)reader.ReadInt32();
             ElementSize = reader.ReadInt32();
             PropertyFlags = (EPropertyFlags)reader.ReadUInt64();
             RepIndex = reader.ReadUInt16();
@@ -100,10 +65,10 @@ namespace UAssetAPI.FieldTypes
             BlueprintReplicationCondition = (ELifetimeCondition)reader.ReadByte();
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
-            writer.Write(ArrayDim);
+            base.Write(writer);
+            writer.Write((int)ArrayDim);
             writer.Write(ElementSize);
             writer.Write((ulong)PropertyFlags);
             writer.Write(RepIndex);
@@ -124,20 +89,20 @@ namespace UAssetAPI.FieldTypes
         ///<summary>The FNumericProperty which represents the underlying type of the enum</summary>
         public FProperty UnderlyingProp;
 
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
+            base.Read(reader);
 
             Enum = new FPackageIndex(reader.ReadInt32());
-            UnderlyingProp = MainSerializer.ReadFProperty(asset, reader);
+            UnderlyingProp = MainSerializer.ReadFProperty(reader);
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
+            base.Write(writer);
 
             writer.Write(Enum.Index);
-            MainSerializer.WriteFProperty(UnderlyingProp, asset, writer);
+            MainSerializer.WriteFProperty(UnderlyingProp, writer);
         }
     }
 
@@ -145,32 +110,33 @@ namespace UAssetAPI.FieldTypes
     {
         public FProperty Inner;
 
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
-            Inner = MainSerializer.ReadFProperty(asset, reader);
+            base.Read(reader);
+            Inner = MainSerializer.ReadFProperty(reader);
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
-            MainSerializer.WriteFProperty(Inner, asset, writer);
+            base.Write(writer);
+            MainSerializer.WriteFProperty(Inner, writer);
         }
     }
 
     public class FSetProperty : FProperty
     {
         public FProperty ElementProp;
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
-            ElementProp = MainSerializer.ReadFProperty(asset, reader);
+            base.Read(reader);
+            ElementProp = MainSerializer.ReadFProperty(reader);
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
-            MainSerializer.WriteFProperty(ElementProp, asset, writer);
+            base.Write(writer);
+            MainSerializer.WriteFProperty(ElementProp, writer);
         }
     }
 
@@ -179,15 +145,15 @@ namespace UAssetAPI.FieldTypes
         // UClass*
         public FPackageIndex PropertyClass;
 
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
+            base.Read(reader);
             PropertyClass = new FPackageIndex(reader.ReadInt32());
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
+            base.Write(writer);
             writer.Write(PropertyClass.Index);
         }
     }
@@ -202,33 +168,33 @@ namespace UAssetAPI.FieldTypes
         // UClass*
         public FPackageIndex MetaClass;
 
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
+            base.Read(reader);
             MetaClass = new FPackageIndex(reader.ReadInt32());
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
+            base.Write(writer);
             writer.Write(MetaClass.Index);
         }
     }
 
-    public class FSoftClassProperty : FSoftObjectProperty
+    public class FSoftClassProperty : FObjectProperty
     {
         // UClass*
         public FPackageIndex MetaClass;
 
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
+            base.Read(reader);
             MetaClass = new FPackageIndex(reader.ReadInt32());
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
+            base.Write(writer);
             writer.Write(MetaClass.Index);
         }
     }
@@ -238,15 +204,15 @@ namespace UAssetAPI.FieldTypes
         // UFunction*
         public FPackageIndex SignatureFunction;
 
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
+            base.Read(reader);
             SignatureFunction = new FPackageIndex(reader.ReadInt32());
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
+            base.Write(writer);
             writer.Write(SignatureFunction.Index);
         }
     }
@@ -266,15 +232,15 @@ namespace UAssetAPI.FieldTypes
         // UFunction*
         public FPackageIndex InterfaceClass;
 
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
+            base.Read(reader);
             InterfaceClass = new FPackageIndex(reader.ReadInt32());
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
+            base.Write(writer);
             writer.Write(InterfaceClass.Index);
         }
     }
@@ -284,18 +250,18 @@ namespace UAssetAPI.FieldTypes
         public FProperty KeyProp;
         public FProperty ValueProp;
 
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
-            KeyProp = MainSerializer.ReadFProperty(asset, reader);
-            ValueProp = MainSerializer.ReadFProperty(asset, reader);
+            base.Read(reader);
+            KeyProp = MainSerializer.ReadFProperty(reader);
+            ValueProp = MainSerializer.ReadFProperty(reader);
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
-            MainSerializer.WriteFProperty(KeyProp, asset, writer);
-            MainSerializer.WriteFProperty(ValueProp, asset, writer);
+            base.Write(writer);
+            MainSerializer.WriteFProperty(KeyProp, writer);
+            MainSerializer.WriteFProperty(ValueProp, writer);
         }
     }
 
@@ -313,9 +279,9 @@ namespace UAssetAPI.FieldTypes
         public bool NativeBool;
         public bool Value;
 
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
+            base.Read(reader);
 
             byte BoolSize = (byte)ElementSize;
             FieldSize = reader.ReadByte();
@@ -326,9 +292,9 @@ namespace UAssetAPI.FieldTypes
             Value = reader.ReadBoolean();
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
+            base.Write(writer);
             writer.Write(FieldSize);
             writer.Write(ByteOffset);
             writer.Write(ByteMask);
@@ -343,15 +309,15 @@ namespace UAssetAPI.FieldTypes
         /// <summary>A pointer to the UEnum represented by this property</summary>
         public FPackageIndex Enum;
 
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
+            base.Read(reader);
             Enum = new FPackageIndex(reader.ReadInt32());
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
+            base.Write(writer);
             writer.Write(Enum.Index);
         }
     }
@@ -361,29 +327,29 @@ namespace UAssetAPI.FieldTypes
         // UScriptStruct*
         public FPackageIndex Struct;
 
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
+            base.Read(reader);
             Struct = new FPackageIndex(reader.ReadInt32());
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
+            base.Write(writer);
             writer.Write(Struct.Index);
         }
     }
 
     public class FNumericProperty : FProperty
     {
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
+            base.Read(reader);
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
+            base.Write(writer);
         }
     }
 
@@ -392,14 +358,14 @@ namespace UAssetAPI.FieldTypes
     /// </summary>
     public class FGenericProperty : FProperty
     {
-        public override void Read(AssetBinaryReader reader, UAsset asset)
+        public override void Read(AssetBinaryReader reader)
         {
-            base.Read(reader, asset);
+            base.Read(reader);
         }
 
-        public override void Write(AssetBinaryWriter writer, UAsset asset)
+        public override void Write(AssetBinaryWriter writer)
         {
-            base.Write(writer, asset);
+            base.Write(writer);
         }
     }
 }

@@ -16,7 +16,9 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using UAssetAPI;
 using UAssetAPI.PropertyTypes;
-using UAssetAPI.StructTypes;
+using UAssetAPI.UnrealTypes;
+using UAssetAPI.PropertyTypes.Objects;
+using UAssetAPI.PropertyTypes.Structs;
 
 public class UAssetParser : Control {
 

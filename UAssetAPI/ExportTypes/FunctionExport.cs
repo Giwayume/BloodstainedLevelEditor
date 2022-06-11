@@ -1,4 +1,5 @@
 using System.IO;
+using UAssetAPI.UnrealTypes;
 
 namespace UAssetAPI
 {
@@ -7,6 +8,7 @@ namespace UAssetAPI
     /// </summary>
     public class FunctionExport : StructExport
     {
+        public EFunctionFlags FunctionFlags;
         public FunctionExport(Export super) : base(super)
         {
             Asset = super.Asset;
@@ -26,14 +28,14 @@ namespace UAssetAPI
         public override void Read(AssetBinaryReader reader, int nextStarting)
         {
             base.Read(reader, nextStarting);
-
+            FunctionFlags = (EFunctionFlags)reader.ReadUInt32();
             // TODO
         }
 
         public override void Write(AssetBinaryWriter writer)
         {
             base.Write(writer);
-            
+            writer.Write((uint)FunctionFlags);
             // TODO
         }
     }

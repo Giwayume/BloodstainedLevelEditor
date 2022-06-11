@@ -1,42 +1,41 @@
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using UAssetAPI.PropertyTypes;
-using UAssetAPI.StructTypes;
+using UAssetAPI.PropertyTypes.Objects;
+using UAssetAPI.PropertyTypes.Structs;
+using UAssetAPI.UnrealTypes;
 
 namespace UAssetAPI
 {
     /// <summary>
     /// Imported spreadsheet table.
     /// </summary>
-    public class DataTable
+    public class UDataTable
     {
         public List<StructPropertyData> Data;
 
-        public DataTable()
+        public UDataTable()
         {
             Data = new List<StructPropertyData>();
         }
 
-        public DataTable(List<StructPropertyData> data)
+        public UDataTable(List<StructPropertyData> data)
         {
             Data = data;
         }
     }
 
     /// <summary>
-    /// Imported spreadsheet table.
+    /// Export for an imported spreadsheet table. See <see cref="UDataTable"/>.
     /// </summary>
     public class DataTableExport : NormalExport
     {
-        public DataTable Table;
+        public UDataTable Table;
 
         public DataTableExport(Export super) : base(super)
         {
 
         }
 
-        public DataTableExport(DataTable data, UAsset asset, byte[] extras) : base(asset, extras)
+        public DataTableExport(UDataTable data, UAsset asset, byte[] extras) : base(asset, extras)
         {
             Table = data;
         }
@@ -51,7 +50,7 @@ namespace UAssetAPI
             base.Read(reader, nextStarting);
 
             // Find an ObjectProperty named RowStruct
-            FName decidedStructType = new FName("Generic");
+            FName decidedStructType = FName.DefineDummy(reader.Asset, "Generic");
             foreach (PropertyData thisData in Data)
             {
                 if (thisData.Name.Value.Value == "RowStruct" && thisData is ObjectPropertyData thisObjData && thisObjData.Value.IsImport())
@@ -63,7 +62,7 @@ namespace UAssetAPI
 
             reader.ReadInt32();
 
-            Table = new DataTable();
+            Table = new UDataTable();
 
             int numEntries = reader.ReadInt32();
             for (int i = 0; i < numEntries; i++)
@@ -83,7 +82,7 @@ namespace UAssetAPI
             base.Write(writer);
 
             // Find an ObjectProperty named RowStruct
-            FName decidedStructType = new FName("Generic");
+            FName decidedStructType = FName.DefineDummy(writer.Asset, "Generic");
             foreach (PropertyData thisData in Data)
             {
                 if (thisData.Name.Value.Value == "RowStruct" && thisData is ObjectPropertyData thisObjData)

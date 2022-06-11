@@ -1,7 +1,6 @@
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using UAssetAPI.PropertyTypes;
+using UAssetAPI.PropertyTypes.Objects;
+using UAssetAPI.UnrealTypes;
 
 namespace UAssetAPI
 {
@@ -11,6 +10,67 @@ namespace UAssetAPI
     public class NormalExport : Export
     {
         public List<PropertyData> Data;
+
+        /// <summary>
+        /// Gets or sets the value associated with the specified key. This operation loops linearly, so it may not be suitable for high-performance environments.
+        /// </summary>
+        /// <param name="key">The key associated with the value to get or set.</param>
+        public PropertyData this[FName key]
+        {
+            get
+            {
+                for (int i = 0; i < Data.Count; i++)
+                {
+                    if (Data[i].Name == key) return Data[i];
+                }
+                return null;
+            }
+            set
+            {
+                for (int i = 0; i < Data.Count; i++)
+                {
+                    if (Data[i].Name == key)
+                    {
+                        Data[i] = value;
+                        Data[i].Name = key;
+                        break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the value associated with the specified key. This operation loops linearly, so it may not be suitable for high-performance environments.
+        /// </summary>
+        /// <param name="key">The key associated with the value to get or set.</param>
+        public PropertyData this[string key]
+        {
+            get
+            {
+                return this[FName.FromString(Asset, key)];
+            }
+            set
+            {
+                this[FName.FromString(Asset, key)] = value;
+            }
+        }
+
+
+        /// <summary>
+        /// Gets or sets the value at the specified index.
+        /// </summary>
+        /// <param name="index">The index of the value to get or set.</param>
+        public PropertyData this[int index]
+        {
+            get
+            {
+                return Data[index];
+            }
+            set
+            {
+                Data[index] = value;
+            }
+        }
 
         public NormalExport(Export super)
         {
@@ -37,7 +97,7 @@ namespace UAssetAPI
         {
             Data = new List<PropertyData>();
             PropertyData bit;
-            while ((bit = MainSerializer.Read(Asset, reader, true)) != null)
+            while ((bit = MainSerializer.Read(reader, true)) != null)
             {
                 Data.Add(bit);
             }
@@ -48,9 +108,9 @@ namespace UAssetAPI
             for (int j = 0; j < Data.Count; j++)
             {
                 PropertyData current = Data[j];
-                MainSerializer.Write(current, Asset, writer, true);
+                MainSerializer.Write(current, writer, true);
             }
-            writer.Write(new FName("None"));
+            writer.Write(new FName(writer.Asset, "None"));
         }
     }
 }

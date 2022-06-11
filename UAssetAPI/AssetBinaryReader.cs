@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using UAssetAPI.Kismet.Bytecode;
+using UAssetAPI.UnrealTypes;
 
 namespace UAssetAPI
 {
@@ -64,6 +67,16 @@ namespace UAssetAPI
             return ReadFString()?.Value;
         }
 
+        public virtual Guid? ReadPropertyGuid()
+        {
+            if (Asset.EngineVersion >= UE4Version.VER_UE4_PROPERTY_GUID_IN_PROPERTY_TAG)
+            {
+                bool hasPropertyGuid = ReadBoolean();
+                if (hasPropertyGuid) return new Guid(ReadBytes(16));
+            }
+            return null;
+        }
+
         public virtual FString ReadFString()
         {
             int length = this.ReadInt32();
@@ -88,13 +101,11 @@ namespace UAssetAPI
         public virtual FString ReadNameMapString(out uint hashes)
         {
             FString str = this.ReadFString();
-            if (!string.IsNullOrEmpty(str.Value))
+            hashes = 0;
+
+            if (Asset.EngineVersion >= UE4Version.VER_UE4_NAME_HASHES_SERIALIZED && !string.IsNullOrEmpty(str.Value))
             {
                 hashes = this.ReadUInt32();
-            }
-            else
-            {
-                hashes = 0;
             }
             return str;
         }
@@ -103,7 +114,94 @@ namespace UAssetAPI
         {
             int nameMapPointer = this.ReadInt32();
             int number = this.ReadInt32();
-            return new FName(Asset.GetNameReference(nameMapPointer), number);
+            return new FName(Asset, nameMapPointer, number);
+        }
+
+        public string XFERSTRING()
+        {
+            List<byte> readData = new List<byte>();
+            while (true)
+            {
+                byte newVal = this.ReadByte();
+                if (newVal == 0) break;
+                readData.Add(newVal);
+            }
+            return Encoding.ASCII.GetString(readData.ToArray());
+        }
+
+        public string XFERUNICODESTRING()
+        {
+            List<byte> readData = new List<byte>();
+            while (true)
+            {
+                byte newVal1 = this.ReadByte();
+                byte newVal2 = this.ReadByte();
+                if (newVal1 == 0 && newVal2 == 0) break;
+                readData.Add(newVal1);
+                readData.Add(newVal2);
+            }
+            return Encoding.Unicode.GetString(readData.ToArray());
+        }
+
+        public void XFERTEXT()
+        {
+
+        }
+
+        public FName XFERNAME()
+        {
+            return this.ReadFName();
+        }
+
+        public FName XFER_FUNC_NAME()
+        {
+            return this.XFERNAME();
+        }
+
+        public FPackageIndex XFERPTR()
+        {
+            return new FPackageIndex(this.ReadInt32());
+        }
+
+        public FPackageIndex XFER_FUNC_POINTER()
+        {
+            return this.XFERPTR();
+        }
+
+        public KismetPropertyPointer XFER_PROP_POINTER()
+        {
+            if (Asset.EngineVersion >= KismetPropertyPointer.XFER_PROP_POINTER_SWITCH_TO_SERIALIZING_AS_FIELD_PATH_VERSION)
+            {
+                int numEntries = this.ReadInt32();
+                FName[] allNames = new FName[numEntries];
+                for (int i = 0; i < numEntries; i++)
+                {
+                    allNames[i] = this.ReadFName();
+                }
+                FPackageIndex owner = this.XFER_OBJECT_POINTER();
+                return new KismetPropertyPointer(new FFieldPath(allNames, owner));
+            }
+            else
+            {
+                return new KismetPropertyPointer(this.XFERPTR());
+            }
+        }
+
+        public FPackageIndex XFER_OBJECT_POINTER()
+        {
+            return this.XFERPTR();
+        }
+
+        public KismetExpression[] ReadExpressionArray(EExprToken endToken)
+        {
+            List<KismetExpression> newData = new List<KismetExpression>();
+            KismetExpression currExpression = null;
+            while (currExpression == null || currExpression.Token != endToken)
+            {
+                if (currExpression != null) newData.Add(currExpression);
+                currExpression = ExpressionSerializer.ReadExpression(this);
+            }
+            return newData.ToArray();
         }
     }
 }

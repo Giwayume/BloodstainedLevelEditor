@@ -6,8 +6,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UAssetAPI.FieldTypes;
-using UAssetAPI.PropertyTypes;
-using UAssetAPI.StructTypes;
+using UAssetAPI.PropertyTypes.Objects;
+using UAssetAPI.PropertyTypes.Structs;
+using UAssetAPI.UnrealTypes;
 
 namespace UAssetAPI
 {
@@ -30,14 +31,32 @@ namespace UAssetAPI
     /// </summary>
     public static class MainSerializer
     {
-#if DEBUG
-        private static PropertyData lastType;
-#endif
+
+        private static IDictionary<string, RegistryEntry> _propertyTypeRegistry;
 
         /// <summary>
         /// The property type registry. Maps serialized property names to their types.
         /// </summary>
-        internal static IDictionary<string, RegistryEntry> PropertyTypeRegistry = null;
+        internal static IDictionary<string, RegistryEntry> PropertyTypeRegistry
+        {
+            get
+            {
+                InitializePropertyTypeRegistry();
+                return _propertyTypeRegistry;
+            }
+            set => _propertyTypeRegistry = value; // I hope you know what you're doing!
+        }
+
+        private static IEnumerable<Assembly> GetDependentAssemblies(Assembly analyzedAssembly)
+        {
+            return AppDomain.CurrentDomain.GetAssemblies().Where(a => GetNamesOfAssembliesReferencedBy(a).Contains(analyzedAssembly.FullName));
+        }
+
+        public static IEnumerable<string> GetNamesOfAssembliesReferencedBy(Assembly assembly)
+        {
+            return assembly.GetReferencedAssemblies().Select(assemblyName => assemblyName.FullName);
+        }
+
         private static Type registryParentDataType = typeof(PropertyData);
 
         /// <summary>
@@ -45,11 +64,13 @@ namespace UAssetAPI
         /// </summary>
         private static void InitializePropertyTypeRegistry()
         {
-            if (PropertyTypeRegistry != null) return;
-            PropertyTypeRegistry = new Dictionary<string, RegistryEntry>();
+            if (_propertyTypeRegistry != null) return;
+            _propertyTypeRegistry = new Dictionary<string, RegistryEntry>();
 
-            Assembly[] allAssemblies = new Assembly[1];
+            Assembly[] allDependentAssemblies = GetDependentAssemblies(registryParentDataType.Assembly).ToArray();
+            Assembly[] allAssemblies = new Assembly[allDependentAssemblies.Length + 1];
             allAssemblies[0] = registryParentDataType.Assembly;
+            Array.Copy(allDependentAssemblies, 0, allAssemblies, 1, allDependentAssemblies.Length);
 
             for (int i = 0; i < allAssemblies.Length; i++)
             {
@@ -61,15 +82,33 @@ namespace UAssetAPI
 
                     var testInstance = Activator.CreateInstance(currentPropertyDataType);
 
-                    FName returnedPropType = currentPropertyDataType.GetProperty("PropertyType")?.GetValue(testInstance, null) as FName;
+                    FString returnedPropType = currentPropertyDataType.GetProperty("PropertyType")?.GetValue(testInstance, null) as FString;
                     if (returnedPropType == null) continue;
                     bool? returnedHasCustomStructSerialization = currentPropertyDataType.GetProperty("HasCustomStructSerialization")?.GetValue(testInstance, null) as bool?;
                     if (returnedHasCustomStructSerialization == null) continue;
+                    bool? returnedShouldBeRegistered = currentPropertyDataType.GetProperty("ShouldBeRegistered")?.GetValue(testInstance, null) as bool?;
+                    if (returnedShouldBeRegistered == null) continue;
 
-                    RegistryEntry res = new RegistryEntry();
-                    res.PropertyType = currentPropertyDataType;
-                    res.HasCustomStructSerialization = (bool)returnedHasCustomStructSerialization;
-                    PropertyTypeRegistry[returnedPropType.Value.Value] = res;
+                    if ((bool)returnedShouldBeRegistered)
+                    {
+                        RegistryEntry res = new RegistryEntry();
+                        res.PropertyType = currentPropertyDataType;
+                        res.HasCustomStructSerialization = (bool)returnedHasCustomStructSerialization;
+                        _propertyTypeRegistry[returnedPropType.Value] = res;
+                    }
+                }
+            }
+
+            // Fetch the current git commit while we're here
+            UAPUtils.CurrentCommit = string.Empty;
+            using (Stream stream = registryParentDataType.Assembly.GetManifestResourceStream("UAssetAPI.git_commit.txt"))
+            {
+                if (stream != null)
+                {
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        if (reader != null) UAPUtils.CurrentCommit = reader.ReadToEnd().Trim();
+                    }
                 }
             }
         }
@@ -80,15 +119,13 @@ namespace UAssetAPI
         /// <param name="type">The serialized type of this property.</param>
         /// <param name="name">The serialized name of this property.</param>
         /// <param name="asset">The UAsset which this property is contained within.</param>
-        /// <param name="reader">The BinaryReader to read from. If left unspecified, you must call the <see cref="PropertyData.Read(BinaryReader, bool, long, long)"/> method manually.</param>
+        /// <param name="reader">The BinaryReader to read from. If left unspecified, you must call the <see cref="PropertyData.Read(AssetBinaryReader, bool, long, long)"/> method manually.</param>
         /// <param name="leng">The length of this property on disk in bytes.</param>
         /// <param name="duplicationIndex">The duplication index of this property.</param>
         /// <param name="includeHeader">Does this property serialize its header in the current context?</param>
         /// <returns>A new PropertyData instance based off of the passed parameters.</returns>
         public static PropertyData TypeToClass(FName type, FName name, UAsset asset, AssetBinaryReader reader = null, int leng = 0, int duplicationIndex = 0, bool includeHeader = true)
         {
-            InitializePropertyTypeRegistry();
-
             long startingOffset = 0;
             if (reader != null) startingOffset = reader.BaseStream.Position;
 
@@ -101,19 +138,10 @@ namespace UAssetAPI
             }
             else
             {
-#if DEBUG
-                //Debug.WriteLine("-----------");
-                //Debug.WriteLine("Parsing unknown type " + type.ToString());
-                //Debug.WriteLine("Length: " + leng);
-                //if (reader != null) Debug.WriteLine("Pos: " + reader.BaseStream.Position);
-                //Debug.WriteLine("Last type: " + lastType.PropertyType?.ToString());
-                //if (lastType is StructPropertyData) Debug.WriteLine("Last struct's type was " + ((StructPropertyData)lastType).StructType?.ToString());
-                //Debug.WriteLine("-----------");
-#endif
                 if (leng > 0)
                 {
                     data = new UnknownPropertyData(name);
-                    ((UnknownPropertyData)data).SetSerializingPropertyType(type);
+                    ((UnknownPropertyData)data).SetSerializingPropertyType(type.Value);
                 }
                 else
                 {
@@ -121,10 +149,6 @@ namespace UAssetAPI
                     throw new FormatException("Unknown property type: " + type.ToString() + " (on " + name.ToString() + " at " + reader.BaseStream.Position + ")");
                 }
             }
-
-#if DEBUG
-            lastType = data;
-#endif
 
             data.DuplicationIndex = duplicationIndex;
             if (reader != null)
@@ -139,11 +163,10 @@ namespace UAssetAPI
         /// <summary>
         /// Reads a property into memory.
         /// </summary>
-        /// <param name="asset">The UAsset which this property is contained within.</param>
         /// <param name="reader">The BinaryReader to read from. The underlying stream should be at the position of the property to be read.</param>
         /// <param name="includeHeader">Does this property serialize its header in the current context?</param>
         /// <returns>The property read from disk.</returns>
-        public static PropertyData Read(UAsset asset, AssetBinaryReader reader, bool includeHeader)
+        public static PropertyData Read(AssetBinaryReader reader, bool includeHeader)
         {
             long startingOffset = reader.BaseStream.Position;
             FName name = reader.ReadFName();
@@ -153,7 +176,7 @@ namespace UAssetAPI
 
             int leng = reader.ReadInt32();
             int duplicationIndex = reader.ReadInt32();
-            PropertyData result = TypeToClass(type, name, asset, reader, leng, duplicationIndex, includeHeader);
+            PropertyData result = TypeToClass(type, name, reader.Asset, reader, leng, duplicationIndex, includeHeader);
             result.Offset = startingOffset;
             return result;
         }
@@ -163,17 +186,16 @@ namespace UAssetAPI
         /// <summary>
         /// Reads an FProperty into memory. Primarily used as a part of <see cref="StructExport"/> serialization.
         /// </summary>
-        /// <param name="asset">The UAsset which this FProperty is contained within.</param>
         /// <param name="reader">The BinaryReader to read from. The underlying stream should be at the position of the FProperty to be read.</param>
         /// <returns>The FProperty read from disk.</returns>
-        public static FProperty ReadFProperty(UAsset asset, AssetBinaryReader reader)
+        public static FProperty ReadFProperty(AssetBinaryReader reader)
         {
             FName serializedType = reader.ReadFName();
             Type requestedType = Type.GetType("UAssetAPI.FieldTypes.F" + allNonLetters.Replace(serializedType.Value.Value, string.Empty));
             if (requestedType == null) requestedType = typeof(FGenericProperty);
             var res = (FProperty)Activator.CreateInstance(requestedType);
             res.SerializedType = serializedType;
-            res.Read(reader, asset);
+            res.Read(reader);
             return res;
         }
 
@@ -181,23 +203,68 @@ namespace UAssetAPI
         /// Serializes an FProperty from memory.
         /// </summary>
         /// <param name="prop">The FProperty to serialize.</param>
-        /// <param name="asset">The UAsset which this FProperty is contained within.</param>
         /// <param name="writer">The BinaryWriter to serialize the FProperty to.</param>
-        public static void WriteFProperty(FProperty prop, UAsset asset, AssetBinaryWriter writer)
+        public static void WriteFProperty(FProperty prop, AssetBinaryWriter writer)
         {
             writer.Write(prop.SerializedType);
-            prop.Write(writer, asset);
+            prop.Write(writer);
+        }
+
+        /// <summary>
+        /// Reads a UProperty into memory. Primarily used as a part of <see cref="PropertyExport"/> serialization.
+        /// </summary>
+        /// <param name="reader">The BinaryReader to read from. The underlying stream should be at the position of the UProperty to be read.</param>
+        /// <param name="serializedType">The type of UProperty to be read.</param>
+        /// <returns>The FProperty read from disk.</returns>
+        public static UProperty ReadUProperty(AssetBinaryReader reader, FName serializedType)
+        {
+            return ReadUProperty(reader, Type.GetType("UAssetAPI.FieldTypes.U" + allNonLetters.Replace(serializedType.Value.Value, string.Empty)));
+        }
+
+        /// <summary>
+        /// Reads a UProperty into memory. Primarily used as a part of <see cref="PropertyExport"/> serialization.
+        /// </summary>
+        /// <param name="reader">The BinaryReader to read from. The underlying stream should be at the position of the UProperty to be read.</param>
+        /// <param name="requestedType">The type of UProperty to be read.</param>
+        /// <returns>The FProperty read from disk.</returns>
+        public static UProperty ReadUProperty(AssetBinaryReader reader, Type requestedType)
+        {
+            if (requestedType == null) requestedType = typeof(UGenericProperty);
+            var res = (UProperty)Activator.CreateInstance(requestedType);
+            res.Read(reader);
+            return res;
+        }
+
+        /// <summary>
+        /// Reads a UProperty into memory. Primarily used as a part of <see cref="PropertyExport"/> serialization.
+        /// </summary>
+        /// <param name="reader">The BinaryReader to read from. The underlying stream should be at the position of the UProperty to be read.</param>
+        /// <returns>The FProperty read from disk.</returns>
+        public static T ReadUProperty<T>(AssetBinaryReader reader) where T : UProperty
+        {
+            var res = (UProperty)Activator.CreateInstance(typeof(T));
+            res.Read(reader);
+            return (T)res;
+        }
+
+        /// <summary>
+        /// Serializes a UProperty from memory.
+        /// </summary>
+        /// <param name="prop">The UProperty to serialize.</param>
+        /// <param name="writer">The BinaryWriter to serialize the UProperty to.</param>
+        public static void WriteUProperty(UProperty prop, AssetBinaryWriter writer)
+        {
+            prop.Write(writer);
         }
 
         /// <summary>
         /// Serializes a property from memory.
         /// </summary>
         /// <param name="property">The property to serialize.</param>
-        /// <param name="asset">The UAsset which this property is contained within.</param>
         /// <param name="writer">The BinaryWriter to serialize the property to.</param>
         /// <param name="includeHeader">Does this property serialize its header in the current context?</param>
         /// <returns>The serial offset where the length of the property is stored.</returns>
-        public static int Write(PropertyData property, UAsset asset, AssetBinaryWriter writer, bool includeHeader)
+        public static int Write(PropertyData property, AssetBinaryWriter writer, bool includeHeader)
         {
             if (property == null) return 0;
 
@@ -205,11 +272,11 @@ namespace UAssetAPI
             writer.Write(property.Name);
             if (property is UnknownPropertyData unknownProp)
             {
-                writer.Write(unknownProp.SerializingPropertyType);
+                writer.Write(new FName(writer.Asset, unknownProp.SerializingPropertyType));
             }
             else
             {
-                writer.Write(property.PropertyType);
+                writer.Write(new FName(writer.Asset, property.PropertyType));
             }
             int oldLoc = (int)writer.BaseStream.Position;
             writer.Write((int)0); // initial length
