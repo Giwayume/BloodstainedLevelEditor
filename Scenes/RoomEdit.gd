@@ -15,13 +15,16 @@ var uasset_parser: Node
 
 var parse_pak_thread: Thread
 var get_room_definition_thread: Thread
+var parse_blueprint_thread: Thread
 var place_nodes_thread: Thread
-
-var parse_enemy_blueprint_thread: Thread
+var blueprint_definitions_pending_load: Array = []
 
 var asset_explorer: Control
+var character_selection_dialog: Control
 var editor_container: Control
 var enemy_difficulty_select_option_button: OptionButton
+var enemy_add_button: Button
+var enemy_delete_button: Button
 var level_outline_tab_container: TabContainer
 var loading_3d_scene_notification: Control
 var loading_status_container: Control
@@ -120,7 +123,13 @@ var trees: Dictionary = {
 		"restore_collapse_state": {}
 	}
 }
-enum { TREE_POPUP_ADD, TREE_POPUP_CLONE, TREE_POPUP_DELETE, TREE_POPUP_UNDELETE }
+enum {
+	TREE_POPUP_ADD,
+	TREE_POPUP_CLONE,
+	TREE_POPUP_DELETE,
+	TREE_POPUP_REMOVE_EDITS,
+	TREE_POPUP_UNDELETE
+}
 var tree_popup_menu_items: Array = [
 	{
 		"id": TREE_POPUP_DELETE,
@@ -133,6 +142,12 @@ var tree_popup_menu_items: Array = [
 		"type": "icon",
 		"texture": icon_reload,
 		"label": "Un-Delete"
+	},
+	{
+		"id": TREE_POPUP_REMOVE_EDITS,
+		"type": "icon",
+		"texture": icon_reload,
+		"label": "Remove All Edits"
 	}
 ]
 
@@ -143,6 +158,7 @@ var room_definition: Dictionary
 
 var current_tool: String = "move"
 var transform_tool_names = ["select", "move", "rotate", "scale"]
+var is_any_dialog_visible: bool = false
 var is_any_menu_popup_visible: bool = false
 var is_mouse_in_3d_viewport_range: bool = false
 var is_panel_popup_blocking: bool = false
@@ -171,7 +187,10 @@ func _ready():
 	editor.write_config_prop("last_edited_level_name", editor.selected_level_name)
 	
 	asset_explorer = find_node("AssetExplorer", true, true)
+	character_selection_dialog = find_node("CharacterSelectionDialog", true, true)
 	enemy_difficulty_select_option_button = find_node("EnemyDifficultySelectOptionButton", true, true)
+	enemy_add_button = find_node("EnemyAddButton", true, true)
+	enemy_delete_button = find_node("EnemyDeleteButton", true, true)
 	editor_container = find_node("EditorContainer", true, true)
 	level_outline_tab_container = find_node("LevelOutlineTabContainer", true, true)
 	loading_3d_scene_notification = find_node("Loading3dSceneNotification", true, true)
@@ -220,7 +239,12 @@ func _ready():
 		trees[tree_name].tree.connect("multi_selected", self, "on_tree_multi_selected", [tree_name])
 		trees[tree_name].tree.connect("item_rmb_selected", self, "on_tree_rmb_selected", [tree_name])
 	editor.connect("history_changed", self, "on_history_changed")
+	character_selection_dialog.connect("about_to_show", self, "on_show_any_dialog")
+	character_selection_dialog.connect("popup_hide", self, "on_hide_any_dialog")
+	character_selection_dialog.connect("character_selected", self, "on_character_add")
 	enemy_difficulty_select_option_button.connect("item_selected", self, "on_enemy_difficulty_item_selected")
+	enemy_add_button.connect("pressed", self, "on_enemy_add")
+	enemy_delete_button.connect("pressed", self, "on_enemy_delete")
 	menu_bar.connect("popup_visibility_changed", self, "on_menu_bar_popup_visibility_changed")
 	panel_asset_info.connect("open_uassetgui", self, "on_open_uasset_gui")
 	panel_light.connect("popup_blocking_changed", self, "on_panel_popup_blocking_changed")
@@ -272,7 +296,7 @@ func _input(event):
 	
 	# Handle mouse events
 	if event is InputEventMouseButton:
-		if is_mouse_in_3d_viewport_range and event.pressed:
+		if is_mouse_in_3d_viewport_range and room_3d_display.can_capture_mouse and event.pressed:
 			room_3d_focus_container.call_deferred("grab_focus")
 	
 	# Handle keyboard events
@@ -300,6 +324,8 @@ func _exit_tree():
 # THREADS #
 ###########
 
+# Get a list of assets in the pak files
+
 func start_parse_pak_thread():
 	parse_pak_thread = Thread.new()
 	parse_pak_thread.start(self, "parse_pak_thread_function")
@@ -314,6 +340,8 @@ func end_parse_pak_thread():
 	print_debug("parse pak complete")
 	start_get_room_definition_thread()
 
+# Build the "room_definition" object, which represents the entire tree for Godot
+
 func start_get_room_definition_thread():
 	get_room_definition_thread = Thread.new()
 	get_room_definition_thread.start(self, "get_room_definition_thread_function")
@@ -326,40 +354,60 @@ func get_room_definition_thread_function(_noop):
 func end_get_room_definition_thread():
 	get_room_definition_thread.wait_to_finish()
 	print_debug("get room def complete")
-	start_place_nodes_thread()
+	start_parse_blueprint_thread()
 
-func start_place_nodes_thread():
-	place_nodes_thread = Thread.new()
-	place_nodes_thread.start(self, "place_nodes_thread_function")
-	loading_status_label.text = "Placing the room's assets..."
+func start_parse_blueprint_thread():
+	Editor.load_room_edits()
+	blueprint_definitions_pending_load = []
+	for tree_name in trees:
+		if Editor.room_edits.has(tree_name) and Editor.room_edits[tree_name].has("new_exports"):
+			for export_definition in Editor.room_edits[tree_name]["new_exports"]:
+				if export_definition.has("blueprint"):
+					blueprint_definitions_pending_load.push_back(export_definition["blueprint"])
+	
+	parse_blueprint_thread = Thread.new()
+	parse_blueprint_thread.start(self, "parse_blueprint_thread_function")
+	loading_status_label.text = "Gathering blueprints..."
 
-func place_nodes_thread_function(_noop):
-	editor.load_room_edits()
-	setup_3d_view()
-	build_object_outlines()
-	call_deferred("end_place_nodes_thread")
+func parse_blueprint_thread_function(_noop):
+	uasset_parser.ParseAndCacheBlueprints(blueprint_definitions_pending_load);
+	call_deferred("end_parse_blueprint_thread")
 
-func end_place_nodes_thread():
-	place_nodes_thread.wait_to_finish()
-	print_debug("place nodes complete")
-	threads_finished()
+func prefix_export_index_recursive(definition, prefix: int):
+	definition.export_index = prefix + definition.export_index
+	definition.outer_export_index = prefix + definition.outer_export_index
+	if definition.has("mesh_export_index"):
+		definition.mesh_export_index = prefix + definition.mesh_export_index
+	if definition.has("root_component_export_index"):
+		definition.root_component_export_index = prefix + definition.root_component_export_index
+	if definition.has("children"):
+		for child in definition.children:
+			prefix_export_index_recursive(child, prefix)
 
-#func start_parse_enemy_blueprint_thread():
-#	parse_enemy_blueprint_thread = Thread.new()
-#	parse_enemy_blueprint_thread.start(self, "parse_enemy_blueprint_thread_function")
-#	loading_status_label.text = "Reading enemy information..."
-#
-#func parse_enemy_blueprint_thread_function(_noop):
-#	uasset_parser.ParseEnemyDefinitionsToUserProjectFolder(enemy_profiles);
-#	call_deferred("end_enemy_blueprint_thread")
-#
-#func end_enemy_blueprint_thread():
-#	parse_enemy_blueprint_thread.wait_to_finish()
-#
+func end_parse_blueprint_thread():
+	parse_blueprint_thread.wait_to_finish()
+
+	blueprint_definitions_pending_load = []
+	
+	var game_directory = editor.read_config()["game_directory"]
+	for tree_name in trees:
+		if Editor.room_edits.has(tree_name) and Editor.room_edits[tree_name].has("new_exports"):
+			for export_definition in Editor.room_edits[tree_name]["new_exports"]:
+				if export_definition.has("blueprint"):
+					var blueprint_snippet = uasset_parser.BlueprintSnippetRoomDefinitions[(
+						game_directory + "/BloodstainedRotN/Content/Paks/" + export_definition.blueprint.file + '|' +
+						export_definition.blueprint.asset + '|' +
+						export_definition.blueprint.object_name
+					)]
+					prefix_export_index_recursive(blueprint_snippet, 10000)
+					for child in room_definition[tree_name].children:
+						if child.type == "Level":
+							child.children.push_back(blueprint_snippet)
+							
 #	var game_directory = editor.read_config()["game_directory"]
 #	var selected_package_name = editor.selected_package
 #	var user_project_path = ProjectSettings.globalize_path("user://UserPackages/" + selected_package_name)
-#
+
 #	uasset_parser.ExtractAssetToFolder(
 #		game_directory + "/BloodstainedRotN/Content/Paks/pakchunk0-WindowsNoEditor.pak",
 #		"BloodstainedRotN/Content/Core/Environment/ACT04_GDN/Level/m04GDN_016_Enemy.umap",
@@ -377,7 +425,23 @@ func end_place_nodes_thread():
 #		"Chr_N3091(3)",
 #		user_project_path + "/ModifiedAssets/BloodstainedRotN/Content/Core/Environment/ACT04_GDN/Level/m04GDN_016_Enemy.umap"
 #	)
+	print_debug("parse blueprints complete")
+	start_place_nodes_thread()
 
+func start_place_nodes_thread():
+	place_nodes_thread = Thread.new()
+	place_nodes_thread.start(self, "place_nodes_thread_function")
+	loading_status_label.text = "Placing the room's assets..."
+
+func place_nodes_thread_function(_noop):
+	setup_3d_view()
+	build_object_outlines()
+	call_deferred("end_place_nodes_thread")
+
+func end_place_nodes_thread():
+	place_nodes_thread.wait_to_finish()
+	print_debug("place nodes complete")
+	threads_finished()
 
 func threads_finished():
 	room_3d_display.is_initial_thread_load_complete = true
@@ -467,6 +531,8 @@ func on_tree_popup_menu_id_pressed(id: int):
 		delete_selected_nodes()
 	elif id == TREE_POPUP_UNDELETE:
 		undelete_selected_nodes()
+	elif id == TREE_POPUP_REMOVE_EDITS:
+		revert_selected_nodes()
 
 func on_history_changed(action: HistoryAction):
 	var ids = action.get_ids()
@@ -474,11 +540,19 @@ func on_history_changed(action: HistoryAction):
 	var is_rebuild_object_outlines: bool = false
 	var is_clear_selection: bool = false
 	
-	if ids.has(HistoryAction.ID.SPATIAL_TRANSFORM):
+	if (
+		ids.has(HistoryAction.ID.SPATIAL_TRANSFORM) or
+		ids.has(HistoryAction.ID.REVERT_COMPONENT)
+	):
 		is_update_3d_cursor_position = true
-	if ids.has(HistoryAction.ID.DELETE_COMPONENT) or ids.has(HistoryAction.ID.UNDELETE_COMPONENT):
+	if (
+		ids.has(HistoryAction.ID.DELETE_COMPONENT) or
+		ids.has(HistoryAction.ID.UNDELETE_COMPONENT) or
+		ids.has(HistoryAction.ID.REVERT_COMPONENT)
+	):
 		is_rebuild_object_outlines = true
-		is_clear_selection = true
+		if not ids.has(HistoryAction.ID.REVERT_COMPONENT):
+			is_clear_selection = true
 	
 	if is_clear_selection:
 		clear_selection()
@@ -489,6 +563,16 @@ func on_history_changed(action: HistoryAction):
 
 func on_menu_bar_popup_visibility_changed(is_visible):
 	is_any_menu_popup_visible = is_visible
+
+func on_show_any_dialog():
+	is_any_dialog_visible = true
+	update_3d_viewport_input_tracking()
+
+func on_hide_any_dialog():
+	is_any_dialog_visible = (
+		character_selection_dialog.visible
+	)
+	update_3d_viewport_input_tracking()
 
 func on_enemy_difficulty_item_selected(index: int):
 	var current_index = -1
@@ -512,6 +596,12 @@ func on_enemy_difficulty_item_selected(index: int):
 			child.set_hidden(index != 2)
 	if index != current_index:
 		call_deferred("clear_selection")
+
+func on_enemy_add():
+	character_selection_dialog.popup_centered_ratio(.75)
+
+func on_enemy_delete():
+	delete_selected_nodes()
 
 func on_room_3d_display_camera_transform_changed(transform):
 	room_editor_controls_display_camera.transform = transform
@@ -731,6 +821,9 @@ func on_translate_selection(offset: Vector3):
 		)
 		selected_node_initial_transforms = []
 
+func on_character_add(character_profile):
+	print_debug(character_profile)
+
 func on_open_uasset_gui():
 	var current_tree_name
 	for tree_name in trees:
@@ -769,6 +862,17 @@ func undelete_selected_nodes():
 			HistoryGroupAction.new("Un-Delete Component(s)", undelete_actions)
 		)
 
+func revert_selected_nodes():
+	var revert_actions: Array = []
+	for node in room_3d_display.selected_nodes:
+		revert_actions.push_back(
+			RevertComponentAction.new(node)
+		)
+	if revert_actions.size() > 0:
+		Editor.do_action(
+			HistoryGroupAction.new("Revert Changes to Component(s)", revert_actions)
+		)
+
 func clear_selection():
 	for node in room_3d_display.selected_nodes.duplicate(false):
 		node.deselect()
@@ -777,8 +881,19 @@ func clear_selection():
 	update_3d_cursor_position()
 
 func update_3d_viewport_input_tracking():
-	var can_capture_mouse = is_mouse_in_3d_viewport_range and not is_any_menu_popup_visible and not is_panel_popup_blocking and is_window_focused
-	var can_capture_keyboard = is_3d_viewport_focused and not is_any_menu_popup_visible and is_window_focused
+	var can_capture_mouse = (
+		is_mouse_in_3d_viewport_range and
+		not is_any_menu_popup_visible and
+		not is_any_dialog_visible and
+		not is_panel_popup_blocking and
+		is_window_focused
+	)
+	var can_capture_keyboard = (
+		is_3d_viewport_focused and
+		not is_any_menu_popup_visible and
+		not is_any_dialog_visible and
+		is_window_focused
+	)
 	room_3d_display.can_capture_mouse = can_capture_mouse and not is_3d_editor_control_active
 	room_3d_display.can_capture_keyboard = can_capture_keyboard
 	room_3d_display.can_select = not is_3d_editor_control_active

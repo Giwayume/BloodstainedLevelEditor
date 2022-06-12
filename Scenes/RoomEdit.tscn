@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=2]
+[gd_scene load_steps=21 format=2]
 
 [ext_resource path="res://Scenes/RoomEdit.gd" type="Script" id=1]
 [ext_resource path="res://Scenes/Room3dDisplay.tscn" type="PackedScene" id=2]
@@ -14,6 +14,9 @@
 [ext_resource path="res://SceneComponents/Inspector/CharacterParamsPanel.tscn" type="PackedScene" id=12]
 [ext_resource path="res://SceneComponents/Inspector/LightPanel.tscn" type="PackedScene" id=13]
 [ext_resource path="res://SceneComponents/Inspector/AssetInfoPanel.tscn" type="PackedScene" id=14]
+[ext_resource path="res://Icons/Editor/Add.svg" type="Texture" id=15]
+[ext_resource path="res://Icons/Editor/Remove.svg" type="Texture" id=16]
+[ext_resource path="res://SceneComponents/CharacterSelection.tscn" type="PackedScene" id=17]
 
 [sub_resource type="StyleBoxEmpty" id=1]
 content_margin_left = 4.0
@@ -215,16 +218,16 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="HBoxContainer" type="HBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer"]
+[node name="HeaderHBoxContainer" type="HBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer"]
 margin_right = 227.0
 margin_bottom = 22.0
 
-[node name="Label" type="Label" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer/HeaderHBoxContainer"]
 margin_right = 65.0
 margin_bottom = 22.0
 text = "Difficulty"
 
-[node name="EnemyDifficultySelectOptionButton" type="OptionButton" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer/HBoxContainer"]
+[node name="EnemyDifficultySelectOptionButton" type="OptionButton" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer/HeaderHBoxContainer"]
 margin_left = 69.0
 margin_right = 227.0
 margin_bottom = 22.0
@@ -236,26 +239,52 @@ selected = 0
 [node name="EnemySharedTree" type="Tree" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer"]
 margin_top = 26.0
 margin_right = 227.0
-margin_bottom = 95.0
+margin_bottom = 86.0
 size_flags_vertical = 3
 allow_rmb_select = true
 select_mode = 2
 
 [node name="EnemyNormalTree" type="Tree" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer"]
-margin_top = 99.0
+margin_top = 90.0
 margin_right = 227.0
-margin_bottom = 169.0
+margin_bottom = 150.0
 size_flags_vertical = 3
 allow_rmb_select = true
 select_mode = 2
 
 [node name="EnemyHardTree" type="Tree" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer"]
-margin_top = 173.0
+margin_top = 154.0
 margin_right = 227.0
-margin_bottom = 243.0
+margin_bottom = 214.0
 size_flags_vertical = 3
 allow_rmb_select = true
 select_mode = 2
+
+[node name="FooterScrollContainer" type="ScrollContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer"]
+margin_top = 218.0
+margin_right = 227.0
+margin_bottom = 242.0
+scroll_vertical_enabled = false
+
+[node name="FooterHBoxContainer" type="HBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer/FooterScrollContainer"]
+margin_right = 227.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="EnemyAddButton" type="Button" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer/FooterScrollContainer/FooterHBoxContainer"]
+margin_left = 43.0
+margin_right = 102.0
+margin_bottom = 24.0
+text = " Add"
+icon = ExtResource( 15 )
+
+[node name="EnemyDeleteButton" type="Button" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Enemy/VBoxContainer/FooterScrollContainer/FooterHBoxContainer"]
+margin_left = 106.0
+margin_right = 183.0
+margin_bottom = 24.0
+text = " Delete"
+icon = ExtResource( 16 )
 
 [node name="Gimmick" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer"]
 visible = false
@@ -458,6 +487,9 @@ margin_bottom = -5.0
 [node name="TreePopupMenu" type="PopupMenu" parent="EditorContainer"]
 margin_right = 16.0
 margin_bottom = 16.0
+
+[node name="CharacterSelectionDialog" parent="EditorContainer" instance=ExtResource( 17 )]
+visible = false
 
 [node name="LoadingStatusContainer" type="Control" parent="."]
 visible = false

@@ -134,7 +134,11 @@ func _exit_tree():
 	emit_signal("popup_blocking_changed", false)
 
 func on_history_changed(action: HistoryAction):
-	if action.get_ids().has(HistoryAction.ID.UPDATE_LIGHT):
+	var action_ids = action.get_ids()
+	if (
+		action_ids.has(HistoryAction.ID.UPDATE_LIGHT) or
+		action_ids.has(HistoryAction.ID.REVERT_COMPONENT)
+	):
 		set_edits_from_selected_nodes()
 
 func on_edit_option_button_item_selected(index: int, field: String):

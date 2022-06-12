@@ -108,6 +108,15 @@ public class UAssetParser : Control {
      * Map of "filename|uassetPath|objectName" key to snippet object for blueprint reuse.
      */
     private Dictionary<string, UAssetSnippet> _blueprintSnippets = new Dictionary<string, UAssetSnippet>();
+    private Godot.Collections.Dictionary<string, object> _blueprintSnippetRoomDefinitions = new Godot.Collections.Dictionary<string, object>();
+    public Godot.Collections.Dictionary<string, object> BlueprintSnippetRoomDefinitions {
+        get {
+            return _blueprintSnippetRoomDefinitions;
+        }
+        set {
+            _blueprintSnippetRoomDefinitions = value;
+        }
+    }
 
     /**
      * OS Library
@@ -633,49 +642,54 @@ public class UAssetParser : Control {
                         assetsToCheck.Add(
                             new System.Collections.Generic.Dictionary<string, string>{
                                 { "key", "bg" },
-                                { "suffix", "_BG.umap" }
+                                { "suffix", "_BG" }
                             }
                         );
                         assetsToCheck.Add(
                             new System.Collections.Generic.Dictionary<string, string>{
                                 { "key", "gimmick" },
-                                { "suffix", "_Gimmick.umap" }
+                                { "suffix", "_Gimmick" }
                             }
                         );
                         assetsToCheck.Add(
                             new System.Collections.Generic.Dictionary<string, string>{
                                 { "key", "enemy" },
-                                { "suffix", "_Enemy.umap" }
+                                { "suffix", "_Enemy" }
                             }
                         );
                         assetsToCheck.Add(
                             new System.Collections.Generic.Dictionary<string, string>{
                                 { "key", "enemy_normal" },
-                                { "suffix", "_Enemy_Normal.umap" }
+                                { "suffix", "_Enemy_Normal" }
                             }
                         );
                         assetsToCheck.Add(
                             new System.Collections.Generic.Dictionary<string, string>{
                                 { "key", "enemy_hard" },
-                                { "suffix", "_Enemy_Hard.umap" }
+                                { "suffix", "_Enemy_Hard" }
                             }
                         );
                         assetsToCheck.Add(
                             new System.Collections.Generic.Dictionary<string, string>{
                                 { "key", "setting" },
-                                { "suffix", "_Setting.umap" }
+                                { "suffix", "_Setting" }
                             }
                         );
                         foreach (System.Collections.Generic.Dictionary<string, string> checkDef in assetsToCheck) {
-                            if (editsJson.ContainsKey(checkDef["key"]) && AssetPathToPakFilePathMap.ContainsKey(assetBasePath + checkDef["suffix"])) {
+                            string modifyAssetPath = assetBasePath + checkDef["suffix"] + ".umap";
+                            string modifyAssetExpPath = assetBasePath + checkDef["suffix"] + ".uexp";
+                            if (editsJson.ContainsKey(checkDef["key"]) && AssetPathToPakFilePathMap.ContainsKey(modifyAssetPath)) {
                                 if (editsJson[checkDef["key"]]["existing_exports"].Count() > 0 || editsJson[checkDef["key"]]["new_exports"].Count() > 0) {
-                                    ExtractAssetToFolder(AssetPathToPakFilePathMap[assetBasePath + checkDef["suffix"]], assetBasePath + checkDef["suffix"], modifiedAssetsFolder);
-                                    UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"], UE4Version.VER_UE4_22);
+                                    ExtractAssetToFolder(AssetPathToPakFilePathMap[modifyAssetPath], modifyAssetPath, modifiedAssetsFolder);
+                                    UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + modifyAssetPath, UE4Version.VER_UE4_22);
                                     UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson[checkDef["key"]]);
-                                    uAsset.Write(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"]);
+                                    uAsset.Write(modifiedAssetsFolder + "/" + modifyAssetPath);
                                 } else {
-                                    if (System.IO.File.Exists(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"])) {
-                                        System.IO.File.Delete(modifiedAssetsFolder + "/" + assetBasePath + checkDef["suffix"]);
+                                    if (System.IO.File.Exists(modifiedAssetsFolder + "/" + modifyAssetPath)) {
+                                        System.IO.File.Delete(modifiedAssetsFolder + "/" + modifyAssetPath);
+                                    }
+                                    if (System.IO.File.Exists(modifiedAssetsFolder + "/" + modifyAssetExpPath)) {
+                                        System.IO.File.Delete(modifiedAssetsFolder + "/" + modifyAssetExpPath);
                                     }
                                 }
                             }
@@ -728,7 +742,7 @@ public class UAssetParser : Control {
             foreach (Export baseExport in uAsset.Exports) {
                 if (baseExport is NormalExport export) {
                     FName objectFName = export.ObjectName;
-                    if (objectName == objectFName.Value + "(" +  objectFName.Number + ")") {
+                    if (objectName == objectFName.Value.Value) {
                         blueprintExportIndex = exportIndex;
                         break;
                     }
@@ -742,20 +756,23 @@ public class UAssetParser : Control {
             }
 
             UAssetSnippet snippet = new UAssetSnippet(uAsset, blueprintExportIndex);
-            _blueprintSnippets[pakFilePath + "|" + assetPath + "|" + objectName] = snippet;
+            string snippetKey = pakFilePath + "|" + assetPath + "|" + objectName;
+            _blueprintSnippets[snippetKey] = snippet;
+            _blueprintSnippetRoomDefinitions[snippetKey] = UMapAsDictionaryTree.ToDictionaryTree(snippet.StrippedUasset, this);
+            GD.Print(pakFilePath);
 
         } catch (Exception e) {
             GD.Print(e);
         }
     }
 
-    public void ParseEnemyDefinitionsToUserProjectFolder(Godot.Collections.Array<Godot.Collections.Dictionary> blueprintLocations) {
+    public void ParseAndCacheBlueprints(Godot.Collections.Array<Godot.Collections.Dictionary> blueprintLocations) {
         string gameDirectory = (string)GetNode("/root/Editor").Call("read_config_prop", "game_directory");
         string selectedPackageName = (string)GetNode("/root/Editor").Get("selected_package");
         string userProjectPath = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName);
         foreach (Godot.Collections.Dictionary blueprintDef in blueprintLocations) {
-            ParseBlueprintForReuse(gameDirectory + "/BloodstainedRotN/Content/Paks/pakchunk0-WindowsNoEditor.pak", (string)blueprintDef["example_placement_package"], (string)blueprintDef["example_placement_export_object_name"]);
-            ExtractAssetToFolder(gameDirectory + "/BloodstainedRotN/Content/Paks/pakchunk0-WindowsNoEditor.pak", (string)blueprintDef["example_placement_package"], userProjectPath + "/ModifiedAssets");
+            ParseBlueprintForReuse(gameDirectory + "/BloodstainedRotN/Content/Paks/pakchunk0-WindowsNoEditor.pak", (string)blueprintDef["asset"], (string)blueprintDef["object_name"]);
+            // ExtractAssetToFolder(gameDirectory + "/BloodstainedRotN/Content/Paks/pakchunk0-WindowsNoEditor.pak", (string)blueprintDef["asset"], userProjectPath + "/ModifiedAssets");
         }
     }
 

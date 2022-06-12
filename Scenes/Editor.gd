@@ -128,6 +128,16 @@ func save_room_edits():
 				edits_file.store_string(JSON.print(room_edits, "    "))
 			edits_file.close()
 
+func get_room_edit_export_prop_list(asset_type: String, export_index):
+	var prop_list = []
+	export_index = str(export_index)
+	var prop_value = null
+	if room_edits.has(asset_type):
+		if room_edits[asset_type]["existing_exports"].has(export_index):
+			for prop_name in room_edits[asset_type]["existing_exports"][export_index]:
+				prop_list.push_back(prop_name)
+	return prop_list
+
 func get_room_edit_export_prop(asset_type: String, export_index, prop_name: String):
 	export_index = str(export_index)
 	var prop_value = null

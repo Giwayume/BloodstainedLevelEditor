@@ -337,6 +337,10 @@ func handle_tree_nodes_after_placement(node: Spatial, definition: Dictionary):
 func use_edited_prop_if_exists(definition: Dictionary, export_index: int, prop_name: String):
 	var edited_prop = editor.get_room_edit_export_prop(current_placing_tree_name, export_index, prop_name)
 	if edited_prop != null:
+		if definition.has(prop_name):
+			definition["_unedited_" + prop_name] = ObjectExt.deep_copy(definition[prop_name])
+		else:
+			definition["_unedited_" + prop_name] = null
 		definition[prop_name] = edited_prop
 
 ####################

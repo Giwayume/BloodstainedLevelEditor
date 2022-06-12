@@ -46,6 +46,7 @@ public class UMapAsDictionaryTree {
         int mainExportIndex = -1;
         int exportIndex = 0;
         foreach (Export export in uAsset.Exports) {
+
             // Populate exportDependencyMap
             int outerIndexInArray = (export.OuterIndex.Index) - 1;
             if (!exportDependencyMap.ContainsKey(outerIndexInArray)) {
@@ -202,11 +203,6 @@ public class UMapAsDictionaryTree {
                 string classPackageImportName = classPackageImport.ClassName.Value.Value;
                 if (classPackageImportName == "Package") {
                     classAssetPath = classPackageImport.ObjectName.Value.Value;
-                    // TODO - PB_Slope_4_4
-                    // if (classAssetPath.IndexOf("Slope") > -1) {
-                    //     GD.Print(classPackageImport.ClassName.Value.Value);
-                    //     GD.Print(classPackageImport.ObjectName.Value, classPackageImport.ObjectName.Number);
-                    // }
                     classAssetPath = Regex.Replace(classAssetPath, @"^\/Game/", @"/BloodstainedRotN/Content/");
                     classAssetPath = Regex.Replace(classAssetPath, @"^[\/]", "");
                     if (classAssetPath.StartsWith(@"BloodstainedRotN/")) {

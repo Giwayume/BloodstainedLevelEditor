@@ -112,7 +112,11 @@ func on_expand_button_toggled(button_pressed: bool):
 		collapse()
 
 func on_history_changed(action: HistoryAction):
-	if action.get_ids().has(HistoryAction.ID.SPATIAL_TRANSFORM):
+	var action_ids = action.get_ids()
+	if (
+		action_ids.has(HistoryAction.ID.SPATIAL_TRANSFORM) or
+		action_ids.has(HistoryAction.ID.REVERT_COMPONENT)
+	):
 		call_deferred("set_transform_from_selected_nodes")
 
 func set_selected_nodes(new_selected_nodes):
