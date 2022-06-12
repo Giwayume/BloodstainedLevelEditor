@@ -478,7 +478,7 @@ public class UMapAsDictionaryTree {
         }
     }
 
-    public static void ModifyAssetFromEditsJson(UAsset uAsset, JObject editsJson) {
+    public static void ModifyAssetFromEditsJson(UAsset uAsset, JObject editsJson, UAssetParser parser) {
         JObject existingExports = (JObject)editsJson["existing_exports"];
         foreach (var editExportEntry in existingExports) {
             int exportIndex = int.Parse(editExportEntry.Key);
@@ -680,7 +680,23 @@ public class UMapAsDictionaryTree {
                 }
             }
         }
-
+        
+        string gameDirectory = (string)parser.GetNode("/root/Editor").Call("read_config_prop", "game_directory");
+        JArray newExports = (JArray)editsJson["new_exports"];
+        foreach (JObject newExport in newExports) {
+            if (newExport.ContainsKey("blueprint")) {
+                JObject blueprint = (JObject)newExport["blueprint"];
+                string pakFilePath = gameDirectory + "/BloodstainedRotN/Content/Paks/" + blueprint["file"].Value<string>();
+                string dictionaryKey = (
+                    pakFilePath + "|" + blueprint["asset"].Value<string>() + "|" + blueprint["object_name"].Value<string>()
+                );
+                if (!parser.BlueprintSnippets.ContainsKey(dictionaryKey)) {
+                    parser.ParseBlueprintForReuse(pakFilePath, blueprint["asset"].Value<string>(), blueprint["object_name"].Value<string>());
+                }
+                UAssetSnippet snippet = parser.BlueprintSnippets[dictionaryKey];
+                snippet.AddToUAsset(uAsset);
+            }
+        }
     }
 
     static void SetPropertyDataByName<T>(List<PropertyData> propertyDataList, FName name, T value) where T: PropertyData {

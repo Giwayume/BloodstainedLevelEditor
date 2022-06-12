@@ -2,6 +2,8 @@ extends Control
 
 signal history_changed
 
+const NEW_EXPORT_PREFIX: int = 100000
+
 var toast_scene = preload("res://SceneComponents/UiComponents/Toast.tscn")
 var loading_screen_scene = preload("res://Scenes/LoadingScreen.tscn")
 
@@ -191,6 +193,17 @@ func remove_room_edit_export_prop(asset_type: String, export_index, prop_name: S
 			room_edits[asset_type]["existing_exports"][export_index].erase(prop_name)
 			if room_edits[asset_type]["existing_exports"][export_index].size() == 0:
 				room_edits[asset_type]["existing_exports"].erase(export_index)
+
+func prefix_export_index_recursive(definition, prefix: int = Editor.NEW_EXPORT_PREFIX):
+	definition.export_index = prefix + definition.export_index
+	definition.outer_export_index = prefix + definition.outer_export_index
+	if definition.has("mesh_export_index"):
+		definition.mesh_export_index = prefix + definition.mesh_export_index
+	if definition.has("root_component_export_index"):
+		definition.root_component_export_index = prefix + definition.root_component_export_index
+	if definition.has("children"):
+		for child in definition.children:
+			prefix_export_index_recursive(child, prefix)
 
 #############
 # PACKAGING #

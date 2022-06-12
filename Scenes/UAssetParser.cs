@@ -108,6 +108,15 @@ public class UAssetParser : Control {
      * Map of "filename|uassetPath|objectName" key to snippet object for blueprint reuse.
      */
     private Dictionary<string, UAssetSnippet> _blueprintSnippets = new Dictionary<string, UAssetSnippet>();
+    public Dictionary<string, UAssetSnippet> BlueprintSnippets {
+        get {
+            return _blueprintSnippets;
+        }
+        set {
+            _blueprintSnippets = value;
+        }
+    }
+
     private Godot.Collections.Dictionary<string, object> _blueprintSnippetRoomDefinitions = new Godot.Collections.Dictionary<string, object>();
     public Godot.Collections.Dictionary<string, object> BlueprintSnippetRoomDefinitions {
         get {
@@ -682,7 +691,7 @@ public class UAssetParser : Control {
                                 if (editsJson[checkDef["key"]]["existing_exports"].Count() > 0 || editsJson[checkDef["key"]]["new_exports"].Count() > 0) {
                                     ExtractAssetToFolder(AssetPathToPakFilePathMap[modifyAssetPath], modifyAssetPath, modifiedAssetsFolder);
                                     UAsset uAsset = new UAsset(modifiedAssetsFolder + "/" + modifyAssetPath, UE4Version.VER_UE4_22);
-                                    UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson[checkDef["key"]]);
+                                    UMapAsDictionaryTree.ModifyAssetFromEditsJson(uAsset, (JObject)editsJson[checkDef["key"]], this);
                                     uAsset.Write(modifiedAssetsFolder + "/" + modifyAssetPath);
                                 } else {
                                     if (System.IO.File.Exists(modifiedAssetsFolder + "/" + modifyAssetPath)) {
@@ -698,7 +707,8 @@ public class UAssetParser : Control {
                 }
                 if (editsJsonHasChanges) {
                     try {
-                        editsJson.Remove("has_changes");
+                        // TODO - remove, temporary testing
+                        // editsJson.Remove("has_changes");
                         System.IO.File.WriteAllText(filePath, editsJson.ToString());
                     } catch (Exception e) {
                         GD.Print(e);
@@ -731,6 +741,11 @@ public class UAssetParser : Control {
 
         // Parse uasset
         try {
+            string snippetKey = pakFilePath + "|" + assetPath + "|" + objectName;
+            if (_blueprintSnippets.ContainsKey(snippetKey)) {
+                return;
+            }
+
             GD.Print("Parsing UAsset ", assetPath);
             UAsset uAsset = new UAsset(outputPath + "/" + assetPath, UE4Version.VER_UE4_22);
             GD.Print("Data preserved: " + (uAsset.VerifyBinaryEquality() ? "YES" : "NO"));
@@ -756,7 +771,6 @@ public class UAssetParser : Control {
             }
 
             UAssetSnippet snippet = new UAssetSnippet(uAsset, blueprintExportIndex);
-            string snippetKey = pakFilePath + "|" + assetPath + "|" + objectName;
             _blueprintSnippets[snippetKey] = snippet;
             _blueprintSnippetRoomDefinitions[snippetKey] = UMapAsDictionaryTree.ToDictionaryTree(snippet.StrippedUasset, this);
             GD.Print(pakFilePath);

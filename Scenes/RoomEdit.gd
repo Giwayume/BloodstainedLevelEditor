@@ -373,17 +373,6 @@ func parse_blueprint_thread_function(_noop):
 	uasset_parser.ParseAndCacheBlueprints(blueprint_definitions_pending_load);
 	call_deferred("end_parse_blueprint_thread")
 
-func prefix_export_index_recursive(definition, prefix: int):
-	definition.export_index = prefix + definition.export_index
-	definition.outer_export_index = prefix + definition.outer_export_index
-	if definition.has("mesh_export_index"):
-		definition.mesh_export_index = prefix + definition.mesh_export_index
-	if definition.has("root_component_export_index"):
-		definition.root_component_export_index = prefix + definition.root_component_export_index
-	if definition.has("children"):
-		for child in definition.children:
-			prefix_export_index_recursive(child, prefix)
-
 func end_parse_blueprint_thread():
 	parse_blueprint_thread.wait_to_finish()
 
@@ -392,6 +381,7 @@ func end_parse_blueprint_thread():
 	var game_directory = editor.read_config()["game_directory"]
 	for tree_name in trees:
 		if Editor.room_edits.has(tree_name) and Editor.room_edits[tree_name].has("new_exports"):
+			var prefix = 1
 			for export_definition in Editor.room_edits[tree_name]["new_exports"]:
 				if export_definition.has("blueprint"):
 					var blueprint_snippet = uasset_parser.BlueprintSnippetRoomDefinitions[(
@@ -399,11 +389,12 @@ func end_parse_blueprint_thread():
 						export_definition.blueprint.asset + '|' +
 						export_definition.blueprint.object_name
 					)]
-					prefix_export_index_recursive(blueprint_snippet, 10000)
+					Editor.prefix_export_index_recursive(blueprint_snippet, prefix * Editor.NEW_EXPORT_PREFIX)
 					for child in room_definition[tree_name].children:
 						if child.type == "Level":
 							child.children.push_back(blueprint_snippet)
-							
+				prefix += 1
+
 #	var game_directory = editor.read_config()["game_directory"]
 #	var selected_package_name = editor.selected_package
 #	var user_project_path = ProjectSettings.globalize_path("user://UserPackages/" + selected_package_name)
@@ -427,6 +418,8 @@ func end_parse_blueprint_thread():
 #	)
 	print_debug("parse blueprints complete")
 	start_place_nodes_thread()
+
+# Place nodes & build object outline based on the room_definition
 
 func start_place_nodes_thread():
 	place_nodes_thread = Thread.new()

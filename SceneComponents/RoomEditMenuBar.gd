@@ -15,6 +15,7 @@ var is_shift_modifier_pressed: bool = false
 
 enum {
 	POPUP_ITEM_TEST_PACKAGE,
+	POPUP_ITEM_PACKAGE_INSTALL,
 	POPUP_ITEM_OPEN_PACKAGE_FOLDER,
 	POPUP_ITEM_OPEN_MAP,
 	POPUP_ITEM_EXIT_PACKAGE,
@@ -33,6 +34,7 @@ func _ready():
 	menu_button_package_popup.add_item("Test In-Game", POPUP_ITEM_TEST_PACKAGE)
 	menu_button_package_popup.add_item("View Map", POPUP_ITEM_OPEN_MAP)
 	menu_button_package_popup.add_separator()
+	menu_button_package_popup.add_item("Package & Install", POPUP_ITEM_PACKAGE_INSTALL)
 	menu_button_package_popup.add_item("Open Package Folder", POPUP_ITEM_OPEN_PACKAGE_FOLDER)
 	menu_button_package_popup.add_separator()
 	menu_button_package_popup.add_item("Exit", POPUP_ITEM_EXIT_PACKAGE)
@@ -61,6 +63,8 @@ func _input(event):
 func on_menu_popup_package_pressed(id: int):
 	if id == POPUP_ITEM_TEST_PACKAGE:
 		editor.package_and_install()
+	elif id == POPUP_ITEM_PACKAGE_INSTALL:
+		editor.package_and_install("", false)
 	elif id == POPUP_ITEM_OPEN_PACKAGE_FOLDER:
 		var open_path = str("file://", ProjectSettings.globalize_path("user://UserPackages/" + editor.selected_package))
 		OS.shell_open(open_path)

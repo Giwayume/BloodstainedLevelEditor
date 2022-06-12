@@ -238,6 +238,11 @@ public class UAssetSnippet {
                 if (oldClassIndexArrayIndex >= 0) {
                     clonedExport.ClassIndex = new FPackageIndex(-(mappedImports[UsedImports.IndexOf(oldClassIndexArrayIndex)] + 1));
                 }
+                int oldTemplateIndex = originalUAsset.Exports[originalExportIndex].TemplateIndex.Index;
+                int oldTemplateIndexArrayIndex = Math.Abs(oldTemplateIndex) - 1;
+                if (oldTemplateIndexArrayIndex >= 0) {
+                    clonedExport.TemplateIndex = new FPackageIndex(-(mappedImports[UsedImports.IndexOf(oldTemplateIndexArrayIndex)] + 1));
+                }
             } catch (Exception e) {
                 GD.Print(e);
             }
@@ -246,6 +251,7 @@ public class UAssetSnippet {
         }
 
         StrippedUasset = strippedUAsset;
+        UsedExports = null;
     }
 
     private List<int> GetAttachedChildrenReferencedObjects(UAssetExportTreeItem exportRoot) {
@@ -290,7 +296,7 @@ public class UAssetSnippet {
             snippetImportIndex++;
         }
         // Modify outer index for each import (this equates to a noop if the import already exists in the file)
-        for (int i = 0; i < StrippedUasset.ImportCount; i++) {
+        for (int i = 0; i < StrippedUasset.Imports.Count; i++) {
             if (newlyAddedImports.IndexOf(i) > -1) {
                 int mappedImportIndex = mappedImports[i];
                 try {
@@ -312,7 +318,12 @@ public class UAssetSnippet {
                 int oldClassIndex = clonedExport.ClassIndex.Index;
                 int oldClassIndexArrayIndex = Math.Abs(oldClassIndex) - 1;
                 if (oldClassIndexArrayIndex >= 0) {
-                    clonedExport.ClassIndex = new FPackageIndex(-(mappedImports[UsedImports.IndexOf(oldClassIndexArrayIndex)] + 1));
+                    clonedExport.ClassIndex = new FPackageIndex(-(mappedImports[oldClassIndexArrayIndex] + 1));
+                }
+                int oldTemplateIndex = clonedExport.TemplateIndex.Index;
+                int oldTemplateIndexArrayIndex = Math.Abs(oldTemplateIndex) - 1;
+                if (oldTemplateIndexArrayIndex >= 0) {
+                    clonedExport.TemplateIndex = new FPackageIndex(-(mappedImports[oldTemplateIndexArrayIndex] + 1));
                 }
             } catch (Exception e) {
                 GD.Print(e);
@@ -333,8 +344,10 @@ public class UAssetSnippet {
         int exportNumber = 1;
         foreach (Export baseExport in attachToAsset.Exports) {
             if (baseExport is LevelExport levelExport) {
+                GD.Print("is level");
                 levelExport.IndexData.Add(exportStartIndex + 1);
                 attachToAsset.Exports[exportStartIndex].OuterIndex.Index = exportNumber;
+                GD.Print(JSON.Print(levelExport.IndexData));
                 break;
             }
             exportNumber++;
@@ -368,7 +381,10 @@ public class UAssetSnippet {
     }
 
     public Export CloneExport(UAsset originalUAsset, Export export, UAsset attachToAsset, int exportStartIndex) {
-        int newOuterIndex = UsedExports.IndexOf(export.OuterIndex.Index - 1);
+        int newOuterIndex = export.OuterIndex.Index - 1;
+        if (UsedExports != null) {
+            newOuterIndex = UsedExports.IndexOf(export.OuterIndex.Index - 1);
+        }
         if (newOuterIndex != -1) {
             newOuterIndex += exportStartIndex + 1;
         } else {
@@ -510,7 +526,10 @@ public class UAssetSnippet {
             }
             else if (propertyData is ObjectPropertyData objectPropertyData) {
                 ObjectPropertyData newObjectPropertyData = new ObjectPropertyData(newPropertyName);
-                int newCurrentIndex = UsedExports.IndexOf(objectPropertyData.Value.Index - 1);
+                int newCurrentIndex = objectPropertyData.Value.Index - 1;
+                if (UsedExports != null) {
+                    newCurrentIndex = UsedExports.IndexOf(objectPropertyData.Value.Index - 1);
+                }
                 if (newCurrentIndex != -1) {
                     newCurrentIndex += exportStartIndex + 1;
                 } else {
@@ -664,7 +683,19 @@ public class UAssetSnippet {
                 newPropertyDataList.Add((RotatorPropertyData)rotatorPropertyData.Clone());
             }
             else if (propertyData is StructPropertyData structPropertyData) {
-                newPropertyDataList.Add((StructPropertyData)structPropertyData.Clone());
+                StructPropertyData newStructPropertyData = new StructPropertyData(newPropertyName);
+                if (structPropertyData.StructType != null) {
+                    newStructPropertyData.StructType = FName.FromString(attachToAsset, structPropertyData.StructType.Value.ToString());
+                }
+                newStructPropertyData.SerializeNone = structPropertyData.SerializeNone;
+                newStructPropertyData.StructGUID = structPropertyData.StructGUID;
+                newStructPropertyData.Value = ClonePropertyData(
+                    originalUAsset,
+                    structPropertyData.Value,
+                    attachToAsset,
+                    exportStartIndex
+                );
+                newPropertyDataList.Add(newStructPropertyData);
             }
             else if (propertyData is TimespanPropertyData timespanPropertyData) {
                 TimespanPropertyData newTimespanPropertyData = new TimespanPropertyData(newPropertyName);
