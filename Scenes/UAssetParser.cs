@@ -147,6 +147,10 @@ public class UAssetParser : Control {
         UAssetExtractFolder = ProjectSettings.GlobalizePath(@"user://PakExtract");
     }
 
+    public int GetNewExportPrefix() {
+        return (int)(GetNode("/root/Editor").Get("NEW_EXPORT_PREFIX"));
+    }
+
     public void GuaranteeAssetListFromPakFiles() {
         try {
             if (_assetPathToPakFilePathMap == default(Godot.Collections.Dictionary<string, string>)) {
@@ -773,8 +777,6 @@ public class UAssetParser : Control {
             UAssetSnippet snippet = new UAssetSnippet(uAsset, blueprintExportIndex);
             _blueprintSnippets[snippetKey] = snippet;
             _blueprintSnippetRoomDefinitions[snippetKey] = UMapAsDictionaryTree.ToDictionaryTree(snippet.StrippedUasset, this);
-            GD.Print(pakFilePath);
-
         } catch (Exception e) {
             GD.Print(e);
         }

@@ -37,6 +37,10 @@ public class UAssetSnippet {
         public DetachedObjectPropertyData() {}
     }
 
+    public class AttachToAssetInfo {
+        public List<int> AttachedExportMap = new List<int>();
+    }
+
     public UAsset StrippedUasset;
     public List<int> UsedImports = new List<int>();
     public HashSet<int> UsedImportSet = new HashSet<int>();
@@ -275,7 +279,9 @@ public class UAssetSnippet {
         return referencedObjects;
     }
 
-    public void AddToUAsset(UAsset attachToAsset) {
+    public AttachToAssetInfo AddToUAsset(UAsset attachToAsset) {
+        AttachToAssetInfo attachInfo = new AttachToAssetInfo();
+
         int importStartIndex = attachToAsset.Imports.Count;
         int exportStartIndex = attachToAsset.Exports.Count;
 
@@ -344,14 +350,14 @@ public class UAssetSnippet {
         int exportNumber = 1;
         foreach (Export baseExport in attachToAsset.Exports) {
             if (baseExport is LevelExport levelExport) {
-                GD.Print("is level");
                 levelExport.IndexData.Add(exportStartIndex + 1);
                 attachToAsset.Exports[exportStartIndex].OuterIndex.Index = exportNumber;
-                GD.Print(JSON.Print(levelExport.IndexData));
                 break;
             }
             exportNumber++;
         }
+
+        return attachInfo;
     }
 
     public int GetExistingImportIndex(Import checkImport, UAsset uAsset) {

@@ -478,212 +478,216 @@ public class UMapAsDictionaryTree {
         }
     }
 
+    private static void ModifyExportFromEditsJson(UAsset uAsset, NormalExport export, JObject editExport, int exportIndex) {
+        foreach (var editExportPropEntry in editExport) {
+            string propName = editExportPropEntry.Key;
+            JToken propValue = editExportPropEntry.Value;
+            if (propName == "deleted") {
+                if (propValue.Value<bool>() == true) {
+                    FPackageIndex outerIndex = export.OuterIndex;
+                    if (outerIndex.IsExport()) {
+                        Export parentExport = outerIndex.ToExport(uAsset);
+                        if (parentExport is LevelExport parentLevelExport) {
+                            parentLevelExport.IndexData.Remove(exportIndex + 1);
+                        }
+                    }
+                    export.OuterIndex = FPackageIndex.FromRawIndex(0);
+                }
+            }
+            /*
+             * CAPSULE PROPS
+             */
+            else if (propName == "capsule_half_height") {
+                uAsset.AddNameReference(new FString("CapsuleHalfHeight"));
+                FloatPropertyData unrealCapsuleHalfHeight = new FloatPropertyData(new FName(uAsset, "CapsuleHalfHeight"));
+                unrealCapsuleHalfHeight.Value = propValue.Value<float>() * 100f;
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "CapsuleHalfHeight"), unrealCapsuleHalfHeight);
+            }
+            else if (propName == "capsule_radius") {
+                uAsset.AddNameReference(new FString("CapsuleRadius"));
+                FloatPropertyData unrealCapsuleRadius = new FloatPropertyData(new FName(uAsset, "CapsuleRadius"));
+                unrealCapsuleRadius.Value = propValue.Value<float>() * 100f;
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "CapsuleRadius"), unrealCapsuleRadius);
+            }
+            /*
+             * LIGHT PROPS
+             */
+            else if (propName == "mobility") {
+                string enumValue = propValue.Value<string>();
+                if (enumValue == "static") {
+                    enumValue = "EComponentMobility::Static";
+                } else if (enumValue == "movable") {
+                    enumValue = "EComponentMobility::Movable";
+                } else {
+                    enumValue = "EComponentMobility::Stationary";
+                }
+                uAsset.AddNameReference(new FString("Mobility"));
+                int mobilityEnumType = uAsset.AddNameReference(new FString("EComponentMobility"));
+                int mobilityEnumValue = uAsset.AddNameReference(new FString(enumValue));
+                BytePropertyData unrealMobility = new BytePropertyData(new FName(uAsset, "Mobility"));
+                unrealMobility.ByteType = BytePropertyType.FName;
+                unrealMobility.EnumType = FName.FromString(uAsset, "EComponentMobility");
+                unrealMobility.EnumValue = FName.FromString(uAsset, enumValue);
+                SetPropertyDataByName<BytePropertyData>(export.Data, new FName(uAsset, "Mobility"), unrealMobility);
+            }
+            else if (propName == "intensity") {
+                uAsset.AddNameReference(new FString("Intensity"));
+                FloatPropertyData unrealIntensity = new FloatPropertyData(new FName(uAsset, "Intensity"));
+                unrealIntensity.Value = propValue.Value<float>();
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "Intensity"), unrealIntensity);
+            }
+            else if (propName == "light_color") {
+                JObject lightColorObject = (JObject)propValue;
+                uAsset.AddNameReference(new FString("LightColor"));
+                uAsset.AddNameReference(new FString("Color"));
+                ColorPropertyData unrealColor = new ColorPropertyData(new FName(uAsset, "LightColor"));
+                unrealColor.Value = System.Drawing.Color.FromArgb(
+                    (int)Math.Round(lightColorObject.Value<float>("a") * 255f),
+                    (int)Math.Round(lightColorObject.Value<float>("r") * 255f),
+                    (int)Math.Round(lightColorObject.Value<float>("g") * 255f),
+                    (int)Math.Round(lightColorObject.Value<float>("b") * 255f)
+                );
+                StructPropertyData unrealLightColorStruct = new StructPropertyData(new FName(uAsset, "LightColor"), new FName(uAsset, "Color"));
+                unrealLightColorStruct.Value.Add(unrealColor);
+                SetPropertyDataByName<StructPropertyData>(export.Data, new FName(uAsset, "LightColor"), unrealLightColorStruct);
+            }
+            else if (propName == "inner_cone_angle") {
+                uAsset.AddNameReference(new FString("InnerConeAngle"));
+                FloatPropertyData unrealInnerConeAngle = new FloatPropertyData(new FName(uAsset, "InnerConeAngle"));
+                unrealInnerConeAngle.Value = propValue.Value<float>();
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "InnerConeAngle"), unrealInnerConeAngle);
+            }
+            else if (propName == "outer_cone_angle") {
+                uAsset.AddNameReference(new FString("OuterConeAngle"));
+                FloatPropertyData unrealOuterConeAngle = new FloatPropertyData(new FName(uAsset, "OuterConeAngle"));
+                unrealOuterConeAngle.Value = propValue.Value<float>();
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "OuterConeAngle"), unrealOuterConeAngle);
+            }
+            else if (propName == "attenuation_radius") {
+                uAsset.AddNameReference(new FString("AttenuationRadius"));
+                FloatPropertyData unrealAttenuationRadius = new FloatPropertyData(new FName(uAsset, "AttenuationRadius"));
+                unrealAttenuationRadius.Value = propValue.Value<float>() * 100.0f;
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "AttenuationRadius"), unrealAttenuationRadius);
+            }
+            else if (propName == "source_radius") {
+                uAsset.AddNameReference(new FString("SourceRadius"));
+                FloatPropertyData unrealSourceRadius = new FloatPropertyData(new FName(uAsset, "SourceRadius"));
+                unrealSourceRadius.Value = propValue.Value<float>() * 100.0f;
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "SourceRadius"), unrealSourceRadius);
+            }
+            else if (propName == "soft_source_radius") {
+                uAsset.AddNameReference(new FString("SoftSourceRadius"));
+                FloatPropertyData unrealSoftSourceRadius = new FloatPropertyData(new FName(uAsset, "SoftSourceRadius"));
+                unrealSoftSourceRadius.Value = propValue.Value<float>() * 100.0f;
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "SoftSourceRadius"), unrealSoftSourceRadius);
+            }
+            else if (propName == "source_length") {
+                uAsset.AddNameReference(new FString("SourceLength"));
+                FloatPropertyData unrealSourceLength = new FloatPropertyData(new FName(uAsset, "SourceLength"));
+                unrealSourceLength.Value = propValue.Value<float>() * 100.0f;
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "SourceLength"), unrealSourceLength);
+            }
+            else if (propName == "temperature") {
+                uAsset.AddNameReference(new FString("Temperature"));
+                FloatPropertyData unrealTemperature = new FloatPropertyData(new FName(uAsset, "Temperature"));
+                unrealTemperature.Value = propValue.Value<float>();
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "Temperature"), unrealTemperature);
+            }
+            else if (propName == "use_temperature") {
+                uAsset.AddNameReference(new FString("bUseTemperature"));
+                BoolPropertyData unrealbUseTemperature = new BoolPropertyData(new FName(uAsset, "bUseTemperature"));
+                unrealbUseTemperature.Value = propValue.Value<bool>();
+                SetPropertyDataByName<BoolPropertyData>(export.Data, new FName(uAsset, "bUseTemperature"), unrealbUseTemperature);
+            }
+            else if (propName == "cast_shadows") {
+                uAsset.AddNameReference(new FString("CastShadows"));
+                BoolPropertyData unrealCastShadows = new BoolPropertyData(new FName(uAsset, "CastShadows"));
+                unrealCastShadows.Value = propValue.Value<bool>();
+                SetPropertyDataByName<BoolPropertyData>(export.Data, new FName(uAsset, "CastShadows"), unrealCastShadows);
+            }
+            else if (propName == "use_inverse_squared_falloff") {
+                uAsset.AddNameReference(new FString("bUseInverseSquaredFalloff"));
+                BoolPropertyData unrealbUseInverseSquaredFalloff = new BoolPropertyData(new FName(uAsset, "bUseInverseSquaredFalloff"));
+                unrealbUseInverseSquaredFalloff.Value = propValue.Value<bool>();
+                SetPropertyDataByName<BoolPropertyData>(export.Data, new FName(uAsset, "bUseInverseSquaredFalloff"), unrealbUseInverseSquaredFalloff);
+            }
+            else if (propName == "light_falloff_exponent") {
+                uAsset.AddNameReference(new FString("LightFalloffExponent"));
+                FloatPropertyData unrealLightFalloffExponent = new FloatPropertyData(new FName(uAsset, "LightFalloffExponent"));
+                unrealLightFalloffExponent.Value = propValue.Value<float>();
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "LightFalloffExponent"), unrealLightFalloffExponent);
+            }
+            else if (propName == "indirect_lighting_intensity") {
+                uAsset.AddNameReference(new FString("IndirectLightingIntensity"));
+                FloatPropertyData unrealIndirectLightingIntensity = new FloatPropertyData(new FName(uAsset, "IndirectLightingIntensity"));
+                unrealIndirectLightingIntensity.Value = propValue.Value<float>();
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "IndirectLightingIntensity"), unrealIndirectLightingIntensity);
+            }
+            else if (propName == "volumetric_scattering_intensity") {
+                uAsset.AddNameReference(new FString("VolumetricScatteringIntensity"));
+                FloatPropertyData unrealVolumetricScatteringIntensity = new FloatPropertyData(new FName(uAsset, "VolumetricScatteringIntensity"));
+                unrealVolumetricScatteringIntensity.Value = propValue.Value<float>();
+                SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "VolumetricScatteringIntensity"), unrealVolumetricScatteringIntensity);
+            }
+            /*
+             * TRANSFORM PROPS
+             */
+            else if (propName == "translation") {
+                JObject translationObject = (JObject)propValue;
+                uAsset.AddNameReference(new FString("RelativeLocation"));
+                uAsset.AddNameReference(new FString("Vector"));
+                VectorPropertyData unrealLocation = ConvertLocationFromGodotToUnreal(uAsset, new Vector3(
+                    translationObject.Value<float>("x"),
+                    translationObject.Value<float>("y"),
+                    translationObject.Value<float>("z")
+                ));
+                StructPropertyData unrealLocationStruct = new StructPropertyData(new FName(uAsset, "RelativeLocation"), new FName(uAsset, "Vector"));
+                unrealLocationStruct.Value.Add(unrealLocation);
+                SetPropertyDataByName<StructPropertyData>(export.Data, new FName(uAsset, "RelativeLocation"), unrealLocationStruct);
+            }
+            else if (propName == "rotation_degrees") {
+                JObject rotationObject = (JObject)propValue;
+                uAsset.AddNameReference(new FString("RelativeRotation"));
+                uAsset.AddNameReference(new FString("Rotator"));
+                RotatorPropertyData unrealRotation = ConvertRotationFromGodotToUnreal(uAsset, new Vector3(
+                    rotationObject.Value<float>("x"),
+                    rotationObject.Value<float>("y"),
+                    rotationObject.Value<float>("z")
+                ));
+                StructPropertyData unrealRotationStruct = new StructPropertyData(new FName(uAsset, "RelativeRotation"), new FName(uAsset, "Rotator"));
+                unrealRotationStruct.Value.Add(unrealRotation);
+                SetPropertyDataByName<StructPropertyData>(export.Data, new FName(uAsset, "RelativeRotation"), unrealRotationStruct);
+            }
+            else if (propName == "scale") {
+                JObject scaleObject = (JObject)propValue;
+                uAsset.AddNameReference(new FString("RelativeScale3D"));
+                uAsset.AddNameReference(new FString("Vector"));
+                VectorPropertyData unrealScale = ConvertScaleFromGodotToUnreal(uAsset, new Vector3(
+                    scaleObject.Value<float>("x"),
+                    scaleObject.Value<float>("y"),
+                    scaleObject.Value<float>("z")
+                ));
+                StructPropertyData unrealScaleStruct = new StructPropertyData(new FName(uAsset, "RelativeScale3D"), new FName(uAsset, "Vector"));
+                unrealScaleStruct.Value.Add(unrealScale);
+                SetPropertyDataByName<StructPropertyData>(export.Data, new FName(uAsset, "RelativeScale3D"), unrealScaleStruct);
+            }
+        }
+    }
+
     public static void ModifyAssetFromEditsJson(UAsset uAsset, JObject editsJson, UAssetParser parser) {
         JObject existingExports = (JObject)editsJson["existing_exports"];
         foreach (var editExportEntry in existingExports) {
             int exportIndex = int.Parse(editExportEntry.Key);
             Export baseExport = uAsset.Exports[exportIndex];
             if (baseExport is NormalExport export) {
-                JObject editExport = (JObject)editExportEntry.Value;
-                foreach (var editExportPropEntry in editExport) {
-                    string propName = editExportPropEntry.Key;
-                    JToken propValue = editExportPropEntry.Value;
-                    if (propName == "deleted") {
-                        if (propValue.Value<bool>() == true) {
-                            FPackageIndex outerIndex = export.OuterIndex;
-                            if (outerIndex.IsExport()) {
-                                Export parentExport = outerIndex.ToExport(uAsset);
-                                if (parentExport is LevelExport parentLevelExport) {
-                                    parentLevelExport.IndexData.Remove(exportIndex + 1);
-                                }
-                            }
-                            export.OuterIndex = FPackageIndex.FromRawIndex(0);
-                        }
-                    }
-                    /*
-                     * CAPSULE PROPS
-                     */
-                    else if (propName == "capsule_half_height") {
-                        uAsset.AddNameReference(new FString("CapsuleHalfHeight"));
-                        FloatPropertyData unrealCapsuleHalfHeight = new FloatPropertyData(new FName(uAsset, "CapsuleHalfHeight"));
-                        unrealCapsuleHalfHeight.Value = propValue.Value<float>() * 100f;
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "CapsuleHalfHeight"), unrealCapsuleHalfHeight);
-                    }
-                    else if (propName == "capsule_radius") {
-                        uAsset.AddNameReference(new FString("CapsuleRadius"));
-                        FloatPropertyData unrealCapsuleRadius = new FloatPropertyData(new FName(uAsset, "CapsuleRadius"));
-                        unrealCapsuleRadius.Value = propValue.Value<float>() * 100f;
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "CapsuleRadius"), unrealCapsuleRadius);
-                    }
-                    /*
-                     * LIGHT PROPS
-                     */
-                    else if (propName == "mobility") {
-                        string enumValue = propValue.Value<string>();
-                        if (enumValue == "static") {
-                            enumValue = "EComponentMobility::Static";
-                        } else if (enumValue == "movable") {
-                            enumValue = "EComponentMobility::Movable";
-                        } else {
-                            enumValue = "EComponentMobility::Stationary";
-                        }
-                        uAsset.AddNameReference(new FString("Mobility"));
-                        int mobilityEnumType = uAsset.AddNameReference(new FString("EComponentMobility"));
-                        int mobilityEnumValue = uAsset.AddNameReference(new FString(enumValue));
-                        BytePropertyData unrealMobility = new BytePropertyData(new FName(uAsset, "Mobility"));
-                        unrealMobility.ByteType = BytePropertyType.FName;
-                        unrealMobility.EnumType = FName.FromString(uAsset, "EComponentMobility");
-                        unrealMobility.EnumValue = FName.FromString(uAsset, enumValue);
-                        SetPropertyDataByName<BytePropertyData>(export.Data, new FName(uAsset, "Mobility"), unrealMobility);
-                    }
-                    else if (propName == "intensity") {
-                        uAsset.AddNameReference(new FString("Intensity"));
-                        FloatPropertyData unrealIntensity = new FloatPropertyData(new FName(uAsset, "Intensity"));
-                        unrealIntensity.Value = propValue.Value<float>();
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "Intensity"), unrealIntensity);
-                    }
-                    else if (propName == "light_color") {
-                        JObject lightColorObject = (JObject)propValue;
-                        uAsset.AddNameReference(new FString("LightColor"));
-                        uAsset.AddNameReference(new FString("Color"));
-                        ColorPropertyData unrealColor = new ColorPropertyData(new FName(uAsset, "LightColor"));
-                        unrealColor.Value = System.Drawing.Color.FromArgb(
-                            (int)Math.Round(lightColorObject.Value<float>("a") * 255f),
-                            (int)Math.Round(lightColorObject.Value<float>("r") * 255f),
-                            (int)Math.Round(lightColorObject.Value<float>("g") * 255f),
-                            (int)Math.Round(lightColorObject.Value<float>("b") * 255f)
-                        );
-                        StructPropertyData unrealLightColorStruct = new StructPropertyData(new FName(uAsset, "LightColor"), new FName(uAsset, "Color"));
-                        unrealLightColorStruct.Value.Add(unrealColor);
-                        SetPropertyDataByName<StructPropertyData>(export.Data, new FName(uAsset, "LightColor"), unrealLightColorStruct);
-                    }
-                    else if (propName == "inner_cone_angle") {
-                        uAsset.AddNameReference(new FString("InnerConeAngle"));
-                        FloatPropertyData unrealInnerConeAngle = new FloatPropertyData(new FName(uAsset, "InnerConeAngle"));
-                        unrealInnerConeAngle.Value = propValue.Value<float>();
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "InnerConeAngle"), unrealInnerConeAngle);
-                    }
-                    else if (propName == "outer_cone_angle") {
-                        uAsset.AddNameReference(new FString("OuterConeAngle"));
-                        FloatPropertyData unrealOuterConeAngle = new FloatPropertyData(new FName(uAsset, "OuterConeAngle"));
-                        unrealOuterConeAngle.Value = propValue.Value<float>();
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "OuterConeAngle"), unrealOuterConeAngle);
-                    }
-                    else if (propName == "attenuation_radius") {
-                        uAsset.AddNameReference(new FString("AttenuationRadius"));
-                        FloatPropertyData unrealAttenuationRadius = new FloatPropertyData(new FName(uAsset, "AttenuationRadius"));
-                        unrealAttenuationRadius.Value = propValue.Value<float>() * 100.0f;
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "AttenuationRadius"), unrealAttenuationRadius);
-                    }
-                    else if (propName == "source_radius") {
-                        uAsset.AddNameReference(new FString("SourceRadius"));
-                        FloatPropertyData unrealSourceRadius = new FloatPropertyData(new FName(uAsset, "SourceRadius"));
-                        unrealSourceRadius.Value = propValue.Value<float>() * 100.0f;
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "SourceRadius"), unrealSourceRadius);
-                    }
-                    else if (propName == "soft_source_radius") {
-                        uAsset.AddNameReference(new FString("SoftSourceRadius"));
-                        FloatPropertyData unrealSoftSourceRadius = new FloatPropertyData(new FName(uAsset, "SoftSourceRadius"));
-                        unrealSoftSourceRadius.Value = propValue.Value<float>() * 100.0f;
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "SoftSourceRadius"), unrealSoftSourceRadius);
-                    }
-                    else if (propName == "source_length") {
-                        uAsset.AddNameReference(new FString("SourceLength"));
-                        FloatPropertyData unrealSourceLength = new FloatPropertyData(new FName(uAsset, "SourceLength"));
-                        unrealSourceLength.Value = propValue.Value<float>() * 100.0f;
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "SourceLength"), unrealSourceLength);
-                    }
-                    else if (propName == "temperature") {
-                        uAsset.AddNameReference(new FString("Temperature"));
-                        FloatPropertyData unrealTemperature = new FloatPropertyData(new FName(uAsset, "Temperature"));
-                        unrealTemperature.Value = propValue.Value<float>();
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "Temperature"), unrealTemperature);
-                    }
-                    else if (propName == "use_temperature") {
-                        uAsset.AddNameReference(new FString("bUseTemperature"));
-                        BoolPropertyData unrealbUseTemperature = new BoolPropertyData(new FName(uAsset, "bUseTemperature"));
-                        unrealbUseTemperature.Value = propValue.Value<bool>();
-                        SetPropertyDataByName<BoolPropertyData>(export.Data, new FName(uAsset, "bUseTemperature"), unrealbUseTemperature);
-                    }
-                    else if (propName == "cast_shadows") {
-                        uAsset.AddNameReference(new FString("CastShadows"));
-                        BoolPropertyData unrealCastShadows = new BoolPropertyData(new FName(uAsset, "CastShadows"));
-                        unrealCastShadows.Value = propValue.Value<bool>();
-                        SetPropertyDataByName<BoolPropertyData>(export.Data, new FName(uAsset, "CastShadows"), unrealCastShadows);
-                    }
-                    else if (propName == "use_inverse_squared_falloff") {
-                        uAsset.AddNameReference(new FString("bUseInverseSquaredFalloff"));
-                        BoolPropertyData unrealbUseInverseSquaredFalloff = new BoolPropertyData(new FName(uAsset, "bUseInverseSquaredFalloff"));
-                        unrealbUseInverseSquaredFalloff.Value = propValue.Value<bool>();
-                        SetPropertyDataByName<BoolPropertyData>(export.Data, new FName(uAsset, "bUseInverseSquaredFalloff"), unrealbUseInverseSquaredFalloff);
-                    }
-                    else if (propName == "light_falloff_exponent") {
-                        uAsset.AddNameReference(new FString("LightFalloffExponent"));
-                        FloatPropertyData unrealLightFalloffExponent = new FloatPropertyData(new FName(uAsset, "LightFalloffExponent"));
-                        unrealLightFalloffExponent.Value = propValue.Value<float>();
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "LightFalloffExponent"), unrealLightFalloffExponent);
-                    }
-                    else if (propName == "indirect_lighting_intensity") {
-                        uAsset.AddNameReference(new FString("IndirectLightingIntensity"));
-                        FloatPropertyData unrealIndirectLightingIntensity = new FloatPropertyData(new FName(uAsset, "IndirectLightingIntensity"));
-                        unrealIndirectLightingIntensity.Value = propValue.Value<float>();
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "IndirectLightingIntensity"), unrealIndirectLightingIntensity);
-                    }
-                    else if (propName == "volumetric_scattering_intensity") {
-                        uAsset.AddNameReference(new FString("VolumetricScatteringIntensity"));
-                        FloatPropertyData unrealVolumetricScatteringIntensity = new FloatPropertyData(new FName(uAsset, "VolumetricScatteringIntensity"));
-                        unrealVolumetricScatteringIntensity.Value = propValue.Value<float>();
-                        SetPropertyDataByName<FloatPropertyData>(export.Data, new FName(uAsset, "VolumetricScatteringIntensity"), unrealVolumetricScatteringIntensity);
-                    }
-                    /*
-                     * TRANSFORM PROPS
-                     */
-                    else if (propName == "translation") {
-                        JObject translationObject = (JObject)propValue;
-                        uAsset.AddNameReference(new FString("RelativeLocation"));
-                        uAsset.AddNameReference(new FString("Vector"));
-                        VectorPropertyData unrealLocation = ConvertLocationFromGodotToUnreal(uAsset, new Vector3(
-                            translationObject.Value<float>("x"),
-                            translationObject.Value<float>("y"),
-                            translationObject.Value<float>("z")
-                        ));
-                        StructPropertyData unrealLocationStruct = new StructPropertyData(new FName(uAsset, "RelativeLocation"), new FName(uAsset, "Vector"));
-                        unrealLocationStruct.Value.Add(unrealLocation);
-                        SetPropertyDataByName<StructPropertyData>(export.Data, new FName(uAsset, "RelativeLocation"), unrealLocationStruct);
-                    }
-                    else if (propName == "rotation_degrees") {
-                        JObject rotationObject = (JObject)propValue;
-                        uAsset.AddNameReference(new FString("RelativeRotation"));
-                        uAsset.AddNameReference(new FString("Rotator"));
-                        RotatorPropertyData unrealRotation = ConvertRotationFromGodotToUnreal(uAsset, new Vector3(
-                            rotationObject.Value<float>("x"),
-                            rotationObject.Value<float>("y"),
-                            rotationObject.Value<float>("z")
-                        ));
-                        StructPropertyData unrealRotationStruct = new StructPropertyData(new FName(uAsset, "RelativeRotation"), new FName(uAsset, "Rotator"));
-                        unrealRotationStruct.Value.Add(unrealRotation);
-                        SetPropertyDataByName<StructPropertyData>(export.Data, new FName(uAsset, "RelativeRotation"), unrealRotationStruct);
-                    }
-                    else if (propName == "scale") {
-                        JObject scaleObject = (JObject)propValue;
-                        uAsset.AddNameReference(new FString("RelativeScale3D"));
-                        uAsset.AddNameReference(new FString("Vector"));
-                        VectorPropertyData unrealScale = ConvertScaleFromGodotToUnreal(uAsset, new Vector3(
-                            scaleObject.Value<float>("x"),
-                            scaleObject.Value<float>("y"),
-                            scaleObject.Value<float>("z")
-                        ));
-                        StructPropertyData unrealScaleStruct = new StructPropertyData(new FName(uAsset, "RelativeScale3D"), new FName(uAsset, "Vector"));
-                        unrealScaleStruct.Value.Add(unrealScale);
-                        SetPropertyDataByName<StructPropertyData>(export.Data, new FName(uAsset, "RelativeScale3D"), unrealScaleStruct);
-                    }
-                }
+                ModifyExportFromEditsJson(uAsset, export, (JObject)editExportEntry.Value, exportIndex);
             }
         }
         
         string gameDirectory = (string)parser.GetNode("/root/Editor").Call("read_config_prop", "game_directory");
         JArray newExports = (JArray)editsJson["new_exports"];
         foreach (JObject newExport in newExports) {
+            int newExportStartIndex = uAsset.Exports.Count;
             if (newExport.ContainsKey("blueprint")) {
                 JObject blueprint = (JObject)newExport["blueprint"];
                 string pakFilePath = gameDirectory + "/BloodstainedRotN/Content/Paks/" + blueprint["file"].Value<string>();
@@ -695,6 +699,17 @@ public class UMapAsDictionaryTree {
                 }
                 UAssetSnippet snippet = parser.BlueprintSnippets[dictionaryKey];
                 snippet.AddToUAsset(uAsset);
+
+                if (newExport.ContainsKey("edits")) {
+                    JObject newExportEdits = (JObject)newExport["edits"];
+                    foreach (var editExportEntry in newExportEdits) {
+                        int exportIndex = newExportStartIndex + int.Parse(editExportEntry.Key);
+                        Export baseExport = uAsset.Exports[exportIndex];
+                        if (baseExport is NormalExport export) {
+                            ModifyExportFromEditsJson(uAsset, export, (JObject)editExportEntry.Value, exportIndex);
+                        }
+                    }
+                }
             }
         }
     }

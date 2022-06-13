@@ -130,23 +130,47 @@ func save_room_edits():
 				edits_file.store_string(JSON.print(room_edits, "    "))
 			edits_file.close()
 
+func get_room_edit_export_storage(asset_type: String, export_index):
+	var edit_storage = null
+	export_index = int(export_index)
+	if export_index >= NEW_EXPORT_PREFIX:
+		var index_in_new_exports_array = floor(export_index / NEW_EXPORT_PREFIX) - 1
+		if len(room_edits[asset_type]["new_exports"]) > index_in_new_exports_array:
+			var new_export_definition = room_edits[asset_type]["new_exports"][index_in_new_exports_array]
+			if not new_export_definition.has("edits"):
+				new_export_definition["edits"] = {}
+			edit_storage = room_edits[asset_type]["new_exports"][index_in_new_exports_array]["edits"]
+		export_index = export_index % NEW_EXPORT_PREFIX
+	else:
+		edit_storage = room_edits[asset_type]["existing_exports"]
+	return {
+		"edit_storage": edit_storage,
+		"export_index": str(export_index)
+	}
+
 func get_room_edit_export_prop_list(asset_type: String, export_index):
 	var prop_list = []
 	export_index = str(export_index)
 	var prop_value = null
-	if room_edits.has(asset_type):
-		if room_edits[asset_type]["existing_exports"].has(export_index):
-			for prop_name in room_edits[asset_type]["existing_exports"][export_index]:
+	if room_edits != null and room_edits.has(asset_type):
+		var edit_storage_export = get_room_edit_export_storage(asset_type, export_index)
+		var edit_storage = edit_storage_export.edit_storage
+		export_index = edit_storage_export.export_index
+		if edit_storage != null and edit_storage.has(export_index):
+			for prop_name in edit_storage[export_index]:
 				prop_list.push_back(prop_name)
 	return prop_list
 
 func get_room_edit_export_prop(asset_type: String, export_index, prop_name: String):
 	export_index = str(export_index)
 	var prop_value = null
-	if room_edits.has(asset_type):
-		if room_edits[asset_type]["existing_exports"].has(export_index):
-			if room_edits[asset_type]["existing_exports"][export_index].has(prop_name):
-				prop_value = room_edits[asset_type]["existing_exports"][export_index][prop_name]
+	if room_edits != null and room_edits.has(asset_type):
+		var edit_storage_export = get_room_edit_export_storage(asset_type, export_index)
+		var edit_storage = edit_storage_export.edit_storage
+		export_index = edit_storage_export.export_index
+		if edit_storage != null and edit_storage.has(export_index):
+			if edit_storage[export_index].has(prop_name):
+				prop_value = edit_storage[export_index][prop_name]
 				if prop_value is Dictionary:
 					if prop_value.has("type"):
 						if prop_value["type"] == "Vector3":
@@ -156,6 +180,9 @@ func get_room_edit_export_prop(asset_type: String, export_index, prop_name: Stri
 	return prop_value
 
 func set_room_edit_export_prop(asset_type: String, export_index, prop_name: String, prop_value):
+	if room_edits == null:
+		return
+	
 	room_edits["has_changes"] = true;
 	export_index = str(export_index)
 	if prop_value == null:
@@ -166,8 +193,13 @@ func set_room_edit_export_prop(asset_type: String, export_index, prop_name: Stri
 				"existing_exports": {},
 				"new_exports": []
 			}
-		if not room_edits[asset_type]["existing_exports"].has(export_index):
-			room_edits[asset_type]["existing_exports"][export_index] = {}
+		
+		var edit_storage_export = get_room_edit_export_storage(asset_type, export_index)
+		var edit_storage = edit_storage_export.edit_storage
+		export_index = edit_storage_export.export_index
+		
+		if not edit_storage.has(export_index):
+			edit_storage[export_index] = {}
 		if prop_value is Vector3:
 			prop_value = {
 				"type": "Vector3",
@@ -183,16 +215,22 @@ func set_room_edit_export_prop(asset_type: String, export_index, prop_name: Stri
 				"b": prop_value.b,
 				"a": prop_value.a
 			}
-		room_edits[asset_type]["existing_exports"][export_index][prop_name] = prop_value
+		edit_storage[export_index][prop_name] = prop_value
 
 func remove_room_edit_export_prop(asset_type: String, export_index, prop_name: String):
+	if room_edits == null:
+		return
+	
 	room_edits["has_changes"] = true;
 	export_index = str(export_index)
 	if room_edits.has(asset_type):
-		if room_edits[asset_type]["existing_exports"].has(export_index):
-			room_edits[asset_type]["existing_exports"][export_index].erase(prop_name)
-			if room_edits[asset_type]["existing_exports"][export_index].size() == 0:
-				room_edits[asset_type]["existing_exports"].erase(export_index)
+		var edit_storage_export = get_room_edit_export_storage(asset_type, export_index)
+		var edit_storage = edit_storage_export.edit_storage
+		export_index = edit_storage_export.export_index
+		if edit_storage != null and edit_storage.has(export_index):
+			edit_storage[export_index].erase(prop_name)
+			if edit_storage[export_index].size() == 0:
+				edit_storage.erase(export_index)
 
 func prefix_export_index_recursive(definition, prefix: int = Editor.NEW_EXPORT_PREFIX):
 	definition.export_index = prefix + definition.export_index
