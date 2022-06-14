@@ -120,6 +120,8 @@ func save_room_edits(is_run_cleanup: bool = false):
 	if room_edits != null:
 		var level_assets = uasset_parser.LevelNameToAssetPathMap[selected_level_name]
 		if level_assets.has("bg"):
+			var has_no_edits = false
+			
 			if is_run_cleanup:
 				for category in room_edits:
 					if typeof(room_edits[category]) == TYPE_DICTIONARY and room_edits[category].has("new_exports"):
@@ -129,15 +131,33 @@ func save_room_edits(is_run_cleanup: bool = false):
 								if new_export.edits["0"].has("deleted") and new_export.edits["0"].deleted == true:
 									room_edits[category].new_exports.remove(new_export_index)
 				
+				if len(room_edits.keys()) == 0:
+					has_no_edits = true
+				if not has_no_edits:
+					var all_categories_has_any_edit = false
+					for category in room_edits:
+						if typeof(room_edits[category]) == TYPE_DICTIONARY:
+							if (
+								len(room_edits[category]["existing_exports"].keys()) > 0 or
+								len(room_edits[category]["existing_exports"]) > 0
+							):
+								all_categories_has_any_edit = true
+								break
+					if not all_categories_has_any_edit:
+						has_no_edits = true
+			
 			var directory = Directory.new()
 			var edits_folder = "user://UserPackages/" + selected_package + "/Edits"
 			var level_path = level_assets["bg"].rsplit("/", true, 1)[0]
 			var edits_file_path = edits_folder + "/" + level_path + "/" + selected_level_name + ".json"
-			var edits_file = File.new()
-			var file_error = edits_file.open(edits_file_path, File.WRITE)
-			if file_error == OK:
-				edits_file.store_string(JSON.print(room_edits, "    "))
-			edits_file.close()
+			if has_no_edits:
+				directory.remove(edits_file_path)
+			else:
+				var edits_file = File.new()
+				var file_error = edits_file.open(edits_file_path, File.WRITE)
+				if file_error == OK:
+					edits_file.store_string(JSON.print(room_edits, "    "))
+				edits_file.close()
 
 func get_room_edit_export_storage(asset_type: String, export_index):
 	var edit_storage = null
