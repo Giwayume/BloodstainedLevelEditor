@@ -9,8 +9,14 @@ const character_profiles = [
 	{
 		"character_id": "N3006",
 		"character_name": "Seama",
-		"example_placement_package": "BloodstainedRotN/Content/Core/Environment/ACT01_SIP/Level/m01SIP_004_Enemy.umap",
+		"example_placement_package": "BloodstainedRotN/Content/Core/Environment/ACT01_SIP/Level/m01SIP_017_Enemy.umap",
 		"example_placement_export_object_name": "Chr_N3006"
+	},
+	{
+		"character_id": "N3006",
+		"character_name": "Seama Generator",
+		"example_placement_package": "BloodstainedRotN/Content/Core/Environment/ACT01_SIP/Level/m01SIP_019_Enemy.umap",
+		"example_placement_export_object_name": "Chr_N3006_Generator"
 	},
 	{
 		"character_id": "N3005",

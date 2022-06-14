@@ -27,7 +27,7 @@ func _ready():
 
 func _notification(what):
 	if what == MainLoop.NOTIFICATION_WM_QUIT_REQUEST:
-		save_room_edits()
+		save_room_edits(true)
 		room_edits = null
 		get_tree().quit()
 
@@ -116,10 +116,19 @@ func load_room_edits():
 					room_edits = edits_dictionary_parse.result
 			edits_file.close()
 
-func save_room_edits():
+func save_room_edits(is_run_cleanup: bool = false):
 	if room_edits != null:
 		var level_assets = uasset_parser.LevelNameToAssetPathMap[selected_level_name]
 		if level_assets.has("bg"):
+			if is_run_cleanup:
+				for category in room_edits:
+					if typeof(room_edits[category]) == TYPE_DICTIONARY and room_edits[category].has("new_exports"):
+						for new_export_index in range(len(room_edits[category].new_exports) - 1, -1, -1):
+							var new_export = room_edits[category].new_exports[new_export_index]
+							if new_export.has("edits") and new_export.edits.has("0"):
+								if new_export.edits["0"].has("deleted") and new_export.edits["0"].deleted == true:
+									room_edits[category].new_exports.remove(new_export_index)
+				
 			var directory = Directory.new()
 			var edits_folder = "user://UserPackages/" + selected_package + "/Edits"
 			var level_path = level_assets["bg"].rsplit("/", true, 1)[0]
@@ -161,6 +170,13 @@ func get_room_edit_export_prop_list(asset_type: String, export_index):
 				prop_list.push_back(prop_name)
 	return prop_list
 
+func get_room_edit_next_new_export_prefix_counter(asset_type: String):
+	var prefix = 1
+	if room_edits != null and room_edits.has(asset_type):
+		if room_edits[asset_type].has("new_exports"):
+			prefix = len(room_edits[asset_type]["new_exports"]) + 1
+	return prefix
+
 func get_room_edit_export_prop(asset_type: String, export_index, prop_name: String):
 	export_index = str(export_index)
 	var prop_value = null
@@ -179,6 +195,24 @@ func get_room_edit_export_prop(asset_type: String, export_index, prop_name: Stri
 							prop_value = Color(prop_value.r, prop_value.g, prop_value.b, prop_value.a)
 	return prop_value
 
+func create_room_edit_asset_type(asset_type: String):
+	if room_edits == null:
+		return
+	if not room_edits.has(asset_type):
+		room_edits[asset_type] = {
+			"existing_exports": {},
+			"new_exports": []
+		}
+
+func create_room_edit_export(asset_type: String, new_export_definition: Dictionary):
+	if room_edits == null:
+		return
+	
+	room_edits["has_changes"] = true;
+	create_room_edit_asset_type(asset_type)
+	
+	room_edits[asset_type].new_exports.push_back(new_export_definition)
+
 func set_room_edit_export_prop(asset_type: String, export_index, prop_name: String, prop_value):
 	if room_edits == null:
 		return
@@ -188,15 +222,18 @@ func set_room_edit_export_prop(asset_type: String, export_index, prop_name: Stri
 	if prop_value == null:
 		remove_room_edit_export_prop(asset_type, export_index, prop_name)
 	else:
-		if not room_edits.has(asset_type):
-			room_edits[asset_type] = {
-				"existing_exports": {},
-				"new_exports": []
-			}
+		create_room_edit_asset_type(asset_type)
+		
+		var original_export_index = export_index
 		
 		var edit_storage_export = get_room_edit_export_storage(asset_type, export_index)
 		var edit_storage = edit_storage_export.edit_storage
 		export_index = edit_storage_export.export_index
+		
+		if edit_storage == null:
+			print_debug(edit_storage)
+			print_debug("[Editor] did not find edit storage for export ", original_export_index)
+			return
 		
 		if not edit_storage.has(export_index):
 			edit_storage[export_index] = {}

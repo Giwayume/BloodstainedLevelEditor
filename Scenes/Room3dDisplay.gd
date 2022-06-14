@@ -298,7 +298,7 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary, is_debu
 	if definition.has("export_index"):
 		var export_index = definition["export_index"]
 		if already_placed_exports[current_placing_tree_name].has(export_index):
-			# print_debug("Infinite recursion at export ", export_index)
+			# print_debug("[Room3dDisplay] Infinite recursion at export ", export_index)
 			return
 		else:
 			already_placed_exports[current_placing_tree_name].push_back(export_index)

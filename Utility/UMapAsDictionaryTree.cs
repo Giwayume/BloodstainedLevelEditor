@@ -687,6 +687,12 @@ public class UMapAsDictionaryTree {
         string gameDirectory = (string)parser.GetNode("/root/Editor").Call("read_config_prop", "game_directory");
         JArray newExports = (JArray)editsJson["new_exports"];
         foreach (JObject newExport in newExports) {
+            if (
+                newExport.ContainsKey("edits") &&
+                ((JObject)newExport["edits"]).ContainsKey("0") &&
+                ((JObject)newExport["edits"]["0"]).ContainsKey("deleted") &&
+                newExport["edits"]["0"]["deleted"].Value<bool>() == true
+            ) continue;
             int newExportStartIndex = uAsset.Exports.Count;
             if (newExport.ContainsKey("blueprint")) {
                 JObject blueprint = (JObject)newExport["blueprint"];

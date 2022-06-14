@@ -382,7 +382,7 @@ public class UAssetSnippet {
         FName classPackage = new FName(attachToAsset, originalImport.ClassPackage.Value, originalImport.ClassPackage.Number);
         FName className = new FName(attachToAsset, originalImport.ClassName.Value, originalImport.ClassName.Number);
         FName objectName = new FName(attachToAsset, originalImport.ObjectName.Value, originalImport.ObjectName.Number);
-        Import clonedImport = new Import(classPackage, className, originalImport.OuterIndex, objectName);
+        Import clonedImport = new Import(classPackage, className, FPackageIndex.FromRawIndex(originalImport.OuterIndex.Index), objectName);
         return clonedImport;
     }
 

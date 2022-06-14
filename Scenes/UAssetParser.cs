@@ -746,49 +746,57 @@ public class UAssetParser : Control {
         // Parse uasset
         try {
             string snippetKey = pakFilePath + "|" + assetPath + "|" + objectName;
-            if (_blueprintSnippets.ContainsKey(snippetKey)) {
-                return;
-            }
 
-            GD.Print("Parsing UAsset ", assetPath);
-            UAsset uAsset = new UAsset(outputPath + "/" + assetPath, UE4Version.VER_UE4_22);
-            GD.Print("Data preserved: " + (uAsset.VerifyBinaryEquality() ? "YES" : "NO"));
+            if (!_blueprintSnippets.ContainsKey(snippetKey)) {
+                GD.Print("Parsing UAsset ", assetPath);
+                UAsset uAsset = new UAsset(outputPath + "/" + assetPath, UE4Version.VER_UE4_22);
+                GD.Print("Data preserved: " + (uAsset.VerifyBinaryEquality() ? "YES" : "NO"));
 
-            int blueprintExportIndex = -1;
+                int blueprintExportIndex = -1;
 
-            // Find the index of the export we want
-            int exportIndex = 0;
-            foreach (Export baseExport in uAsset.Exports) {
-                if (baseExport is NormalExport export) {
-                    FName objectFName = export.ObjectName;
-                    if (objectName == objectFName.Value.Value) {
-                        blueprintExportIndex = exportIndex;
-                        break;
+                // Find the index of the export we want
+                int exportIndex = 0;
+                foreach (Export baseExport in uAsset.Exports) {
+                    if (baseExport is NormalExport export) {
+                        FName objectFName = export.ObjectName;
+                        if (objectName == objectFName.Value.Value) {
+                            blueprintExportIndex = exportIndex;
+                            break;
+                        }
                     }
+                    exportIndex++;
                 }
-                exportIndex++;
+
+                if (blueprintExportIndex == -1) {
+                    GD.Print("Blueprint export not found: ", objectName);
+                    return;
+                }
+
+                UAssetSnippet snippet = new UAssetSnippet(uAsset, blueprintExportIndex);
+
+                _blueprintSnippets[snippetKey] = snippet;
+
+                _blueprintSnippetRoomDefinitions[snippetKey] = UMapAsDictionaryTree.ToDictionaryTree(
+                    _blueprintSnippets[snippetKey].StrippedUasset, this
+                );
             }
 
-            if (blueprintExportIndex == -1) {
-                GD.Print("Blueprint export not found: ", objectName);
-                return;
-            }
-
-            UAssetSnippet snippet = new UAssetSnippet(uAsset, blueprintExportIndex);
-            _blueprintSnippets[snippetKey] = snippet;
-            _blueprintSnippetRoomDefinitions[snippetKey] = UMapAsDictionaryTree.ToDictionaryTree(snippet.StrippedUasset, this);
         } catch (Exception e) {
             GD.Print(e);
         }
     }
 
     public void ParseAndCacheBlueprints(Godot.Collections.Array<Godot.Collections.Dictionary> blueprintLocations) {
-        string gameDirectory = (string)GetNode("/root/Editor").Call("read_config_prop", "game_directory");
-        string selectedPackageName = (string)GetNode("/root/Editor").Get("selected_package");
-        string userProjectPath = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName);
-        foreach (Godot.Collections.Dictionary blueprintDef in blueprintLocations) {
-            ParseBlueprintForReuse(gameDirectory + "/BloodstainedRotN/Content/Paks/pakchunk0-WindowsNoEditor.pak", (string)blueprintDef["asset"], (string)blueprintDef["object_name"]);
-            // ExtractAssetToFolder(gameDirectory + "/BloodstainedRotN/Content/Paks/pakchunk0-WindowsNoEditor.pak", (string)blueprintDef["asset"], userProjectPath + "/ModifiedAssets");
+        try {
+            string gameDirectory = (string)GetNode("/root/Editor").Call("read_config_prop", "game_directory");
+            string selectedPackageName = (string)GetNode("/root/Editor").Get("selected_package");
+            string userProjectPath = ProjectSettings.GlobalizePath(@"user://UserPackages/" + selectedPackageName);
+            foreach (Godot.Collections.Dictionary blueprintDef in blueprintLocations) {
+                ParseBlueprintForReuse(gameDirectory + "/BloodstainedRotN/Content/Paks/pakchunk0-WindowsNoEditor.pak", (string)blueprintDef["asset"], (string)blueprintDef["object_name"]);
+                // ExtractAssetToFolder(gameDirectory + "/BloodstainedRotN/Content/Paks/pakchunk0-WindowsNoEditor.pak", (string)blueprintDef["asset"], userProjectPath + "/ModifiedAssets");
+            }
+        } catch (Exception e) {
+            GD.Print(e);
         }
     }
 

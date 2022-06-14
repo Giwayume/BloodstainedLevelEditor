@@ -157,6 +157,7 @@ var tree_popup_menu_items: Array = [
 var room_definition: Dictionary
 
 var current_tool: String = "move"
+var current_tab_section_index: int = 0
 var transform_tool_names = ["select", "move", "rotate", "scale"]
 var is_any_dialog_visible: bool = false
 var is_any_menu_popup_visible: bool = false
@@ -241,7 +242,7 @@ func _ready():
 	editor.connect("history_changed", self, "on_history_changed")
 	character_selection_dialog.connect("about_to_show", self, "on_show_any_dialog")
 	character_selection_dialog.connect("popup_hide", self, "on_hide_any_dialog")
-	character_selection_dialog.connect("character_selected", self, "on_character_add")
+	character_selection_dialog.connect("character_selected", self, "on_character_dialog_selected")
 	enemy_difficulty_select_option_button.connect("item_selected", self, "on_enemy_difficulty_item_selected")
 	enemy_add_button.connect("pressed", self, "on_enemy_add")
 	enemy_delete_button.connect("pressed", self, "on_enemy_delete")
@@ -316,7 +317,7 @@ func _input(event):
 					delete_selected_nodes()
 
 func _exit_tree():
-	editor.save_room_edits()
+	editor.save_room_edits(true)
 	editor.room_edits = null
 	editor.clear_action_history()
 
@@ -337,7 +338,7 @@ func parse_pak_thread_function(_noop):
 
 func end_parse_pak_thread():
 	parse_pak_thread.wait_to_finish()
-	print_debug("parse pak complete")
+	print_debug("[RoomEdit] parse pak complete")
 	start_get_room_definition_thread()
 
 # Build the "room_definition" object, which represents the entire tree for Godot
@@ -353,7 +354,7 @@ func get_room_definition_thread_function(_noop):
 
 func end_get_room_definition_thread():
 	get_room_definition_thread.wait_to_finish()
-	print_debug("get room def complete")
+	print_debug("[RoomEdit] get room def complete")
 	start_parse_blueprint_thread()
 
 func start_parse_blueprint_thread():
@@ -377,46 +378,26 @@ func end_parse_blueprint_thread():
 	parse_blueprint_thread.wait_to_finish()
 
 	blueprint_definitions_pending_load = []
-	
 	var game_directory = editor.read_config()["game_directory"]
 	for tree_name in trees:
 		if Editor.room_edits.has(tree_name) and Editor.room_edits[tree_name].has("new_exports"):
 			var prefix = 1
 			for export_definition in Editor.room_edits[tree_name]["new_exports"]:
 				if export_definition.has("blueprint"):
-					var blueprint_snippet = uasset_parser.BlueprintSnippetRoomDefinitions[(
-						game_directory + "/BloodstainedRotN/Content/Paks/" + export_definition.blueprint.file + '|' +
-						export_definition.blueprint.asset + '|' +
-						export_definition.blueprint.object_name
-					)]
+					var blueprint_snippet = ObjectExt.deep_copy(
+						uasset_parser.BlueprintSnippetRoomDefinitions[(
+							game_directory + "/BloodstainedRotN/Content/Paks/" + export_definition.blueprint.file + '|' +
+							export_definition.blueprint.asset + '|' +
+							export_definition.blueprint.object_name
+						)]
+					)
 					Editor.prefix_export_index_recursive(blueprint_snippet, prefix * Editor.NEW_EXPORT_PREFIX)
 					for child in room_definition[tree_name].children:
 						if child.type == "Level":
 							child.children.push_back(blueprint_snippet)
 				prefix += 1
 
-#	var game_directory = editor.read_config()["game_directory"]
-#	var selected_package_name = editor.selected_package
-#	var user_project_path = ProjectSettings.globalize_path("user://UserPackages/" + selected_package_name)
-
-#	uasset_parser.ExtractAssetToFolder(
-#		game_directory + "/BloodstainedRotN/Content/Paks/pakchunk0-WindowsNoEditor.pak",
-#		"BloodstainedRotN/Content/Core/Environment/ACT04_GDN/Level/m04GDN_016_Enemy.umap",
-#		user_project_path + "/ModifiedAssets"
-#	)
-#	uasset_parser.AddBlueprintToAsset(
-#		game_directory + "/BloodstainedRotN/Content/Paks/pakchunk0-WindowsNoEditor.pak",
-#		"BloodstainedRotN/Content/Core/Environment/ACT04_GDN/Level/m04GDN_015_Enemy.umap",
-#		"Chr_N3091(3)",
-#		user_project_path + "/ModifiedAssets/BloodstainedRotN/Content/Core/Environment/ACT04_GDN/Level/m04GDN_015_Enemy.umap"
-#	)
-#	uasset_parser.AddBlueprintToAsset(
-#		game_directory + "/BloodstainedRotN/Content/Paks/pakchunk0-WindowsNoEditor.pak",
-#		"BloodstainedRotN/Content/Core/Environment/ACT04_GDN/Level/m04GDN_015_Enemy.umap",
-#		"Chr_N3091(3)",
-#		user_project_path + "/ModifiedAssets/BloodstainedRotN/Content/Core/Environment/ACT04_GDN/Level/m04GDN_016_Enemy.umap"
-#	)
-	print_debug("parse blueprints complete")
+	print_debug("[RoomEdit] parse blueprints complete")
 	start_place_nodes_thread()
 
 # Place nodes & build object outline based on the room_definition
@@ -433,7 +414,7 @@ func place_nodes_thread_function(_noop):
 
 func end_place_nodes_thread():
 	place_nodes_thread.wait_to_finish()
-	print_debug("place nodes complete")
+	print_debug("[RoomEdit] place nodes complete")
 	threads_finished()
 
 func threads_finished():
@@ -589,6 +570,7 @@ func on_enemy_difficulty_item_selected(index: int):
 			child.set_hidden(index != 2)
 	if index != current_index:
 		call_deferred("clear_selection")
+	current_tab_section_index = index
 
 func on_enemy_add():
 	character_selection_dialog.popup_centered_ratio(.75)
@@ -631,8 +613,11 @@ func on_room_3d_display_selection_changed(selected_nodes):
 			item.deselect(0)
 		for node in remaining_selected_nodes:
 			var export_index = node.definition.export_index
-			tree_uncollapse_from_item(current_tree.tree_id_map[export_index])
-			current_tree.tree_id_map[export_index].select(0)
+			if current_tree.tree_id_map.has(export_index):
+				tree_uncollapse_from_item(current_tree.tree_id_map[export_index])
+				current_tree.tree_id_map[export_index].select(0)
+			else:
+				print_debug("[RoomEdit] tried to expand tree for unknown export ", export_index)
 		current_tree.tree.ensure_cursor_is_visible()
 		if selected_nodes_by_tree_name.has(tree_name):
 			last_tree_name = tree_name
@@ -814,22 +799,63 @@ func on_translate_selection(offset: Vector3):
 		)
 		selected_node_initial_transforms = []
 
-func on_character_add(character_profile):
-	print_debug(character_profile)
+func on_character_dialog_selected(character_profile):
+	var current_tree_name = get_current_tree_name()
+
+	var new_export = {
+		"blueprint": {
+			"file": "pakchunk0-WindowsNoEditor.pak",
+			"asset": character_profile.example_placement_package,
+			"object_name": character_profile.example_placement_export_object_name
+		}
+	}
+	var game_directory = editor.read_config()["game_directory"]
+	uasset_parser.ParseAndCacheBlueprints([new_export.blueprint]);
+	var blueprint_snippet_definition = ObjectExt.deep_copy(
+		uasset_parser.BlueprintSnippetRoomDefinitions[(
+			game_directory + "/BloodstainedRotN/Content/Paks/" + new_export.blueprint.file + '|' +
+			new_export.blueprint.asset + '|' +
+			new_export.blueprint.object_name
+		)]
+	)
+	Editor.prefix_export_index_recursive(blueprint_snippet_definition, Editor.get_room_edit_next_new_export_prefix_counter(current_tree_name) * Editor.NEW_EXPORT_PREFIX)
+	
+	for child in room_definition[current_tree_name].children:
+		if child.type == "Level":
+			child.children.push_back(blueprint_snippet_definition)
+	
+	var level_node = room_3d_display.asset_roots[current_tree_name].find_node("Level*", true, false)
+	
+	Editor.create_room_edit_export(current_tree_name, new_export)
+	
+	room_3d_display.current_placing_tree_name = current_tree_name
+	room_3d_display.place_tree_nodes_recursive(level_node, blueprint_snippet_definition)
+	
+	build_object_outlines(current_tree_name)
 
 func on_open_uasset_gui():
-	var current_tree_name
-	for tree_name in trees:
-		if level_outline_tab_container.current_tab == trees[tree_name].tab_index:
-			current_tree_name = tree_name
 	OS.execute(ProjectSettings.globalize_path("res://VendorBinary/UAssetGUI/UAssetGUI.exe"), [
-		# ProjectSettings.globalize_path("user://PakExtract/" + room_definition.level_assets[current_tree_name]),
+		# ProjectSettings.globalize_path("user://PakExtract/" + room_definition.level_assets[get_current_tree_name()]),
 		# "VER_UE4_22"
 	], false)
 
 ###########
 # METHODS #
 ###########
+
+func get_current_tree_name():
+	var current_tree_name
+	for tree_name in trees:
+		if (
+			trees[tree_name].tab_index == level_outline_tab_container.current_tab and
+			(
+				not trees[tree_name].has("tab_section_index") or
+				trees[tree_name].tab_section_index == current_tab_section_index
+			)
+		):
+			current_tree_name = tree_name
+			break
+	return current_tree_name
 
 func delete_selected_nodes():
 	var delete_actions: Array = []
@@ -987,22 +1013,23 @@ func build_popup_menu_item(item, popup_menu):
 	elif item.type == "separator":
 		popup_menu.add_separator()
 
-func build_object_outlines():
+func build_object_outlines(filter_tree_name = ""):
 	for tree_name in trees:
-		for id in trees[tree_name].tree_id_map:
-			trees[tree_name].restore_collapse_state[id] = trees[tree_name].tree_id_map[id].collapsed
-		trees[tree_name].tree_id_map.clear()
-		trees[tree_name].node_id_map.clear()
-		trees[tree_name].tree.clear()
-		build_object_outline(
-			trees[tree_name].tree,
-			trees[tree_name].root_item,
-			trees[tree_name].tree_id_map,
-			trees[tree_name].node_id_map,
-			trees[tree_name].restore_collapse_state,
-			room_3d_display.find_node("AssetTrees", true, true).get_node(tree_name)
-		)
-		trees[tree_name].restore_collapse_state = {}
+		if filter_tree_name == "" or filter_tree_name == tree_name:
+			for id in trees[tree_name].tree_id_map:
+				trees[tree_name].restore_collapse_state[id] = trees[tree_name].tree_id_map[id].collapsed
+			trees[tree_name].tree_id_map.clear()
+			trees[tree_name].node_id_map.clear()
+			trees[tree_name].tree.clear()
+			build_object_outline(
+				trees[tree_name].tree,
+				trees[tree_name].root_item,
+				trees[tree_name].tree_id_map,
+				trees[tree_name].node_id_map,
+				trees[tree_name].restore_collapse_state,
+				room_3d_display.find_node("AssetTrees", true, true).get_node(tree_name)
+			)
+			trees[tree_name].restore_collapse_state = {}
 
 func build_object_outline(tree: Tree, parent_item: TreeItem, tree_id_map: Dictionary, node_id_map: Dictionary, restore_collapse_state: Dictionary, parent_node: Node):
 	var placement_node = parent_node

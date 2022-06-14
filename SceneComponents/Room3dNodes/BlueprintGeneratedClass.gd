@@ -101,11 +101,11 @@ func start_model_load(meshes: Array):
 					room_3d_display.load_3d_model(model_definition, mesh_load_node, "on_3d_model_loaded")
 			else:
 				if load_def.has("custom_mesh"):
-					print_debug("BlueprintGeneratedClass load mesh asset not found: ", load_def.custom_mesh)
+					print_debug("[BlueprintGeneratedClass] load mesh asset not found: ", load_def.custom_mesh)
 				else:
-					print_debug("BlueprintGeneratedClass load mesh asset not found: ", load_def.mesh)
+					print_debug("[BlueprintGeneratedClass] load mesh asset not found: ", load_def.mesh)
 		else:
-			print_debug("BlueprintGeneratedClass mesh node not found: ", load_def.object_name, " ", load_def.object_type)
+			print_debug("[BlueprintGeneratedClass] mesh node not found: ", load_def.object_name, " ", load_def.object_type)
 
 func select():
 	.select()

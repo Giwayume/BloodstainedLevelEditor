@@ -44,7 +44,12 @@ While making changes to a level, changes are automatically saved. Use the "Packa
 | Mouse Wheel        | Zoom in/out                            |
 
 ## Target functionality:
-- [ ] Add/Remove enemies from any room
+- [ ] Edit enemies
+    - [x] Add
+    - [x] Remove
+    - [ ] Set initial position based on camera view
+    - [ ] Issues when multiple enemy blueprints are added (Seama + Morte as example)
+    - [ ] Check some enemy blueprints not working
 - [x] Edit the placement of any 3D static mesh in any room or remove them
     - [x] Undo/redo history
     - [x] Visual transform cursor
