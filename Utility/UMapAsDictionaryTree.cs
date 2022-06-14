@@ -704,7 +704,7 @@ public class UMapAsDictionaryTree {
                     parser.ParseBlueprintForReuse(pakFilePath, blueprint["asset"].Value<string>(), blueprint["object_name"].Value<string>());
                 }
                 UAssetSnippet snippet = parser.BlueprintSnippets[dictionaryKey];
-                snippet.AddToUAsset(uAsset);
+                snippet.AddToUAsset(uAsset, "BLOODSTAINED_LEVEL_EDITOR_INJECT_" + newExportStartIndex);
 
                 if (newExport.ContainsKey("edits")) {
                     JObject newExportEdits = (JObject)newExport["edits"];

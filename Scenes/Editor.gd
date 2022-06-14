@@ -139,7 +139,7 @@ func save_room_edits(is_run_cleanup: bool = false):
 						if typeof(room_edits[category]) == TYPE_DICTIONARY:
 							if (
 								len(room_edits[category]["existing_exports"].keys()) > 0 or
-								len(room_edits[category]["existing_exports"]) > 0
+								len(room_edits[category]["new_exports"]) > 0
 							):
 								all_categories_has_any_edit = true
 								break
@@ -150,8 +150,14 @@ func save_room_edits(is_run_cleanup: bool = false):
 			var edits_folder = "user://UserPackages/" + selected_package + "/Edits"
 			var level_path = level_assets["bg"].rsplit("/", true, 1)[0]
 			var edits_file_path = edits_folder + "/" + level_path + "/" + selected_level_name + ".json"
+			var modified_asset_path = "user://UserPackages/" + selected_package + "/ModifiedAssets/" + level_path
 			if has_no_edits:
 				directory.remove(edits_file_path)
+				var files = DirectoryExt.list_files(modified_asset_path)
+				for file in files:
+					print_debug(file)
+					if file.begins_with(selected_level_name):
+						directory.remove(modified_asset_path + "/" + file)
 			else:
 				var edits_file = File.new()
 				var file_error = edits_file.open(edits_file_path, File.WRITE)

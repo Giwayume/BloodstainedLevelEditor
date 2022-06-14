@@ -829,10 +829,17 @@ func on_character_dialog_selected(character_profile):
 	Editor.create_room_edit_export(current_tree_name, new_export)
 	
 	room_3d_display.current_placing_tree_name = current_tree_name
-	room_3d_display.place_tree_nodes_recursive(level_node, blueprint_snippet_definition)
+	var transform_node = room_3d_display.place_tree_nodes_recursive(level_node, blueprint_snippet_definition)
+
+	if transform_node.selection_transform_node:
+		transform_node = transform_node.selection_transform_node
+	var walking_coordinate = room_3d_display.get_room_walking_coordinate_at_camera_center()
+	if walking_coordinate != null:
+		transform_node.transform.origin = walking_coordinate
+		SpatialTransformAction.new(transform_node, Transform(), transform_node.transform).do()
 	
 	build_object_outlines(current_tree_name)
-
+	
 func on_open_uasset_gui():
 	OS.execute(ProjectSettings.globalize_path("res://VendorBinary/UAssetGUI/UAssetGUI.exe"), [
 		# ProjectSettings.globalize_path("user://PakExtract/" + room_definition.level_assets[get_current_tree_name()]),

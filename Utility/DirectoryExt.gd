@@ -21,3 +21,20 @@ static func remove_recursive(path):
 		directory.remove(path)
 	else:
 		print_debug("Error removing " + path)
+
+static func list_files(path):
+	var directory = Directory.new()
+	var files = []
+	directory.open(path)
+	directory.list_dir_begin()
+	
+	while true:
+		var file = directory.get_next()
+		if file == "":
+			break
+		elif not file.begins_with(".") and not directory.current_is_dir():
+			files.append(file)
+	
+	directory.list_dir_end()
+	
+	return files

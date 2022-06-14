@@ -329,6 +329,7 @@ func place_tree_nodes_recursive(parent: Spatial, definition: Dictionary, is_debu
 		for child_definition in definition["children"]:
 			place_tree_nodes_recursive(node, child_definition)
 	call_deferred("handle_tree_nodes_after_placement", node, definition)
+	return node
 
 func handle_tree_nodes_after_placement(node: Spatial, definition: Dictionary):
 	if (definition.has("deleted") and definition["deleted"]):
@@ -346,6 +347,21 @@ func use_edited_prop_if_exists(definition: Dictionary, export_index: int, prop_n
 ####################
 # OBJECT SELECTION #
 ####################
+
+func get_room_walking_coordinate_at_camera_center():
+	var mouse_pos = Vector2(get_viewport().size.x / 2.0, get_viewport().size.y / 2.0)
+	var ray_length = 10000000
+	var ray_from = camera.project_ray_origin(mouse_pos)
+	var ray_to = ray_from + camera.project_ray_normal(mouse_pos) * ray_length
+	var direction = (ray_to - ray_from).normalized()
+	
+	var axis = "z"
+	if direction[axis] == 0:
+		return null
+	var distance = (translation[axis] - ray_from[axis]) / direction[axis]
+	if distance < 0:
+		return null
+	return ray_from + direction * distance
 
 func select_object_at_mouse(is_add: bool = false):
 	if not can_select:

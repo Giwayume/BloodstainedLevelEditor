@@ -47,9 +47,9 @@ While making changes to a level, changes are automatically saved. Use the "Packa
 - [ ] Edit enemies
     - [x] Add
     - [x] Remove
-    - [ ] Set initial position based on camera view
-    - [ ] Issues when multiple enemy blueprints are added (Seama + Morte as example)
-    - [ ] Check some enemy blueprints not working
+    - [x] Set initial position based on camera view
+    - [x] Issues when multiple enemy blueprints are added (Seama + Morte as example)
+    - [ ] Check though all enemy blueprints to make sure they work well
 - [x] Edit the placement of any 3D static mesh in any room or remove them
     - [x] Undo/redo history
     - [x] Visual transform cursor
