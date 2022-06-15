@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://SceneComponents/CustomMesh/PBWhite_f3_1.gd" type="Script" id=1]
+
+[node name="PBWhite_f3_1" type="Spatial"]
+script = ExtResource( 1 )

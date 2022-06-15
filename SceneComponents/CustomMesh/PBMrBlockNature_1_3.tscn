@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://SceneComponents/CustomMesh/PBMrBlockNature_1_3.gd" type="Script" id=1]
+
+[node name="PBMrBlockNature_1_3" type="Spatial"]
+script = ExtResource( 1 )

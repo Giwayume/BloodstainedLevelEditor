@@ -22,6 +22,8 @@ func on_3d_model_loaded(new_loaded_model):
 func create_collision_area():
 	# Child class creates area & visualization first
 	
+	collision_area.set_script(node_selection_area_script)
+	collision_area.selectable_parent = self
 	collision_area.name = "CollisionArea"
 	collision_area.collision_layer = PhysicsLayers3d.layers.editor_select_collider
 	collision_area.collision_mask = PhysicsLayers3d.layers.none
@@ -71,8 +73,6 @@ func set_hidden(hidden: bool):
 
 func generate_cube(wx, wz, h):
 	var area = Area.new()
-	area.set_script(node_selection_area_script)
-	area.selectable_parent = self
 	var collision_shape = CollisionShape.new()
 	var box_shape = BoxShape.new()
 	box_shape.extents = Vector3(wx, h, wz)
@@ -116,8 +116,6 @@ func generate_cube(wx, wz, h):
 
 func generate_wedge_slope(wx, wz, h):
 	var area = Area.new()
-	area.set_script(node_selection_area_script)
-	area.selectable_parent = self
 	var collision_polygon = CollisionPolygon.new()
 	collision_polygon.polygon = PoolVector2Array([
 		Vector2(0, 0),
@@ -155,8 +153,6 @@ func generate_wedge_slope(wx, wz, h):
 
 func generate_box_slope(wx, wz, hl, hr):
 	var area = Area.new()
-	area.set_script(node_selection_area_script)
-	area.selectable_parent = self
 	var collision_shape = CollisionShape.new()
 	var box_shape = BoxShape.new()
 	box_shape.extents = Vector3(wx / 2, min(hl, hr) / 2, -wz / 2)
@@ -207,3 +203,227 @@ func generate_box_slope(wx, wz, hl, hr):
 	cv.end()
 	collision_visualization = cv
 
+func generate_sectioned_slope_2(s1, s2, depth):
+	var area = Area.new()
+	area.set_script(node_selection_area_script)
+	area.selectable_parent = self
+	var collision_polygon = CollisionPolygon.new()
+	collision_polygon.polygon = PoolVector2Array([
+		Vector2(0, 0),
+		Vector2(.6, s1),
+		Vector2(1.2, s2),
+		Vector2(1.2, 0.0),
+		Vector2(0.6, 0.0)
+	])
+	collision_polygon.depth = depth
+	collision_polygon.transform.origin = Vector3(0, 0, -depth/2)
+	area.add_child(collision_polygon)
+	collision_area = area
+	
+	var cv = ImmediateGeometry.new()
+	cv.begin(Mesh.PRIMITIVE_LINE_LOOP)
+	cv.add_vertex(Vector3(0, 0, 0))
+	cv.add_vertex(Vector3(0.6, s1, 0))
+	cv.add_vertex(Vector3(0.6, s1, -depth))
+	cv.add_vertex(Vector3(0, 0, -depth))
+	cv.add_vertex(Vector3(0, 0, 0))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_LOOP)
+	cv.add_vertex(Vector3(0.6, s1, 0))
+	cv.add_vertex(Vector3(1.2, s2, 0))
+	cv.add_vertex(Vector3(1.2, s2, -depth))
+	cv.add_vertex(Vector3(0.6, s1, -depth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_LOOP)
+	cv.add_vertex(Vector3(1.2, s2, 0))
+	cv.add_vertex(Vector3(1.2, 0, 0))
+	cv.add_vertex(Vector3(0, 0, 0))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_LOOP)
+	cv.add_vertex(Vector3(1.2, s2, -depth))
+	cv.add_vertex(Vector3(1.2, 0, -depth))
+	cv.add_vertex(Vector3(0, 0, -depth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_LOOP)
+	cv.add_vertex(Vector3(1.2, 0, 0))
+	cv.add_vertex(Vector3(1.2, 0, -depth))
+	cv.end()
+	collision_visualization = cv
+
+func generate_sectioned_slope_3(s1, s2, s3, depth):
+	var area = Area.new()
+	area.set_script(node_selection_area_script)
+	area.selectable_parent = self
+	var collision_polygon = CollisionPolygon.new()
+	collision_polygon.polygon = PoolVector2Array([
+		Vector2(0, 0),
+		Vector2(.6, s1),
+		Vector2(1.2, s2),
+		Vector2(1.8, s3),
+		Vector2(1.8, 0.0),
+		Vector2(1.2, 0.0),
+		Vector2(0.6, 0.0)
+	])
+	collision_polygon.depth = depth
+	collision_polygon.transform.origin = Vector3(0, 0, -depth/2)
+	area.add_child(collision_polygon)
+	collision_area = area
+	
+	var cv = ImmediateGeometry.new()
+	cv.begin(Mesh.PRIMITIVE_LINE_LOOP)
+	cv.add_vertex(Vector3(0, 0, 0))
+	cv.add_vertex(Vector3(0.6, s1, 0))
+	cv.add_vertex(Vector3(0.6, s1, -depth))
+	cv.add_vertex(Vector3(0, 0, -depth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_STRIP)
+	cv.add_vertex(Vector3(0.6, s1, 0))
+	cv.add_vertex(Vector3(1.2, s2, 0))
+	cv.add_vertex(Vector3(1.2, s2, -depth))
+	cv.add_vertex(Vector3(0.6, s1, -depth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_STRIP)
+	cv.add_vertex(Vector3(1.2, s2, 0))
+	cv.add_vertex(Vector3(1.8, s3, 0))
+	cv.add_vertex(Vector3(1.8, s3, -depth))
+	cv.add_vertex(Vector3(1.2, s2, -depth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_STRIP)
+	cv.add_vertex(Vector3(1.8, s3, 0))
+	cv.add_vertex(Vector3(1.8, 0, 0))
+	cv.add_vertex(Vector3(0, 0, 0))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_STRIP)
+	cv.add_vertex(Vector3(1.8, s3, -depth))
+	cv.add_vertex(Vector3(1.8, 0, -depth))
+	cv.add_vertex(Vector3(0, 0, -depth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_STRIP)
+	cv.add_vertex(Vector3(1.8, 0, 0))
+	cv.add_vertex(Vector3(1.8, 0, -depth))
+	cv.end()
+	collision_visualization = cv
+
+func generate_sectioned_slope_4(s1, s2, s3, s4, depth):
+	var area = Area.new()
+	area.set_script(node_selection_area_script)
+	area.selectable_parent = self
+	var collision_polygon = CollisionPolygon.new()
+	collision_polygon.polygon = PoolVector2Array([
+		Vector2(0, 0),
+		Vector2(.6, s1),
+		Vector2(1.2, s2),
+		Vector2(1.8, s3),
+		Vector2(2.4, s4),
+		Vector2(2.4, 0.0),
+		Vector2(1.8, 0.0),
+		Vector2(1.2, 0.0),
+		Vector2(0.6, 0.0)
+	])
+	collision_polygon.depth = depth
+	collision_polygon.transform.origin = Vector3(0, 0, -depth/2)
+	area.add_child(collision_polygon)
+	collision_area = area
+	
+	var cv = ImmediateGeometry.new()
+	cv.begin(Mesh.PRIMITIVE_LINE_LOOP)
+	cv.add_vertex(Vector3(0, 0, 0))
+	cv.add_vertex(Vector3(0.6, s1, 0))
+	cv.add_vertex(Vector3(0.6, s1, -depth))
+	cv.add_vertex(Vector3(0, 0, -depth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_STRIP)
+	cv.add_vertex(Vector3(0.6, s1, 0))
+	cv.add_vertex(Vector3(1.2, s2, 0))
+	cv.add_vertex(Vector3(1.2, s2, -depth))
+	cv.add_vertex(Vector3(0.6, s1, -depth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_STRIP)
+	cv.add_vertex(Vector3(1.2, s2, 0))
+	cv.add_vertex(Vector3(1.8, s3, 0))
+	cv.add_vertex(Vector3(1.8, s3, -depth))
+	cv.add_vertex(Vector3(1.2, s2, -depth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_STRIP)
+	cv.add_vertex(Vector3(1.8, s3, 0))
+	cv.add_vertex(Vector3(2.4, s4, 0))
+	cv.add_vertex(Vector3(2.4, s4, -depth))
+	cv.add_vertex(Vector3(1.8, s3, -depth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_STRIP)
+	cv.add_vertex(Vector3(2.4, s4, 0))
+	cv.add_vertex(Vector3(2.4, 0, 0))
+	cv.add_vertex(Vector3(0, 0, 0))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_STRIP)
+	cv.add_vertex(Vector3(2.4, s4, -depth))
+	cv.add_vertex(Vector3(2.4, 0, -depth))
+	cv.add_vertex(Vector3(0, 0, -depth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_STRIP)
+	cv.add_vertex(Vector3(2.4, 0, 0))
+	cv.add_vertex(Vector3(2.4, 0, -depth))
+	cv.end()
+	collision_visualization = cv
+
+func generate_octagon(ix, ox, h, depth):
+	var halfdepth = depth / 2
+	var area = Area.new()
+	area.set_script(node_selection_area_script)
+	area.selectable_parent = self
+	var collision_polygon = CollisionPolygon.new()
+	collision_polygon.polygon = PoolVector2Array([
+		Vector2(-ox, h),
+		Vector2(-ix, h + .6),
+		Vector2(ix, h + .6),
+		Vector2(ox, h),
+		Vector2(ox, 0),
+		Vector2(ix, -.6),
+		Vector2(-ix, -.6),
+		Vector2(-ox, 0)
+	])
+	collision_polygon.depth = depth
+	collision_polygon.transform.origin = Vector3(0, 0, 0)
+	area.add_child(collision_polygon)
+	collision_area = area
+	
+	var cv = ImmediateGeometry.new()
+	cv.begin(Mesh.PRIMITIVE_LINE_LOOP)
+	cv.add_vertex(Vector3(-ox, h, -halfdepth))
+	cv.add_vertex(Vector3(-ix, h + .6, -halfdepth))
+	cv.add_vertex(Vector3(ix, h + .6, -halfdepth))
+	cv.add_vertex(Vector3(ox, h, -halfdepth))
+	cv.add_vertex(Vector3(ox, 0, -halfdepth))
+	cv.add_vertex(Vector3(ix, -.6, -halfdepth))
+	cv.add_vertex(Vector3(-ix, -.6, -halfdepth))
+	cv.add_vertex(Vector3(-ox, 0, -halfdepth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINE_LOOP)
+	cv.add_vertex(Vector3(-ox, h, halfdepth))
+	cv.add_vertex(Vector3(-ix, h + .6, halfdepth))
+	cv.add_vertex(Vector3(ix, h + .6, halfdepth))
+	cv.add_vertex(Vector3(ox, h, halfdepth))
+	cv.add_vertex(Vector3(ox, 0, halfdepth))
+	cv.add_vertex(Vector3(ix, -.6, halfdepth))
+	cv.add_vertex(Vector3(-ix, -.6, halfdepth))
+	cv.add_vertex(Vector3(-ox, 0, halfdepth))
+	cv.end()
+	cv.begin(Mesh.PRIMITIVE_LINES)
+	cv.add_vertex(Vector3(-ox, h, halfdepth))
+	cv.add_vertex(Vector3(-ox, h, -halfdepth))
+	cv.add_vertex(Vector3(-ix, h + .6, halfdepth))
+	cv.add_vertex(Vector3(-ix, h + .6, -halfdepth))
+	cv.add_vertex(Vector3(ix, h + .6, halfdepth))
+	cv.add_vertex(Vector3(ix, h + .6, -halfdepth))
+	cv.add_vertex(Vector3(ox, h, halfdepth))
+	cv.add_vertex(Vector3(ox, h, -halfdepth))
+	cv.add_vertex(Vector3(ox, 0, halfdepth))
+	cv.add_vertex(Vector3(ox, 0, -halfdepth))
+	cv.add_vertex(Vector3(ix, -.6, halfdepth))
+	cv.add_vertex(Vector3(ix, -.6, -halfdepth))
+	cv.add_vertex(Vector3(-ix, -.6, halfdepth))
+	cv.add_vertex(Vector3(-ix, -.6, -halfdepth))
+	cv.add_vertex(Vector3(-ox, 0, halfdepth))
+	cv.add_vertex(Vector3(-ox, 0, -halfdepth))
+	cv.end()
+	collision_visualization = cv

@@ -14,6 +14,449 @@ const blueprint_profiles: Dictionary = {
 			"mobility": "static"
 		}
 	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_a1.uasset": {
+		"meshes": [
+				{
+					"object_name": "StaticMeshComponent0",
+					"object_type": "StaticMeshComponent",
+					"custom_mesh": "PBSlope_1_1.tscn"
+				}
+			]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_b2.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMeshComponent0",
+				"object_type": "StaticMeshComponent",
+				"custom_mesh": "PBWhite_b2.tscn"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_b3.uasset": {
+		"class_edits": {
+			"PB_white_b3_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_b3_1.tscn"
+					}
+				]
+			},
+			"PB_white_b3_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_b3_2.tscn"
+					}
+				]
+			},
+			"PB_white_b3_3_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_b3_3.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_b4.uasset": {
+		"class_edits": {
+			"PB_white_b4_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_b4_1.tscn"
+					}
+				]
+			},
+			"PB_white_b4_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_b4_2.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_c2.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMeshComponent0",
+				"object_type": "StaticMeshComponent",
+				"custom_mesh": "PBWhite_c2.tscn"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_c3.uasset": {
+		"class_edits": {
+			"PB_white_c3_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_c3_1.tscn"
+					}
+				]
+			},
+			"PB_white_c3_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_c3_2.tscn"
+					}
+				]
+			},
+			"PB_white_c3_3_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_c3_3.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_c4.uasset": {
+		"class_edits": {
+			"PB_white_c4_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_c4_1.tscn"
+					}
+				]
+			},
+			"PB_white_c4_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_c4_2.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_d2.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMeshComponent0",
+				"object_type": "StaticMeshComponent",
+				"custom_mesh": "PBWhite_d2.tscn"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_d3.uasset": {
+		"class_edits": {
+			"PB_white_d3_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_d3_1.tscn"
+					}
+				]
+			},
+			"PB_white_d3_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_d3_2.tscn"
+					}
+				]
+			},
+			"PB_white_d3_3_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_d3_3.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_d4.uasset": {
+		"class_edits": {
+			"PB_white_d4_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_d4_1.tscn"
+					}
+				]
+			},
+			"PB_white_d4_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_d4_2.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_e2.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMeshComponent0",
+				"object_type": "StaticMeshComponent",
+				"custom_mesh": "PBWhite_e2.tscn"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_e3.uasset": {
+		"class_edits": {
+			"PB_white_e3_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_e3_1.tscn"
+					}
+				]
+			},
+			"PB_white_e3_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_e3_2.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_e4.uasset": {
+		"class_edits": {
+			"PB_white_e4_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_e4_1.tscn"
+					}
+				]
+			},
+			"PB_white_e4_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_e4_2.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_f2.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMeshComponent0",
+				"object_type": "StaticMeshComponent",
+				"custom_mesh": "PBWhite_f2.tscn"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_f3.uasset": {
+		"class_edits": {
+			"PB_white_f3_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_f3_1.tscn"
+					}
+				]
+			},
+			"PB_white_f3_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_f3_2.tscn"
+					}
+				]
+			},
+			"PB_white_f3_3_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_f3_3.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_f4.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMeshComponent0",
+				"object_type": "StaticMeshComponent",
+				"custom_mesh": "PBWhite_f4_1.tscn"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_g2.uasset": {
+		"meshes": [
+			{
+				"object_name": "StaticMeshComponent0",
+				"object_type": "StaticMeshComponent",
+				"custom_mesh": "PBWhite_g2.tscn"
+			}
+		]
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_g3.uasset": {
+		"class_edits": {
+			"PB_white_g3_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_g3_1.tscn"
+					}
+				]
+			},
+			"PB_white_g3_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_g3_2.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/MrWhiteBox/PB_white_g4.uasset": {
+		"class_edits": {
+			"PB_white_g4_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_g4_1.tscn"
+					}
+				]
+			},
+			"PB_white_g4_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBWhite_g4_2.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/PBMrBlockNature_1.uasset": {
+		"class_edits": {
+			"PBMrBlockNature_1_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBMrBlockNature_1_1.tscn"
+					}
+				]
+			},
+			"PBMrBlockNature_1_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBMrBlockNature_1_2.tscn"
+					}
+				]
+			},
+			"PBMrBlockNature_1_3_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBMrBlockNature_1_3.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/PBMrBlockNature_2.uasset": {
+		"class_edits": {
+			"PBMrBlockNature_2_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBMrBlockNature_2_1.tscn"
+					}
+				]
+			},
+			"PBMrBlockNature_2_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBMrBlockNature_2_2.tscn"
+					}
+				]
+			},
+			"PBMrBlockNature_2_3_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBMrBlockNature_2_3.tscn"
+					}
+				]
+			}
+		}
+	},
+	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNature/PBMrBlockNature_3.uasset": {
+		"class_edits": {
+			"PBMrBlockNature_3_1_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBMrBlockNature_3_1.tscn"
+					}
+				]
+			},
+			"PBMrBlockNature_3_2_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBMrBlockNature_3_2.tscn"
+					}
+				]
+			},
+			"PBMrBlockNature_3_3_C": {
+				"meshes": [
+					{
+						"object_name": "StaticMeshComponent0",
+						"object_type": "StaticMeshComponent",
+						"custom_mesh": "PBMrBlockNature_3_3.tscn"
+					}
+				]
+			}
+		}
+	},
 	"BloodstainedRotN/Content/Core/Environment/Tool/MrBlockNum/Mr_MultiBlock_New.uasset": {
 		"meshes": [
 			{
