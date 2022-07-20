@@ -17,6 +17,8 @@ using UAssetAPI.PropertyTypes.Objects;
 using UAssetAPI.PropertyTypes.Structs;
 
 public class UAssetSnippet {
+    private int PERSISTENT_LEVEL_EXPORT_IDENTIFIER = -6969420;
+
     public class UAssetExportTreeItem {
         public int ExportIndex = -1; // 0 - indexed!
         public bool IsRoot = true;
@@ -249,6 +251,15 @@ public class UAssetSnippet {
             strippedUAsset.Imports.Add(clonedImport);
         }
 
+        // Find level export index
+        int originalPersistentLevelExportNumber = 0;
+        foreach (Export export in originalUAsset.Exports) {
+            originalPersistentLevelExportNumber++;
+            if (export is LevelExport levelExport) {
+                break;
+            }
+        }
+
         // Cloned used exports and add to end of current asset's exports
         bool isPrimaryExport = true;
         foreach (int originalExportIndex in UsedExports) {
@@ -256,6 +267,9 @@ public class UAssetSnippet {
             if (isPrimaryExport) {
                 clonedExport.bIsAsset = true;
                 clonedExport.OuterIndex.Index = 0;
+            }
+            if (clonedExport.OuterIndex.Index == originalPersistentLevelExportNumber) {
+                clonedExport.OuterIndex.Index = PERSISTENT_LEVEL_EXPORT_IDENTIFIER;
             }
             try {
                 int oldClassIndex = originalUAsset.Exports[originalExportIndex].ClassIndex.Index;
@@ -296,13 +310,17 @@ public class UAssetSnippet {
                             }
                         } else if (index.Index > 0) {
                             int newExportIndex = index.Index - 1;
-                            if (UsedExports != null) {
-                                newExportIndex = UsedExports.IndexOf(index.Index - 1);
-                            }
-                            if (newExportIndex != -1) {
-                                newExportIndex += exportStartIndex + 1;
+                            if (index.Index == originalPersistentLevelExportNumber) {
+                                newExportIndex = PERSISTENT_LEVEL_EXPORT_IDENTIFIER;
                             } else {
-                                newExportIndex = index.Index;
+                                if (UsedExports != null) {
+                                    newExportIndex = UsedExports.IndexOf(index.Index - 1);
+                                }
+                                if (newExportIndex != -1) {
+                                    newExportIndex += exportStartIndex + 1;
+                                } else {
+                                    newExportIndex = index.Index;
+                                }
                             }
                             newIndex = FPackageIndex.FromRawIndex(newExportIndex);
                         }
@@ -383,9 +401,25 @@ public class UAssetSnippet {
             }
         }
 
+        // Find level export index
+        int persistentLevelExportNumber = 0;
+        foreach (Export export in attachToAsset.Exports) {
+            persistentLevelExportNumber++;
+            if (export is LevelExport levelExport) {
+                break;
+            }
+        }
+        List<int> levelExportExtraIndexData = new List<int>();
+
         // Cloned used exports and add to end of current asset's exports
+        int currentAdditionalExportIndex = 0;
         foreach (Export snippetExport in StrippedUasset.Exports) {
+            bool isPersistentLevelParentExport = snippetExport.OuterIndex.Index == PERSISTENT_LEVEL_EXPORT_IDENTIFIER;
             Export clonedExport = CloneExport(StrippedUasset, snippetExport, attachToAsset, exportStartIndex);
+            if (isPersistentLevelParentExport) {
+                clonedExport.OuterIndex = FPackageIndex.FromRawIndex(persistentLevelExportNumber);
+                levelExportExtraIndexData.Add(attachToAsset.Exports.Count);
+            }
             try {
                 clonedExport.bIsAsset = false;
                 int oldClassIndex = clonedExport.ClassIndex.Index;
@@ -414,7 +448,9 @@ public class UAssetSnippet {
                     for (int i = 0; i < dependencyArray.Count; i++) {
                         FPackageIndex index = dependencyArray[i];
                         FPackageIndex newIndex = defaultIndex;
-                        if (index.Index < 0) {
+                        if (index.Index == PERSISTENT_LEVEL_EXPORT_IDENTIFIER) {
+                            newIndex = FPackageIndex.FromRawIndex(persistentLevelExportNumber);
+                        } else if (index.Index < 0) {
                             int arrayIndex = Math.Abs(index.Index) - 1;
                             if (arrayIndex >= 0) {
                                 newIndex = FPackageIndex.FromRawIndex(-(mappedImports[arrayIndex] + 1));
@@ -452,11 +488,14 @@ public class UAssetSnippet {
         int levelExportNumber = 1;
         foreach (Export baseExport in attachToAsset.Exports) {
             if (baseExport is LevelExport levelExport) {
-                int newExportNumber = exportStartIndex + 1;
-                levelExport.IndexData.Add(newExportNumber);
-                attachToAsset.Exports[exportStartIndex].OuterIndex.Index = levelExportNumber;
-                attachToAsset.Exports[exportStartIndex].CreateBeforeCreateDependencies[0] = FPackageIndex.FromRawIndex(levelExportNumber);
-                levelExport.CreateBeforeSerializationDependencies.Add(FPackageIndex.FromRawIndex(newExportNumber));
+                levelExportExtraIndexData.Add(exportStartIndex);
+                foreach (int levelExportExtraIndex in levelExportExtraIndexData) {
+                    int newExportNumber = levelExportExtraIndex + 1;
+                    levelExport.IndexData.Add(newExportNumber);
+                    attachToAsset.Exports[levelExportExtraIndex].OuterIndex.Index = levelExportNumber;
+                    attachToAsset.Exports[levelExportExtraIndex].CreateBeforeCreateDependencies[0] = FPackageIndex.FromRawIndex(levelExportNumber);
+                    levelExport.CreateBeforeSerializationDependencies.Add(FPackageIndex.FromRawIndex(newExportNumber));
+                }
                 break;
             }
             levelExportNumber++;
@@ -641,8 +680,17 @@ public class UAssetSnippet {
                 FMulticastDelegate[] newValue = new FMulticastDelegate[multicastDelegatePropertyData.Value.Length];
                 for (int i = 0; i < multicastDelegatePropertyData.Value.Length; i++) {
                     // attachToAsset.AddNameReference(multicastDelegatePropertyData.Value[i].Delegate.Value);
+                    int newNumberIndex = multicastDelegatePropertyData.Value[i].Number - 1;
+                    if (UsedExports != null) {
+                        newNumberIndex = UsedExports.IndexOf(multicastDelegatePropertyData.Value[i].Number - 1);
+                    }
+                    if (newNumberIndex != -1) {
+                        newNumberIndex += exportStartIndex + 1;
+                    } else {
+                        newNumberIndex = 0;
+                    }
                     newValue[i] = new FMulticastDelegate(
-                        multicastDelegatePropertyData.Value[i].Number,
+                        newNumberIndex,
                         FName.FromString(attachToAsset, multicastDelegatePropertyData.Value[i].Delegate.Value.Value)
                         // new FName(attachToAsset, multicastDelegatePropertyData.Value[i].Delegate.Value.Value, multicastDelegatePropertyData.Value[i].Delegate.Number)
                     );
