@@ -295,14 +295,37 @@ margin_top = 29.0
 margin_right = -5.0
 margin_bottom = -5.0
 
-[node name="GimmickTree" type="Tree" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Gimmick"]
+[node name="VBoxContainer" type="VBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Gimmick"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="GimmickTree" type="Tree" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Gimmick/VBoxContainer"]
+margin_right = 227.0
+margin_bottom = 217.0
+size_flags_vertical = 3
 allow_rmb_select = true
 select_mode = 2
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
+[node name="FooterScrollContainer" type="ScrollContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Gimmick/VBoxContainer"]
+margin_top = 221.0
+margin_right = 227.0
+margin_bottom = 243.0
+scroll_vertical_enabled = false
+
+[node name="FooterHBoxContainer" type="HBoxContainer" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Gimmick/VBoxContainer/FooterScrollContainer"]
+margin_right = 37.0
+margin_bottom = 22.0
+
+[node name="GimmickAddButton" type="Button" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer/Gimmick/VBoxContainer/FooterScrollContainer/FooterHBoxContainer"]
+margin_right = 37.0
+margin_bottom = 22.0
+text = "Add"
 
 [node name="Setting" type="Control" parent="EditorContainer/VBoxContainer/HSplitContainer/VSplitContainer/LevelOutlineMarginContainer/LevelOutlineTabContainer"]
 visible = false

@@ -403,9 +403,15 @@ public class UAssetSnippet {
 
         // Find level export index
         int persistentLevelExportNumber = 0;
+        List<FName> levelExportNames = new List<FName>();
         foreach (Export export in attachToAsset.Exports) {
             persistentLevelExportNumber++;
             if (export is LevelExport levelExport) {
+                foreach (int exportIndex in levelExport.IndexData) {
+                    if (exportIndex > 0 && exportIndex <= attachToAsset.Exports.Count) {
+                        levelExportNames.Add(attachToAsset.Exports[exportIndex - 1].ObjectName);
+                    }
+                }
                 break;
             }
         }
@@ -495,6 +501,13 @@ public class UAssetSnippet {
                     attachToAsset.Exports[levelExportExtraIndex].OuterIndex.Index = levelExportNumber;
                     attachToAsset.Exports[levelExportExtraIndex].CreateBeforeCreateDependencies[0] = FPackageIndex.FromRawIndex(levelExportNumber);
                     levelExport.CreateBeforeSerializationDependencies.Add(FPackageIndex.FromRawIndex(newExportNumber));
+
+                    Export addedLevelExport = attachToAsset.Exports[newExportNumber - 1];
+                    FName newObjectName = GuaranteeUniqueFNameFromList(addedLevelExport.ObjectName, levelExportNames, attachToAsset);
+                    if (!newObjectName.Equals(addedLevelExport.ObjectName)) {
+                        levelExportNames.Add(newObjectName);
+                    }
+                    addedLevelExport.ObjectName = newObjectName;
                 }
                 break;
             }
@@ -502,6 +515,27 @@ public class UAssetSnippet {
         }
 
         return attachInfo;
+    }
+
+    public bool IsFNameInList(FName fName, List<FName> list) {
+        bool isInList = false;
+        foreach (FName checkFName in list) {
+            if (fName.Equals(checkFName)) {
+                isInList = true;
+                break;
+            }
+        }
+        return isInList;
+    }
+
+    public FName GuaranteeUniqueFNameFromList(FName fName, List<FName> list, UAsset attachToAsset) {
+        int number = fName.Number;
+        FName newFName = new FName(attachToAsset, fName.Value, number);
+        while (IsFNameInList(newFName, list)) {
+            number++;
+            newFName.Number = number;
+        }
+        return newFName;
     }
 
     public bool IsCloneableImport(string classPackage, string className) {
