@@ -248,7 +248,7 @@ public class UAssetParser : Control {
         }
 
         // Add any room/level assets we find to a separate list for easy reading
-        if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Environment/[^/]*?/Level/m[0-9]{2}[A-Z]{3}_[0-9]{3}").Success) {
+        if (Regex.Match(packagePath, @"^BloodstainedRotN/Content/Core/Environment/[^/]*?/Level/m[0-9]{2}[A-Z0-9]{3}_[0-9]{3}").Success) {
             string packageName = packagePath.Split("/").Last();
             string levelName = packageName.Substring(0, 10);
             Godot.Collections.Dictionary<string, string> roomPackageDef = default(Godot.Collections.Dictionary<string, string>);

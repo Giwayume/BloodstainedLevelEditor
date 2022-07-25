@@ -92,32 +92,35 @@ func clear_action_history():
 
 func load_room_edits():
 	room_edits = null
-	var level_assets = uasset_parser.LevelNameToAssetPathMap[selected_level_name]
-	if level_assets.has("bg"):
-		var directory = Directory.new()
-		var edits_folder = "user://UserPackages/" + selected_package + "/Edits"
-		var level_path = level_assets["bg"].rsplit("/", true, 1)[0]
-		var error = directory.make_dir_recursive(edits_folder + "/" + level_path)
-		if error == OK:
-			var edits_file_path = edits_folder + "/" + level_path + "/" + selected_level_name + ".json"
-			var edits_file
-			if not directory.file_exists(edits_file_path):
-				edits_file = File.new()
-				edits_file.open(edits_file_path, File.WRITE)
-				edits_file.store_line("{ }")
-				edits_file.close()
-			edits_file = File.new()
-			var file_error = edits_file.open(edits_file_path, File.READ)
-			if file_error == OK:
-				var edits_json = edits_file.get_as_text()
-				var edits_dictionary_parse = JSON.parse(edits_json)
-				if edits_dictionary_parse.error == OK:
+	if uasset_parser.LevelNameToAssetPathMap.has(selected_level_name):
+		var level_assets = uasset_parser.LevelNameToAssetPathMap[selected_level_name]
+		if level_assets.has("bg"):
+			var directory = Directory.new()
+			var edits_folder = "user://UserPackages/" + selected_package + "/Edits"
+			var level_path = level_assets["bg"].rsplit("/", true, 1)[0]
+			var error = directory.make_dir_recursive(edits_folder + "/" + level_path)
+			if error == OK:
+				var edits_file_path = edits_folder + "/" + level_path + "/" + selected_level_name + ".json"
+				var edits_file
+				if not directory.file_exists(edits_file_path):
+					edits_file = File.new()
+					edits_file.open(edits_file_path, File.WRITE)
+					edits_file.store_line("{ }")
 					edits_file.close()
-					room_edits = edits_dictionary_parse.result
-			edits_file.close()
+				edits_file = File.new()
+				var file_error = edits_file.open(edits_file_path, File.READ)
+				if file_error == OK:
+					var edits_json = edits_file.get_as_text()
+					var edits_dictionary_parse = JSON.parse(edits_json)
+					if edits_dictionary_parse.error == OK:
+						edits_file.close()
+						room_edits = edits_dictionary_parse.result
+				edits_file.close()
+	else:
+		room_edits = {}
 
 func save_room_edits(is_run_cleanup: bool = false):
-	if room_edits != null:
+	if room_edits != null and uasset_parser.LevelNameToAssetPathMap.has(selected_level_name):
 		var level_assets = uasset_parser.LevelNameToAssetPathMap[selected_level_name]
 		if level_assets.has("bg"):
 			var has_no_edits = false
