@@ -192,6 +192,9 @@ public class UAssetSnippet {
                     }
                 }
             }
+            if (usedExport is NormalExport normalExport) {
+                BuildUsedImportsFromPropertyData(normalExport.Data);
+            }
         }
         List<int> foundParentImports = UsedImports.ToList();
         while (foundParentImports.Count > 0) {
@@ -210,10 +213,24 @@ public class UAssetSnippet {
             foundParentImports = newFoundParentImports;
         }
         UsedImports.Reverse();
+    }
 
-        // for (int i = 0; i < originalUAsset.Imports.Count; i++) {
-        //     UsedImports.Add(i);
-        // }
+    private void BuildUsedImportsFromPropertyData(List<PropertyData> propertyDataList) {
+        foreach (PropertyData propertyData in propertyDataList) {
+            if (propertyData is ObjectPropertyData objectPropertyData) {
+                if (objectPropertyData.IsImport()) {
+                    int arrayDepIndex = Math.Abs(objectPropertyData.Value.Index) - 1;
+                    if (!UsedImportSet.Contains(arrayDepIndex)) {
+                        UsedImportSet.Add(arrayDepIndex);
+                        UsedImports.Add(arrayDepIndex);
+                    }
+                }
+            } else if (propertyData is ArrayPropertyData arrayPropertyData) {
+                BuildUsedImportsFromPropertyData(arrayPropertyData.Value.ToList<PropertyData>());
+            } else if (propertyData is StructPropertyData structPropertyData) {
+                BuildUsedImportsFromPropertyData(structPropertyData.Value);
+            }
+        }
     }
 
     private void CreateStrippedUAsset(UAsset originalUAsset) {
@@ -263,7 +280,7 @@ public class UAssetSnippet {
         // Cloned used exports and add to end of current asset's exports
         bool isPrimaryExport = true;
         foreach (int originalExportIndex in UsedExports) {
-            Export clonedExport = CloneExport(originalUAsset, originalUAsset.Exports[originalExportIndex], strippedUAsset, exportStartIndex);
+            Export clonedExport = CloneExport(originalUAsset, originalUAsset.Exports[originalExportIndex], strippedUAsset, exportStartIndex, mappedImports);
             if (isPrimaryExport) {
                 clonedExport.bIsAsset = true;
                 clonedExport.OuterIndex.Index = 0;
@@ -340,6 +357,7 @@ public class UAssetSnippet {
 
         StrippedUasset = strippedUAsset;
         UsedExports = null;
+        UsedImports = null;
     }
 
     private List<int> GetAttachedChildrenReferencedObjects(UAssetExportTreeItem exportRoot) {
@@ -385,6 +403,7 @@ public class UAssetSnippet {
             }
             snippetImportIndex++;
         }
+
         // Modify outer index for each import (this equates to a noop if the import already exists in the file)
         for (int i = 0; i < StrippedUasset.Imports.Count; i++) {
             if (newlyAddedImports.IndexOf(i) > -1) {
@@ -421,7 +440,7 @@ public class UAssetSnippet {
         int currentAdditionalExportIndex = 0;
         foreach (Export snippetExport in StrippedUasset.Exports) {
             bool isPersistentLevelParentExport = snippetExport.OuterIndex.Index == PERSISTENT_LEVEL_EXPORT_IDENTIFIER;
-            Export clonedExport = CloneExport(StrippedUasset, snippetExport, attachToAsset, exportStartIndex);
+            Export clonedExport = CloneExport(StrippedUasset, snippetExport, attachToAsset, exportStartIndex, mappedImports);
             if (isPersistentLevelParentExport) {
                 clonedExport.OuterIndex = FPackageIndex.FromRawIndex(persistentLevelExportNumber);
                 levelExportExtraIndexData.Add(attachToAsset.Exports.Count);
@@ -581,7 +600,7 @@ public class UAssetSnippet {
         return clonedImport;
     }
 
-    public Export CloneExport(UAsset originalUAsset, Export export, UAsset attachToAsset, int exportStartIndex) {
+    public Export CloneExport(UAsset originalUAsset, Export export, UAsset attachToAsset, int exportStartIndex, List<int> mappedImports) {
         int newOuterIndex = export.OuterIndex.Index - 1;
         if (UsedExports != null) {
             newOuterIndex = UsedExports.IndexOf(export.OuterIndex.Index - 1);
@@ -602,7 +621,7 @@ public class UAssetSnippet {
             newTypedExport = new ClassExport(newExport);
         } else if (export is NormalExport normalExport) {
             newTypedExport = new NormalExport(newExport);
-            ((NormalExport)newTypedExport).Data = ClonePropertyData(originalUAsset, new List<PropertyData>(normalExport.Data), attachToAsset, exportStartIndex);
+            ((NormalExport)newTypedExport).Data = ClonePropertyData(originalUAsset, new List<PropertyData>(normalExport.Data), attachToAsset, exportStartIndex, mappedImports);
         }
         newTypedExport.ClassIndex = FPackageIndex.FromRawIndex(export.ClassIndex.Index);
         newTypedExport.SuperIndex = FPackageIndex.FromRawIndex(export.SuperIndex.Index);
@@ -636,7 +655,7 @@ public class UAssetSnippet {
         return (formatter.Deserialize(stream));
     }
 
-    public List<PropertyData> ClonePropertyData(UAsset originalUAsset, List<PropertyData> propertyDataList, UAsset attachToAsset, int exportStartIndex) {
+    public List<PropertyData> ClonePropertyData(UAsset originalUAsset, List<PropertyData> propertyDataList, UAsset attachToAsset, int exportStartIndex, List<int> mappedImports) {
         List<PropertyData> newPropertyDataList = new List<PropertyData>();
         foreach (PropertyData propertyData in propertyDataList) {
             FName newPropertyName = FName.FromString(attachToAsset, propertyData.Name.Value.Value);
@@ -644,7 +663,7 @@ public class UAssetSnippet {
             attachToAsset.AddNameReference(propertyData.PropertyType);
             if (propertyData is ArrayPropertyData arrayPropertyData) {
                 ArrayPropertyData newArrayPropertyData = new ArrayPropertyData(newPropertyName);
-                newArrayPropertyData.Value = ClonePropertyData(originalUAsset, arrayPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex).ToArray();
+                newArrayPropertyData.Value = ClonePropertyData(originalUAsset, arrayPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex, mappedImports).ToArray();
                 newPropertyDataList.Add(newArrayPropertyData);
             }
             else if (propertyData is BoolPropertyData boolPropertyData) {
@@ -741,12 +760,23 @@ public class UAssetSnippet {
             }
             else if (propertyData is ObjectPropertyData objectPropertyData) {
                 ObjectPropertyData newObjectPropertyData = new ObjectPropertyData(newPropertyName);
-                int newCurrentIndex = objectPropertyData.Value.Index - 1;
-                if (UsedExports != null) {
-                    newCurrentIndex = UsedExports.IndexOf(objectPropertyData.Value.Index - 1);
-                }
-                if (newCurrentIndex != -1) {
+                bool isImport = objectPropertyData.Value.IsImport();
+                bool isExport = objectPropertyData.Value.IsExport();
+                int newCurrentIndex = Math.Abs(objectPropertyData.Value.Index) - 1;
+                if (isExport) {
+                    if (UsedExports != null) {
+                        newCurrentIndex = UsedExports.IndexOf(objectPropertyData.Value.Index - 1);
+                    }
                     newCurrentIndex += exportStartIndex + 1;
+                } else if (isImport) {
+                    if (UsedImports != null) {
+                        int usedImportIndex = UsedImports.IndexOf(newCurrentIndex);
+                        if (usedImportIndex > -1) {
+                            newCurrentIndex = -(mappedImports[usedImportIndex] + 1);
+                        }
+                    } else {
+                        newCurrentIndex = -(mappedImports[newCurrentIndex] + 1);
+                    }
                 } else {
                     newCurrentIndex = 0;
                 }
@@ -755,7 +785,7 @@ public class UAssetSnippet {
             }
             else if (propertyData is SetPropertyData setPropertyData) {
                 SetPropertyData newSetPropertyData = new SetPropertyData(newPropertyName);
-                newSetPropertyData.Value = ClonePropertyData(originalUAsset, setPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex).ToArray();
+                newSetPropertyData.Value = ClonePropertyData(originalUAsset, setPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex, mappedImports).ToArray();
                 newPropertyDataList.Add(newSetPropertyData);
             }
             else if (propertyData is SoftAssetPathPropertyData softAssetPathPropertyData) {
@@ -814,7 +844,7 @@ public class UAssetSnippet {
             }
             else if (propertyData is BoxPropertyData boxPropertyData) {
                 BoxPropertyData newBoxPropertyData = new BoxPropertyData(newPropertyName);
-                newBoxPropertyData.Value = (VectorPropertyData[])ClonePropertyData(originalUAsset, boxPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex).ToArray();
+                newBoxPropertyData.Value = (VectorPropertyData[])ClonePropertyData(originalUAsset, boxPropertyData.Value.ToList<PropertyData>(), attachToAsset, exportStartIndex, mappedImports).ToArray();
                 newBoxPropertyData.IsValid = boxPropertyData.IsValid;
                 newPropertyDataList.Add(newBoxPropertyData);
             }
@@ -909,7 +939,8 @@ public class UAssetSnippet {
                     originalUAsset,
                     structPropertyData.Value,
                     attachToAsset,
-                    exportStartIndex
+                    exportStartIndex,
+                    mappedImports
                 );
                 newPropertyDataList.Add(newStructPropertyData);
             }

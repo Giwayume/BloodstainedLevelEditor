@@ -7,6 +7,12 @@ const character_profiles = [
 		"example_placement_export_object_name": "PBEasyTreasureBox_BP"
 	},
 	{
+		"character_id": "N0001",
+		"character_name": "PBEasyTreasureBox_BP_Gold",
+		"example_placement_package": "BloodstainedRotN/Content/Core/Environment/ACT08_TWR/Level/m08TWR_019_Gimmick.umap",
+		"example_placement_export_object_name": "PBEasyTreasureBox_BP"
+	},
+	{
 		"character_id": "N3003",
 		"character_name": "Morte",
 		"example_placement_package": "BloodstainedRotN/Content/Core/Environment/ACT01_SIP/Level/m01SIP_001_Enemy_Normal.umap",
