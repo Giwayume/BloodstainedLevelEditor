@@ -280,6 +280,7 @@ public class UAssetSnippet {
         // Cloned used exports and add to end of current asset's exports
         bool isPrimaryExport = true;
         foreach (int originalExportIndex in UsedExports) {
+            GD.Print("Cloning export " + originalExportIndex);
             Export clonedExport = CloneExport(originalUAsset, originalUAsset.Exports[originalExportIndex], strippedUAsset, exportStartIndex, mappedImports);
             if (isPrimaryExport) {
                 clonedExport.bIsAsset = true;
@@ -681,11 +682,13 @@ public class UAssetSnippet {
                     attachToAsset.AddNameReference(byteValueName);
                     newBytePropertyData.EnumValue = FName.FromString(attachToAsset, bytePropertyData.EnumValue.ToString());
                 }
-                FString byteEnumTypeName = originalUAsset.GetNameReference(
-                    originalUAsset.SearchNameReference(bytePropertyData.EnumType.Value)
-                );
-                attachToAsset.AddNameReference(byteEnumTypeName);
-                newBytePropertyData.EnumType = FName.FromString(attachToAsset, byteEnumTypeName.ToString());
+                if (bytePropertyData.EnumType != null) {
+                    FString byteEnumTypeName = originalUAsset.GetNameReference(
+                        originalUAsset.SearchNameReference(bytePropertyData.EnumType.Value)
+                    );
+                    attachToAsset.AddNameReference(byteEnumTypeName);
+                    newBytePropertyData.EnumType = FName.FromString(attachToAsset, byteEnumTypeName.ToString());
+                }
                 newPropertyDataList.Add(newBytePropertyData);
             }
             else if (propertyData is EnumPropertyData enumPropertyData) {

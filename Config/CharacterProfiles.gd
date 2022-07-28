@@ -2,9 +2,9 @@
 const character_profiles = [
 	{
 		"character_id": "N0001",
-		"character_name": "PBEasyTreasureBox_BP",
-		"example_placement_package": "BloodstainedRotN/Content/Core/Environment/ACT01_SIP/Level/m01SIP_002_Gimmick.umap",
-		"example_placement_export_object_name": "PBEasyTreasureBox_BP"
+		"character_name": "ToriiWarp",
+		"example_placement_package": "BloodstainedRotN/Content/Core/Environment/ACT07_LIB/Level/m07LIB_006_Gimmick.umap",
+		"example_placement_export_object_name": "ToriiWarp_BP"
 	},
 	{
 		"character_id": "N0001",
