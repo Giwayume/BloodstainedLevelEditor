@@ -691,6 +691,23 @@ public class UAssetSnippet {
                 }
                 newPropertyDataList.Add(newBytePropertyData);
             }
+            else if (propertyData is DelegatePropertyData delegatePropertyData) {
+                DelegatePropertyData newDelegatePropertyData = new DelegatePropertyData(newPropertyName);
+                int newObjectIndex = delegatePropertyData.Value.Object.Index - 1;
+                if (UsedExports != null) {
+                    newObjectIndex = UsedExports.IndexOf(delegatePropertyData.Value.Object.Index - 1);
+                }
+                if (newObjectIndex != -1) {
+                    newObjectIndex += exportStartIndex + 1;
+                } else {
+                    newObjectIndex = 0;
+                }
+                newDelegatePropertyData.Value = new FDelegate(
+                    FPackageIndex.FromRawIndex(newObjectIndex),
+                    FName.FromString(attachToAsset, delegatePropertyData.Value.Delegate.Value.Value)
+                );
+                newPropertyDataList.Add(newDelegatePropertyData);
+            }
             else if (propertyData is EnumPropertyData enumPropertyData) {
                 EnumPropertyData newEnumPropertyData = new EnumPropertyData(newPropertyName);
                 // FName newEnumValue = new FName(attachToAsset, enumPropertyData.Value.Value.Value, enumPropertyData.Value.Number);
