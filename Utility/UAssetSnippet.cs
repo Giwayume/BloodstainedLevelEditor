@@ -596,7 +596,7 @@ public class UAssetSnippet {
             FName.FromString(attachToAsset, originalImport.ClassPackage.Value.Value),
             FName.FromString(attachToAsset, originalImport.ClassName.Value.Value),
             FPackageIndex.FromRawIndex(originalImport.OuterIndex.Index),
-            FName.FromString(attachToAsset, originalImport.ObjectName.Value.Value)
+            FName.FromString(attachToAsset, originalImport.ObjectName.ToString()) // .Value.Value?
         );
         return clonedImport;
     }
